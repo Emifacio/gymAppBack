@@ -8,6 +8,14 @@ from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _first_present_env(*names: str) -> str | None:
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value
+    return None
+
+
 def _normalize_database_url(value: str) -> str:
     normalized = value.strip()
     if normalized.startswith("postgresql+asyncpg://"):
@@ -105,11 +113,19 @@ class Settings(BaseSettings):
             self.secret_key = secrets.token_urlsafe(32)
 
         if not self.database_url:
-            self.database_url = _build_database_url_from_pg_env()
+            self.database_url = _first_present_env(
+                "DATABASE_URL",
+                "DATABASE_PUBLIC_URL",
+                "POSTGRES_URL",
+                "POSTGRES_URL_NON_POOLING",
+                "POSTGRES_PRISMA_URL",
+                "POSTGRESQL_URL",
+            ) or _build_database_url_from_pg_env()
         if not self.database_url:
             raise ValueError(
-                "DATABASE_URL is required. Set DATABASE_URL directly or provide PGHOST, "
-                "PGPORT, PGUSER, PGPASSWORD, and PGDATABASE."
+                "A database URL is required. Set DATABASE_URL (or another supported "
+                "Postgres URL env var) directly, or provide PGHOST, PGPORT, PGUSER, "
+                "PGPASSWORD, and PGDATABASE."
             )
         self.database_url = _normalize_database_url(self.database_url)
 
