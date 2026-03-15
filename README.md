@@ -1,27 +1,48 @@
 # Gym Backend
 
-Production-ready backend scaffold for a gym management platform built with FastAPI, PostgreSQL, SQLAlchemy async, Alembic, Redis, Celery, and Docker.
+Backend platform for gym operations built with FastAPI, PostgreSQL, SQLAlchemy async, Alembic, Redis, Celery, Docker, and JWT authentication.
 
-## Stack
+## Overview
+
+This project implements the core backend domains for a gym management system:
+
+- member management
+- authentication and role-based access
+- class scheduling
+- booking and waitlist handling
+- attendance tracking
+- Strava account connection and activity sync
+- Redis-backed caching
+- Celery workers for asynchronous jobs
+
+The codebase is structured around a clean service/repository split so it stays maintainable as the product grows.
+
+## Tech Stack
 
 - Python 3.11+
 - FastAPI
 - PostgreSQL
 - SQLAlchemy 2 async ORM
-- Alembic migrations
-- Redis for caching and Celery transport
-- Celery worker and beat
+- Alembic
+- Redis
+- Celery
+- Docker Compose
 - Pydantic v2
-- JWT authentication
+- JWT bearer auth
 
-## Project Structure
+## Project Layout
 
 ```text
 app/
   api/
+    routes/
   core/
   domain/
+    models/
   infrastructure/
+    cache/
+    database/
+    integrations/
   repositories/
   schemas/
   services/
@@ -30,67 +51,212 @@ migrations/
 docker/
 docker-compose.yml
 requirements.txt
+README.md
 ```
 
-## Quick Start
+## Architecture
 
-1. Start the platform:
+- `app/api`: FastAPI route layer and request dependencies
+- `app/core`: settings, security, logging, exceptions
+- `app/domain`: enums and SQLAlchemy models
+- `app/repositories`: persistence access logic
+- `app/services`: business rules and orchestration
+- `app/infrastructure`: DB session, Redis, external clients
+- `app/workers`: Celery app and background tasks
+- `migrations`: Alembic environment and schema revisions
+
+## Local Development
+
+### Prerequisites
+
+- Docker Desktop
+- Docker Compose
+
+### Start the stack
 
 ```bash
 docker compose up --build
 ```
 
-2. Open the API docs:
+### Open the API
 
-```text
-http://localhost:8000/docs
+- Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+- ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
+- Health check: [http://localhost:8000/health](http://localhost:8000/health)
+
+### Stop the stack
+
+```bash
+docker compose down
 ```
 
-## Default Environment
+### Reset local database volume
 
-The repository includes a ready-to-use `.env` for local development. Update `SECRET_KEY` and Strava credentials before production use.
+```bash
+docker compose down -v
+```
+
+## Environment
+
+The repository includes a ready-to-use `.env` for local development and a matching `.env.example`.
+
+Key variables:
+
+- `SECRET_KEY`: JWT signing secret
+- `DATABASE_URL`: async SQLAlchemy database URL
+- `REDIS_URL`: Redis cache URL
+- `CELERY_BROKER_URL`: Redis broker URL for Celery
+- `CELERY_RESULT_BACKEND`: result backend URL for Celery
+- `STRAVA_CLIENT_ID`: optional Strava OAuth client id
+- `STRAVA_CLIENT_SECRET`: optional Strava OAuth client secret
 
 ## Authentication
 
-- `POST /auth/register` creates the first account as an admin automatically for bootstrap.
-- All later registrations default to the `member` role.
-- Use the returned bearer token in the `Authorize` button inside Swagger.
+Authentication uses bearer tokens.
 
-## Main Domains
+- `POST /auth/register`
+- `POST /auth/login`
 
-- Members: profile management, roles, membership status
-- Classes: scheduling, instructors, capacity and status
-- Bookings: transactional reservations, capacity checks, waitlist promotion
-- Attendance: instructor/admin attendance marking and history
-- Integrations: Strava account connection and background activity sync
+Behavior:
 
-## Booking Concurrency
+- the first registered account is automatically created as `admin`
+- later self-registrations default to `member`
+- protected endpoints expect `Authorization: Bearer <token>`
 
-Booking creation and cancellation use:
+## Roles
+
+Supported member roles:
+
+- `member`
+- `instructor`
+- `admin`
+
+Examples:
+
+- admins can manage members and classes
+- instructors can manage their own classes and mark attendance
+- members can manage their own bookings, integrations, and profile data
+
+## Main API Areas
+
+### Members
+
+- `POST /members`
+- `GET /members`
+- `GET /members/{id}`
+- `PATCH /members/{id}`
+
+### Classes
+
+- `POST /classes`
+- `GET /classes`
+- `GET /classes/{id}`
+- `PATCH /classes/{id}`
+- `DELETE /classes/{id}`
+
+### Bookings
+
+- `POST /bookings`
+- `DELETE /bookings/{id}`
+- `GET /members/{id}/bookings`
+
+### Attendance
+
+- `POST /attendance`
+- `GET /attendance/class/{classId}`
+- `GET /attendance/member/{memberId}`
+
+### Strava / Activities
+
+- `POST /integrations/strava/connect`
+- `POST /activities/sync`
+- `GET /members/{id}/activities`
+
+## Booking and Waitlist Logic
+
+Booking is designed to be concurrency-safe.
+
+The service layer uses:
 
 - database transactions
-- row-level locking on the class record
-- deterministic waitlist promotion
+- row-level locking on the class row
+- booking count checks inside the transaction
+- automatic waitlist promotion after cancellation
 
-This prevents overbooking during concurrent reservation attempts.
+This prevents overbooking when multiple users reserve the same class at the same time.
 
-## Background Tasks
+## Background Jobs
 
-- `app.tasks.sync_member_activities`: fetches Strava activities and stores simplified activity records
-- `app.tasks.send_class_reminders`: scans upcoming classes and is scheduled by Celery beat
+Celery services included in Docker Compose:
 
-## Local Development Commands
+- `celery_worker`
+- `celery_beat`
+
+Registered tasks:
+
+- `app.tasks.sync_member_activities`
+- `app.tasks.send_class_reminders`
+
+## Database and Migrations
+
+Alembic is configured and the initial schema migration is included.
+
+Run migrations manually if needed:
 
 ```bash
 alembic upgrade head
+```
+
+Create a new autogenerated migration:
+
+```bash
+alembic revision --autogenerate -m "describe_change"
+```
+
+## Redis Usage
+
+Redis is used for:
+
+- Celery message brokering
+- Celery result storage
+- caching frequently requested member and class detail responses
+
+## Useful Commands
+
+Run the API locally outside Docker:
+
+```bash
 uvicorn app.main:app --reload
+```
+
+Run the worker locally:
+
+```bash
 celery -A app.workers.celery_app.celery_app worker --loglevel=info
+```
+
+Run beat locally:
+
+```bash
 celery -A app.workers.celery_app.celery_app beat --loglevel=info
+```
+
+Inspect running containers:
+
+```bash
+docker compose ps
+```
+
+Show logs:
+
+```bash
+docker compose logs -f api
+docker compose logs -f celery_worker
+docker compose logs -f celery_beat
 ```
 
 ## Notes
 
-- Redis caching is applied to class and member detail reads.
-- The Strava connect endpoint stores OAuth tokens supplied by a client-side OAuth flow or admin tooling.
-- Alembic is configured for autogeneration using the SQLAlchemy metadata in `app.infrastructure.database.base.Base`.
-- The class model file uses `gym_class.py` instead of `class.py` because `class` is a reserved Python keyword.
+- The Strava connect endpoint stores access credentials supplied by a client-side OAuth flow or admin tooling.
+- The class model file is named `gym_class.py` because `class.py` would conflict with Python syntax.
+- The local Docker stack has been verified to serve `/health` and `/docs`.
