@@ -90,6 +90,22 @@ docker compose up --build
 docker compose down
 ```
 
+## Railway Deployment
+
+If Railway asks for a start command, use:
+
+```bash
+sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+```
+
+Recommended build command:
+
+```bash
+pip install -r requirements.txt
+```
+
+The repository now includes a `Procfile` with the same web command so Railway can detect it automatically.
+
 ### Reset local database volume
 
 ```bash
