@@ -1,0 +1,4 @@
+interface:
+  display_name: "GymApp Railway Deploy"
+  short_description: "Deploy GymApp backend to Railway"
+  default_prompt: "Use $gymapp-railway-deploy to deploy or debug the GymApp backend on Railway."
