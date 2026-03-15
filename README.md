@@ -92,10 +92,17 @@ docker compose down
 
 ## Railway Deployment
 
-If Railway asks for a start command, use:
+The repository now includes a root `railway.toml` so Railway has an explicit deploy config:
+
+- build from the root `Dockerfile`
+- run `alembic upgrade head` as a pre-deploy step
+- start Uvicorn with Railway's injected `PORT`
+- healthcheck `GET /health`
+
+If you want to verify or override the service manually in Railway UI:
 
 ```bash
-sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
 ```
 
 Recommended build command:
@@ -104,11 +111,11 @@ Recommended build command:
 pip install -r requirements.txt
 ```
 
-The repository now includes a `Procfile` with the same web command so Railway can detect it automatically.
+The repository also includes a `Procfile` as a fallback, but Railway should prefer `railway.toml`.
 
 Minimum variables for a web deployment:
 
-- `DATABASE_URL`, or Railway Postgres variables `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, and `PGDATABASE`
+- `DATABASE_URL`, `DATABASE_PUBLIC_URL`, `POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`, `POSTGRES_PRISMA_URL`, `POSTGRESQL_URL`, or Railway Postgres variables `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, and `PGDATABASE`
 - `SECRET_KEY` for stable JWT signing
 
 Optional variables:
@@ -118,6 +125,12 @@ Optional variables:
 
 If `SECRET_KEY` is omitted, the app now generates an ephemeral key at boot so the service can start, but existing auth tokens will become invalid after every restart.
 If Redis variables are omitted, the web process can still boot, but Redis-backed cache and worker features will not work until a Redis service is configured.
+
+Important Railway UI check:
+
+- open your web service, then `Variables`
+- make sure the database variables are present on that web service itself
+- if you created a Railway Postgres service, link or reference its variables into the web service before redeploying
 
 ### Reset local database volume
 
