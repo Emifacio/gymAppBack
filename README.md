@@ -98,6 +98,7 @@ The repository now includes a root `railway.toml` so Railway has an explicit dep
 - run `alembic upgrade head` as a pre-deploy step
 - start Uvicorn with Railway's injected `PORT`
 - healthcheck `GET /health`
+- exclude the local `.env` from Docker builds so Railway uses service variables instead of development defaults
 
 If you want to verify or override the service manually in Railway UI:
 
