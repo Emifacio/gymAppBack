@@ -16,6 +16,14 @@ def _first_present_env(*names: str) -> str | None:
     return None
 
 
+def _first_present_env_with_name(*names: str) -> tuple[str | None, str | None]:
+    for name in names:
+        value = os.getenv(name)
+        if value:
+            return value, name
+    return None, None
+
+
 def _normalize_database_url(value: str) -> str:
     normalized = value.strip()
     if normalized.startswith("postgresql+asyncpg://"):
@@ -71,6 +79,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     database_url: str | None = None
     redis_url: str | None = None
+    redis_url_source: str | None = None
     celery_broker_url: str | None = None
     celery_result_backend: str | None = None
     cache_ttl_seconds: int = 300
@@ -130,7 +139,20 @@ class Settings(BaseSettings):
         self.database_url = _normalize_database_url(self.database_url)
 
         if not self.redis_url:
-            self.redis_url = os.getenv("REDIS_URL") or _build_redis_url_from_env() or "redis://localhost:6379/0"
+            redis_url, redis_url_source = _first_present_env_with_name("REDIS_URL")
+            if redis_url:
+                self.redis_url = redis_url
+                self.redis_url_source = redis_url_source
+            else:
+                derived_redis_url = _build_redis_url_from_env()
+                if derived_redis_url:
+                    self.redis_url = derived_redis_url
+                    self.redis_url_source = "REDISHOST/REDIS_HOST"
+                else:
+                    self.redis_url = "redis://localhost:6379/0"
+                    self.redis_url_source = "fallback-localhost"
+        elif not self.redis_url_source:
+            self.redis_url_source = "settings"
         if not self.celery_broker_url:
             self.celery_broker_url = self.redis_url
         if not self.celery_result_backend:
