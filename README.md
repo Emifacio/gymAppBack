@@ -121,7 +121,15 @@ Minimum variables for a web deployment:
 Optional variables:
 
 - `REDIS_URL` for cache and Celery on Railway
-- `CELERY_BROKER_URL` and `CELERY_RESULT_BACKEND` if you want values separate from `REDIS_URL`
+- `CELERY_BROKER_URL` and `CELERY_RESULT_BACKEND` if you want to override the defaults explicitly
+
+Recommended Railway Redis variables on the web service:
+
+```text
+REDIS_URL=${{Redis.REDIS_URL}}
+CELERY_BROKER_URL=${{Redis.REDIS_URL}}
+CELERY_RESULT_BACKEND=${{Redis.REDIS_URL}}
+```
 
 If `SECRET_KEY` is omitted, the app now generates an ephemeral key at boot so the service can start, but existing auth tokens will become invalid after every restart.
 If Redis variables are omitted, the web process can still boot, but Redis-backed cache and worker features will not work until a Redis service is configured.
