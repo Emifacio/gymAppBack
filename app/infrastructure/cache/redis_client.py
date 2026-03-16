@@ -1,5 +1,7 @@
+import asyncio
 import json
 import logging
+import time
 from typing import Any
 
 from redis.asyncio import Redis
@@ -9,21 +11,43 @@ logger = logging.getLogger(__name__)
 
 
 class RedisCache:
-    def __init__(self, redis_url: str | None, default_ttl: int = 300) -> None:
+    def __init__(
+        self,
+        redis_url: str | None,
+        default_ttl: int = 300,
+        connect_timeout_seconds: float = 5.0,
+    ) -> None:
         self.redis_url = redis_url
         self.default_ttl = default_ttl
+        self.connect_timeout_seconds = connect_timeout_seconds
         self.client: Redis | None = None
 
     async def connect(self) -> None:
         if not self.redis_url:
             logger.info("redis_connection_skipped")
             return
+        started_at = time.perf_counter()
         try:
-            self.client = Redis.from_url(self.redis_url, encoding="utf-8", decode_responses=True)
-            await self.client.ping()
+            self.client = Redis.from_url(
+                self.redis_url,
+                encoding="utf-8",
+                decode_responses=True,
+                socket_connect_timeout=self.connect_timeout_seconds,
+                socket_timeout=self.connect_timeout_seconds,
+            )
+            await asyncio.wait_for(self.client.ping(), timeout=self.connect_timeout_seconds)
         except Exception:
-            logger.warning("redis_connection_failed", exc_info=True)
+            elapsed_seconds = time.perf_counter() - started_at
+            logger.warning(
+                "redis_connection_failed timeout_seconds=%s elapsed_seconds=%.2f",
+                self.connect_timeout_seconds,
+                elapsed_seconds,
+                exc_info=True,
+            )
             self.client = None
+        else:
+            elapsed_seconds = time.perf_counter() - started_at
+            logger.info("redis_connection_established elapsed_seconds=%.2f", elapsed_seconds)
 
     async def close(self) -> None:
         if self.client is not None:

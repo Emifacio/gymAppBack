@@ -134,6 +134,7 @@ CELERY_RESULT_BACKEND=${{Redis.REDIS_URL}}
 
 If `SECRET_KEY` is omitted, the app now generates an ephemeral key at boot so the service can start, but existing auth tokens will become invalid after every restart.
 If Redis variables are omitted, the web process can still boot, but it now skips Redis connection attempts and returns a clear `503` for background-job requests until a Redis service is configured.
+If Redis is configured but slow to answer during startup, the web process now gives up after a short timeout and keeps booting without cache instead of hanging the whole deploy.
 
 Important Railway UI check:
 

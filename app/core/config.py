@@ -91,6 +91,7 @@ class Settings(BaseSettings):
     celery_broker_url: str | None = None
     celery_result_backend: str | None = None
     cache_ttl_seconds: int = 300
+    redis_connect_timeout_seconds: float = 5.0
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
     timezone: str = "UTC"
     strava_client_id: str | None = None

@@ -49,7 +49,11 @@ async def lifespan(app: FastAPI):
             "redis_configuration_missing source=%s background_jobs_available=false cache_available=false",
             settings.redis_url_source or "unknown",
         )
-    redis_cache = RedisCache(settings.cache_redis_url, default_ttl=settings.cache_ttl_seconds)
+    redis_cache = RedisCache(
+        settings.cache_redis_url,
+        default_ttl=settings.cache_ttl_seconds,
+        connect_timeout_seconds=settings.redis_connect_timeout_seconds,
+    )
     await redis_cache.connect()
     app.state.redis_cache = redis_cache
     yield
