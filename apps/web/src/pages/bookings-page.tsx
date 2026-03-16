@@ -84,7 +84,7 @@ export function BookingsPage() {
                 </p>
                 <button
                   className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
-                  disabled={cancelBooking.isPending}
+                  disabled={cancelBooking.isPending || booking.status !== "confirmed"}
                   onClick={() => {
                     cancelBooking.mutate({
                       bookingId: booking.id,
@@ -93,7 +93,7 @@ export function BookingsPage() {
                   }}
                   type="button"
                 >
-                  Cancel booking
+                  {booking.status === "confirmed" ? "Cancel booking" : "Already cancelled"}
                 </button>
               </div>
             ))}

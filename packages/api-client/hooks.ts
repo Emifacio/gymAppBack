@@ -2,6 +2,7 @@ import { queryOptions, useMutation, useQuery, useQueryClient, type UseMutationOp
 
 import { toAuthSession, type AuthSession, type SessionManager } from "./auth";
 import {
+  isApiResponseError,
   unwrapResult,
   type ActivityRecord,
   type ActivitySyncPayload,
@@ -113,12 +114,20 @@ export function getMemberSubscriptionQueryOptions(client: GymApiClient, memberId
   const untypedClient = client as any;
   return queryOptions({
     queryKey: gymKeys.memberSubscription(memberId),
-    queryFn: () =>
-      unwrapResult<MemberSubscription>(
-        untypedClient.GET("/members/{member_id}/subscription", {
-          params: { path: { member_id: memberId } }
-        })
-      )
+    queryFn: async () => {
+      try {
+        return await unwrapResult<MemberSubscription | null>(
+          untypedClient.GET("/members/{member_id}/subscription", {
+            params: { path: { member_id: memberId } }
+          })
+        );
+      } catch (error) {
+        if (isApiResponseError(error) && error.status === 404) {
+          return null;
+        }
+        throw error;
+      }
+    }
   });
 }
 

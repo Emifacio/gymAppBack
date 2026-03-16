@@ -126,12 +126,12 @@ async def assign_member_subscription(
     return await service.assign_subscription(member_id, payload.plan_id)
 
 
-@router.get("/{member_id}/subscription", response_model=MemberSubscriptionRead)
+@router.get("/{member_id}/subscription", response_model=MemberSubscriptionRead | None)
 async def get_member_subscription(
     member_id: UUID,
     current_user: Member = Depends(get_current_user),
     service: SubscriptionService = Depends(get_subscription_service),
-) -> MemberSubscriptionRead:
+) -> MemberSubscriptionRead | None:
     if current_user.role != MemberRole.ADMIN and current_user.id != member_id:
         raise ForbiddenError("You can only access your own subscription")
     return await service.get_member_subscription(member_id)

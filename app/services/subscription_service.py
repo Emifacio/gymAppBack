@@ -56,7 +56,7 @@ class SubscriptionService:
         self.member_subscription_repository = member_subscription_repository
         self.cache = cache
 
-    async def get_member_subscription(self, member_id: UUID) -> MemberSubscriptionRead:
+    async def get_member_subscription(self, member_id: UUID) -> MemberSubscriptionRead | None:
         member = await self.member_repository.get_by_id(member_id)
         if member is None:
             raise NotFoundError("Member not found")
@@ -65,7 +65,7 @@ class SubscriptionService:
         if subscription is None:
             subscription = await self.member_subscription_repository.get_latest_for_member(member_id)
         if subscription is None:
-            raise NotFoundError("Subscription not found")
+            return None
 
         if subscription.status == SubscriptionStatus.ACTIVE and subscription.period_end <= datetime.now(timezone.utc):
             await self._sync_subscription_for_read(subscription.id)
@@ -169,7 +169,7 @@ class SubscriptionService:
 
             subscription = await self.member_subscription_repository.get_active_for_member(member_id, for_update=True)
             if subscription is None:
-                raise NotFoundError("Active subscription not found")
+                return
             subscription.status = SubscriptionStatus.CANCELLED
         await self._invalidate_member_cache(member_id)
 

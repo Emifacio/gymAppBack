@@ -3,7 +3,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import AppException, ConflictError, ForbiddenError, NotFoundError
+from app.core.exceptions import AppException, ForbiddenError, NotFoundError
 from app.domain.enums import BookingEligibilityOutcome, BookingStatus, MemberRole, WaitlistStatus
 from app.domain.models.booking import Booking
 from app.domain.models.member import Member
@@ -150,7 +150,13 @@ class BookingService:
             if actor_role != MemberRole.ADMIN and booking.member_id != actor_id:
                 raise ForbiddenError("You can only cancel your own bookings")
             if booking.status == BookingStatus.CANCELLED:
-                raise ConflictError("Booking is already cancelled")
+                return BookingCancellationResponse(
+                    booking_id=booking_id,
+                    cancelled=True,
+                    message="Booking was already cancelled",
+                    credit_restored=False,
+                    promoted_booking=None,
+                )
 
             related_member_ids.add(booking.member_id)
             related_class_id = booking.class_id
