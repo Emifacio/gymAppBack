@@ -37,9 +37,9 @@ export function WorkoutsPage() {
   return (
     <div className="space-y-[var(--section-gap)]">
       <header>
-        <h1 className="section-title text-[var(--font-size-4xl)]">Schedule</h1>
+        <h1 className="section-title text-[var(--font-size-4xl)]">Horario</h1>
         <p className="mt-2 text-sm font-medium text-[var(--ink-500)] lg:text-base">
-          Explore upcoming classes, manage your bookings, and track your training journey.
+          Explora próximas clases, gestiona tus reservas y haz un seguimiento de tu progreso.
         </p>
       </header>
 
@@ -47,39 +47,39 @@ export function WorkoutsPage() {
         <StatCard
           detail={
             subscription?.active_plan
-              ? subscription.plan_name ?? "Assigned"
-              : "No active plan"
+              ? subscription.plan_name ?? "Asignado"
+              : "Sin plan activo"
           }
-          label="Active plan"
-          value={subscription?.active_plan ? "Assigned" : "None"}
+          label="Plan activo"
+          value={subscription?.active_plan ? "Asignado" : "Ninguno"}
         />
         <StatCard
           detail={
             subscription?.active_plan
               ? subscription.allows_free_pass
-                ? "Unlimited capacity"
-                : `${formatCredits(subscription.active_credits)} remaining`
-              : "Booking locked"
+                ? "Capacidad ilimitada"
+                : `${formatCredits(subscription.active_credits)} restantes`
+              : "Reservas bloqueadas"
           }
-          label="Credits"
+          label="Créditos"
           value={subscription?.active_plan ? String(subscription.active_credits) : "0"}
         />
         <StatCard
           detail={formatDateTime(subscription?.period_end)}
-          label="Renewal"
-          value="Period end"
+          label="Renovación"
+          value="Fin del periodo"
         />
       </section>
 
       <section className="apple-card">
         <div className="mb-6">
-          <h2 className="section-title text-[var(--font-size-xl)] text-[var(--ink-900)]">Refine Schedule</h2>
-          <p className="mt-1 text-sm font-medium text-[var(--ink-500)]">Filter by class status and availability.</p>
+          <h2 className="section-title text-[var(--font-size-xl)] text-[var(--ink-900)]">Refinar Horario</h2>
+          <p className="mt-1 text-sm font-medium text-[var(--ink-500)]">Filtrar por estado de clase y disponibilidad.</p>
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Status</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Estado</span>
             <select
               className="w-full rounded-xl border border-[var(--surface-outline)] bg-[var(--bg-main)] px-4 py-3 text-sm font-medium outline-none transition focus:border-[var(--primary)]"
               value={filters.status}
@@ -90,10 +90,10 @@ export function WorkoutsPage() {
                 }))
               }
             >
-              <option value="">All statuses</option>
-              <option value="scheduled">Scheduled</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="completed">Completed</option>
+              <option value="">Todos los estados</option>
+              <option value="scheduled">Programado</option>
+              <option value="cancelled">Cancelado</option>
+              <option value="completed">Completado</option>
             </select>
           </div>
         </div>
@@ -102,8 +102,8 @@ export function WorkoutsPage() {
       {canManage && (
         <section className="apple-card bg-[var(--bg-main)]/50">
           <div className="mb-8">
-            <h2 className="section-title text-[var(--font-size-2xl)]">Create Workout</h2>
-            <p className="mt-1 text-sm font-medium text-[var(--ink-500)] lg:text-base">Schedule a new training session for the community.</p>
+            <h2 className="section-title text-[var(--font-size-2xl)]">Crear Entrenamiento</h2>
+            <p className="mt-1 text-sm font-medium text-[var(--ink-500)] lg:text-base">Programa una nueva sesión de entrenamiento para la comunidad.</p>
           </div>
 
           <form
@@ -112,17 +112,17 @@ export function WorkoutsPage() {
               // ... mutation logic
             }}
           >
-            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="name" placeholder="Workout name" required />
-            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="location" placeholder="Location" required />
-            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="instructor_id" placeholder="Instructor ID (optional)" />
-            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" min={15} name="duration_minutes" placeholder="Duration (m)" required type="number" />
-            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" min={1} name="capacity" placeholder="Capacity" required type="number" />
+            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="name" placeholder="Nombre del entrenamiento" required />
+            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="location" placeholder="Ubicación" required />
+            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="instructor_id" placeholder="ID del instructor (opcional)" />
+            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" min={15} name="duration_minutes" placeholder="Duración (m)" required type="number" />
+            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" min={1} name="capacity" placeholder="Capacidad" required type="number" />
             <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="scheduled_at" required type="datetime-local" />
-            <textarea className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium sm:col-span-2 lg:col-span-3" name="description" placeholder="Description" />
+            <textarea className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium sm:col-span-2 lg:col-span-3" name="description" placeholder="Descripción" />
             
             <div className="sm:col-span-2 lg:col-span-3">
               <Button className="w-full h-12" loading={createWorkout.isPending} type="submit" variant="primary">
-                {createWorkout.isPending ? "Scheduling..." : "Create workout"}
+                {createWorkout.isPending ? "Programando..." : "Crear entrenamiento"}
               </Button>
             </div>
           </form>
@@ -131,9 +131,9 @@ export function WorkoutsPage() {
 
       {showEmptyState ? (
         <EmptyState
-          eyebrow="Availability"
-          title="No classes scheduled"
-          description="Check back later or contact administrators for the upcoming training block."
+          eyebrow="Disponibilidad"
+          title="No hay clases programadas"
+          description="Vuelve más tarde o contacta a los administradores para el próximo bloque de entrenamiento."
         />
       ) : (
         <div className="grid gap-6">

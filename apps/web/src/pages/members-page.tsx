@@ -84,25 +84,25 @@ export function MembersPage() {
         instructor_specialties: ""
       });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Could not create the member.");
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo crear el miembro.");
     }
   }
 
   return (
     <div className="space-y-[var(--section-gap)]">
       <header>
-        <h1 className="section-title text-[var(--font-size-4xl)]">Members</h1>
+        <h1 className="section-title text-[var(--font-size-4xl)]">Miembros</h1>
         <p className="mt-2 text-sm font-medium text-[var(--ink-500)] lg:text-base">
-          Manage your athlete community, instructor staff, and administrative accounts.
+          Gestiona tu comunidad de atletas, personal de instructores y cuentas administrativas.
         </p>
       </header>
 
       <div className="grid gap-[var(--section-gap)] lg:grid-cols-[1.2fr_0.8fr]">
         <section className="apple-card">
           <div>
-            <h2 className="section-title text-[var(--font-size-xl)] text-[var(--ink-900)]">Directory</h2>
+            <h2 className="section-title text-[var(--font-size-xl)] text-[var(--ink-900)]">Directorio</h2>
             <p className="mt-1 text-sm font-medium text-[var(--ink-500)]">
-              Real-time member tracking and status overview.
+              Seguimiento de miembros en tiempo real y resumen de estado.
             </p>
           </div>
 
@@ -119,15 +119,15 @@ export function MembersPage() {
                 }
                 className="w-full rounded-xl border border-[var(--surface-outline)] bg-[var(--bg-main)] px-4 py-3 text-sm font-medium outline-none transition focus:border-[var(--primary)]"
               >
-                <option value="">All roles</option>
-                <option value="member">Member</option>
+                <option value="">Todos los roles</option>
+                <option value="member">Miembro</option>
                 <option value="instructor">Instructor</option>
-                <option value="admin">Admin</option>
+                <option value="admin">Administrador</option>
               </select>
             </div>
 
             <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Status</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Estado</span>
               <select
                 value={filters.membership_status}
                 onChange={(event) =>
@@ -138,10 +138,10 @@ export function MembersPage() {
                 }
                 className="w-full rounded-xl border border-[var(--surface-outline)] bg-[var(--bg-main)] px-4 py-3 text-sm font-medium outline-none transition focus:border-[var(--primary)]"
               >
-                <option value="">All statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="cancelled">Cancelled</option>
+                <option value="">Todos los estados</option>
+                <option value="active">Activo</option>
+                <option value="inactive">Inactivo</option>
+                <option value="cancelled">Cancelado</option>
               </select>
             </div>
           </div>
@@ -149,7 +149,7 @@ export function MembersPage() {
           <div className="mt-8 space-y-3">
             {membersQuery.isLoading ? (
               <div className="rounded-2xl border border-dashed border-[var(--ink-300)] px-4 py-10 text-center text-sm font-medium text-[var(--ink-500)]">
-                Fetching member data...
+                Obteniendo datos de los miembros...
               </div>
             ) : members.length > 0 ? (
               members.map((member) => (
@@ -172,7 +172,7 @@ export function MembersPage() {
               ))
             ) : (
               <div className="rounded-2xl border border-dashed border-[var(--ink-300)] px-4 py-10 text-center text-sm font-medium text-[var(--ink-500)]">
-                No members found match these filters.
+                No se encontraron miembros que coincidan con estos filtros.
               </div>
             )}
           </div>
@@ -180,15 +180,15 @@ export function MembersPage() {
 
         <section className="apple-card p-8">
           <div>
-            <h2 className="text-xl font-bold text-[var(--ink-900)]">New Profile</h2>
+            <h2 className="text-xl font-bold text-[var(--ink-900)]">Nuevo Perfil</h2>
             <p className="mt-1 text-sm font-medium text-[var(--ink-500)]">
-              Create a new account for a member, instructor, or administrator.
+              Crea una nueva cuenta para un miembro, instructor o administrador.
             </p>
           </div>
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Full name</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Nombre completo</span>
               <input
                 required
                 value={formState.full_name}
@@ -201,7 +201,7 @@ export function MembersPage() {
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Email</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Correo electrónico</span>
                 <input
                   required
                   type="email"
@@ -214,7 +214,7 @@ export function MembersPage() {
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Password</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Contraseña</span>
                 <input
                   required
                   minLength={8}
@@ -230,7 +230,7 @@ export function MembersPage() {
 
             <div className="grid gap-6 sm:grid-cols-2">
               <div className="space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Role</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Rol</span>
                 <select
                   value={formState.role}
                   onChange={(event) =>
@@ -241,14 +241,14 @@ export function MembersPage() {
                   }
                   className="w-full rounded-xl border border-[var(--surface-outline)] bg-[var(--bg-main)] px-4 py-3 text-sm font-medium outline-none transition focus:border-[var(--primary)]"
                 >
-                  <option value="member">Member</option>
+                  <option value="member">Miembro</option>
                   <option value="instructor">Instructor</option>
-                  <option value="admin">Admin</option>
+                  <option value="admin">Administrador</option>
                 </select>
               </div>
 
               <div className="space-y-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Membership status</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Estado de membresía</span>
                 <select
                   value={formState.membership_status}
                   onChange={(event) =>
@@ -259,9 +259,9 @@ export function MembersPage() {
                   }
                   className="w-full rounded-xl border border-[var(--surface-outline)] bg-[var(--bg-main)] px-4 py-3 text-sm font-medium outline-none transition focus:border-[var(--primary)]"
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                  <option value="cancelled">Cancelado</option>
                 </select>
               </div>
             </div>
@@ -273,7 +273,7 @@ export function MembersPage() {
             ) : null}
 
             <Button className="w-full h-12" disabled={createMember.isPending} loading={createMember.isPending} type="submit" variant="primary">
-              {createMember.isPending ? "Creating account..." : "Create member"}
+              {createMember.isPending ? "Creando cuenta..." : "Crear miembro"}
             </Button>
           </form>
         </section>

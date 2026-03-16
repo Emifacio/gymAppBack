@@ -13,15 +13,15 @@ function linkClassName(isActive: boolean) {
 export function DashboardLayout() {
   const { logout, session } = useAuth();
   const navigation = [
-    { label: "Dashboard", to: "/", icon: LayoutDashboard },
-    { label: "Classes", to: "/workouts", icon: Calendar },
-    { label: "Reservations", to: "/bookings", icon: BookCheck },
-    { label: "Integrations", to: "/integrations", icon: Puzzle },
-    ...(canManagePlans(session?.member) ? [{ label: "Plans", to: "/plans", icon: CreditCard }] : []),
+    { label: "Panel", to: "/", icon: LayoutDashboard },
+    { label: "Clases", to: "/workouts", icon: Calendar },
+    { label: "Reservas", to: "/bookings", icon: BookCheck },
+    { label: "Integraciones", to: "/integrations", icon: Puzzle },
+    ...(canManagePlans(session?.member) ? [{ label: "Planes", to: "/plans", icon: CreditCard }] : []),
     ...(canManageOperations(session?.member)
       ? [
-          { label: "Members", to: "/members", icon: Users },
-          { label: "Attendance", to: "/attendance", icon: History }
+          { label: "Miembros", to: "/members", icon: Users },
+          { label: "Asistencia", to: "/attendance", icon: History }
         ]
       : [])
   ];
@@ -34,7 +34,7 @@ export function DashboardLayout() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)] text-white">
             <Sparkles className="h-5 w-5" />
           </div>
-          <span className="text-lg font-bold tracking-tight text-[var(--ink-900)]">Gym</span>
+          <span className="text-lg font-bold tracking-tight text-[var(--ink-900)]">Gimnasio</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-[var(--ink-100)] flex items-center justify-center">
@@ -51,7 +51,7 @@ export function DashboardLayout() {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary)] text-white">
             <Sparkles className="h-6 w-6" />
           </div>
-          <span className="text-xl font-bold tracking-tight text-[var(--ink-900)]">Gym Platform</span>
+          <span className="text-xl font-bold tracking-tight text-[var(--ink-900)]">Plataforma de Gimnasio</span>
         </div>
 
         <nav className="flex-1 space-y-1">
@@ -72,7 +72,7 @@ export function DashboardLayout() {
             type="button"
           >
             <LogOut className="h-5 w-5" />
-            Logout
+            Cerrar sesión
           </button>
         </div>
       </aside>

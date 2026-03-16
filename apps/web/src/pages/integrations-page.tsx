@@ -55,7 +55,7 @@ export function IntegrationsPage() {
         external_account_id: ""
       });
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Could not connect Strava.");
+      setErrorMessage(error instanceof Error ? error.message : "No se pudo conectar Strava.");
     }
   }
 
@@ -68,34 +68,34 @@ export function IntegrationsPage() {
       const result = await syncActivities.mutateAsync(
         syncMemberId ? { memberId: syncMemberId } : {}
       );
-      setSyncMessage(`Sync queued with task ${result.task_id}. Current status: ${result.status}.`);
+      setSyncMessage(`Sincronización en cola con la tarea ${result.task_id}. Estado actual: ${result.status}.`);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Could not sync activities.");
+      setErrorMessage(error instanceof Error ? error.message : "No se pudieron sincronizar las actividades.");
     }
   }
 
   return (
     <div className="space-y-8">
       <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-700">Integrations</p>
-        <h1 className="mt-2 text-3xl font-semibold text-slate-900">Performance sync</h1>
+        <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-700">Integraciones</p>
+        <h1 className="mt-2 text-3xl font-semibold text-slate-900">Sincronización de rendimiento</h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
-          Connect Strava, sync endurance activity, and bring outdoor training into the gym member
-          profile.
+          Conecta Strava, sincroniza tu actividad de resistencia y trae tus entrenamientos al aire libre al
+          perfil de miembro del gimnasio.
         </p>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-6">
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Connect Strava</h2>
+            <h2 className="text-xl font-semibold text-slate-900">Conectar Strava</h2>
             <p className="mt-1 text-sm text-slate-500">
-              This form exposes all optional fields accepted by the current `StravaConnectRequest`.
+              Este formulario expone todos los campos opcionales aceptados por la solicitud actual de conexión con Strava.
             </p>
 
             <form className="mt-6 space-y-4" onSubmit={handleConnect}>
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Access token</span>
+                <span className="text-sm font-medium text-slate-700">Token de acceso</span>
                 <input
                   required
                   value={connectState.access_token}
@@ -110,7 +110,7 @@ export function IntegrationsPage() {
               </label>
 
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Refresh token</span>
+                <span className="text-sm font-medium text-slate-700">Token de actualización</span>
                 <input
                   value={connectState.refresh_token}
                   onChange={(event) =>
@@ -124,7 +124,7 @@ export function IntegrationsPage() {
               </label>
 
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Token expires at</span>
+                <span className="text-sm font-medium text-slate-700">Token expira el</span>
                 <input
                   type="datetime-local"
                   value={connectState.token_expires_at}
@@ -139,7 +139,7 @@ export function IntegrationsPage() {
               </label>
 
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">External account ID</span>
+                <span className="text-sm font-medium text-slate-700">ID de cuenta externa</span>
                 <input
                   value={connectState.external_account_id}
                   onChange={(event) =>
@@ -157,24 +157,24 @@ export function IntegrationsPage() {
                 disabled={connectStrava.isPending}
                 className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                {connectStrava.isPending ? "Connecting..." : "Connect Strava"}
+                {connectStrava.isPending ? "Conectando..." : "Conectar Strava"}
               </button>
             </form>
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Sync activities</h2>
+            <h2 className="text-xl font-semibold text-slate-900">Sincronizar actividades</h2>
             <p className="mt-1 text-sm text-slate-500">
-              The sync screen also exposes the optional `member_id` override accepted by the backend.
+              La pantalla de sincronización también expone el campo opcional `member_id` aceptado por el backend.
             </p>
 
             <form className="mt-6 space-y-4" onSubmit={handleSync}>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                Provider: Strava
+                Proveedor: Strava
               </div>
 
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Member ID override</span>
+                <span className="text-sm font-medium text-slate-700">Anulación de ID de miembro</span>
                 <input
                   value={syncMemberId}
                   onChange={(event) => setSyncMemberId(event.target.value)}
@@ -187,7 +187,7 @@ export function IntegrationsPage() {
                 disabled={syncActivities.isPending}
                 className="w-full rounded-full bg-amber-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-amber-200"
               >
-                {syncActivities.isPending ? "Syncing..." : "Run sync"}
+                {syncActivities.isPending ? "Sincronizando..." : "Ejecutar sincronización"}
               </button>
             </form>
 
@@ -208,9 +208,9 @@ export function IntegrationsPage() {
         <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">Activity timeline</h2>
+              <h2 className="text-xl font-semibold text-slate-900">Cronología de actividad</h2>
               <p className="mt-1 text-sm text-slate-500">
-                {activitiesQuery.data?.length ?? 0} activities synced · {formatDistanceMeters(totalDistance)}
+                {activitiesQuery.data?.length ?? 0} actividades sincronizadas · {formatDistanceMeters(totalDistance)}
               </p>
             </div>
           </div>
@@ -233,12 +233,12 @@ export function IntegrationsPage() {
             ))}
 
             {activitiesQuery.isLoading ? (
-              <p className="text-sm text-slate-500">Loading activities...</p>
+              <p className="text-sm text-slate-500">Cargando actividades...</p>
             ) : null}
 
             {!activitiesQuery.isLoading && (activitiesQuery.data ?? []).length === 0 ? (
               <p className="text-sm text-slate-500">
-                No synced activities yet. Connect Strava and run a sync to populate this view.
+                Aún no hay actividades sincronizadas. Conecta Strava y ejecuta una sincronización para poblar esta vista.
               </p>
             ) : null}
           </div>

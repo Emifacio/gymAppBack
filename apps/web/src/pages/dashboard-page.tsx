@@ -26,9 +26,9 @@ export function DashboardPage() {
   if (!workouts.length && workoutsQuery.isSuccess) {
     return (
       <EmptyState
-        eyebrow="Ready to grow"
-        title="No workouts are scheduled yet"
-        description="The frontend stack is live and wired to the FastAPI contract. As soon as classes are created in the backend, they’ll land here automatically with full type safety."
+        eyebrow="Listo para crecer"
+        title="Aún no hay entrenamientos programados"
+        description="El stack frontend está activo y conectado al contrato de FastAPI. Tan pronto como se creen clases en el backend, aparecerán aquí automáticamente con total seguridad de tipos."
       />
     );
   }
@@ -41,10 +41,10 @@ export function DashboardPage() {
         </div>
         <div>
           <h2 className="section-title text-[var(--font-size-2xl)]">
-            Good morning, {session?.member.full_name.split(' ')[0]}
+            Buenos días, {session?.member.full_name.split(' ')[0]}
           </h2>
           <p className="mt-1 text-sm font-medium text-[var(--ink-500)] lg:text-base">
-            You have {confirmedBookings.length} classes scheduled for this week.
+            Tienes {confirmedBookings.length} clases programadas para esta semana.
           </p>
         </div>
       </header>
@@ -53,26 +53,26 @@ export function DashboardPage() {
         <StatCard
           detail={
             subscription?.active_plan
-              ? `Renews on ${formatDateTime(subscription.period_end)}.`
-              : "Assign a subscription to unlock bookings."
+              ? `Se renueva el ${formatDateTime(subscription.period_end)}.`
+              : "Asigna una suscripción para desbloquear reservas."
           }
-          label={subscription?.plan_name ?? "Active plan"}
+          label={subscription?.plan_name ?? "Plan activo"}
           value={
             subscription?.active_plan
               ? subscription.allows_free_pass
-                ? "Free pass"
+                ? "Pase libre"
                 : formatCredits(subscription.active_credits)
-              : "No active plan"
+              : "Sin plan activo"
           }
         />
         <StatCard
-          detail="Confirmed reservations in your feed."
-          label="Your bookings"
+          detail="Reservas confirmadas en tu feed."
+          label="Mis reservas"
           value={String(confirmedBookings.length)}
         />
         <StatCard
-          detail="Classes available for booking today."
-          label="Upcoming classes"
+          detail="Clases disponibles para reservar hoy."
+          label="Próximas clases"
           value={String(workouts.length)}
         />
       </section>
@@ -80,9 +80,9 @@ export function DashboardPage() {
       <section className="grid gap-[var(--section-gap)] lg:grid-cols-2">
         <div className="apple-card">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
-            Subscription
+            Suscripción
           </p>
-          <h2 className="section-title mt-2 text-[var(--font-size-xl)]">Membership snapshot</h2>
+          <h2 className="section-title mt-2 text-[var(--font-size-xl)]">Resumen de membresía</h2>
           {subscription?.active_plan ? (
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
@@ -90,49 +90,49 @@ export function DashboardPage() {
                 <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{subscription.plan_name}</p>
               </div>
               <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Remaining credits</p>
+                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Créditos restantes</p>
                 <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">
                   {subscription.allows_free_pass
-                    ? "Unlimited"
+                    ? "Ilimitados"
                     : formatCredits(subscription.active_credits)}
                 </p>
               </div>
               <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Period end</p>
+                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Fin del periodo</p>
                 <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{formatDateTime(subscription.period_end)}</p>
               </div>
               <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Waitlist</p>
-                <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{activeWaitlist.length} entries</p>
+                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Lista de espera</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{activeWaitlist.length} entradas</p>
               </div>
             </div>
           ) : (
             <div className="mt-6 rounded-[1.25rem] bg-[var(--bg-main)] p-5 text-sm font-medium text-[var(--ink-500)]">
               {subscription?.error_code === "PLAN_EXPIRED"
-                ? `Your last plan expired on ${formatDateTime(subscription.period_end)}.`
-                : "No active subscription is assigned yet."}
+                ? `Tu último plan expiró el ${formatDateTime(subscription.period_end)}.`
+                : "Aún no se ha asignado una suscripción activa."}
             </div>
           )}
         </div>
 
         <div className="apple-card">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
-            Booking status
+            Estado de reserva
           </p>
-          <h2 className="section-title mt-2 text-[var(--font-size-xl)]">Reservation overview</h2>
+          <h2 className="section-title mt-2 text-[var(--font-size-xl)]">Vista general de reservas</h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Confirmed</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{confirmedBookings.length} bookings</p>
+              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Confirmadas</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{confirmedBookings.length} reservas</p>
             </div>
             <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Waitlist</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{activeWaitlist.length} pending</p>
+              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Lista de espera</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{activeWaitlist.length} pendientes</p>
             </div>
             <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4 sm:col-span-2">
-              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Next class</p>
+              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Próxima clase</p>
               <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">
-                {upcomingWorkout ? formatRelativeSlot(upcomingWorkout.scheduled_at) : "No classes yet."}
+                {upcomingWorkout ? formatRelativeSlot(upcomingWorkout.scheduled_at) : "Sin clases aún."}
               </p>
             </div>
           </div>
@@ -142,11 +142,11 @@ export function DashboardPage() {
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Upcoming</p>
-            <h2 className="section-title mt-1 text-3xl font-semibold">Workout sessions</h2>
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Próximamente</p>
+            <h2 className="section-title mt-1 text-3xl font-semibold">Sesiones de entrenamiento</h2>
           </div>
           <Link className={buttonClassName({ size: "sm", variant: "ghost" })} to="/workouts">
-            View all
+            Ver todas
           </Link>
         </div>
 

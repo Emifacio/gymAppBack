@@ -58,7 +58,7 @@ export function MemberDetailPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Link className={buttonClassName({ size: "sm", variant: "ghost" })} to="/members">
-              Back to members
+              Volver a miembros
             </Link>
             <h1 className="mt-3 text-3xl font-semibold text-slate-900">{member.full_name}</h1>
             <p className="mt-2 text-sm text-slate-600">{member.email}</p>
@@ -71,7 +71,7 @@ export function MemberDetailPage() {
               {member.membership_status}
             </span>
             <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
-              {member.is_active ? "active account" : "inactive account"}
+              {member.is_active ? "cuenta activa" : "cuenta inactiva"}
             </span>
           </div>
         </div>
@@ -79,9 +79,9 @@ export function MemberDetailPage() {
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">Profile details</h2>
+          <h2 className="text-xl font-semibold text-slate-900">Detalles del perfil</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Every optional member update field from the backend schema is editable here.
+            Todos los campos de actualización opcionales del esquema del backend son editables aquí.
           </p>
 
           <form
@@ -136,7 +136,7 @@ export function MemberDetailPage() {
             }}
           >
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Full name</span>
+              <span className="text-sm font-medium text-slate-700">Nombre completo</span>
               <input
                 defaultValue={member.full_name}
                 name="full_name"
@@ -146,7 +146,7 @@ export function MemberDetailPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Phone</span>
+                <span className="text-sm font-medium text-slate-700">Teléfono</span>
                 <input
                   defaultValue={member.phone ?? ""}
                   name="phone"
@@ -155,7 +155,7 @@ export function MemberDetailPage() {
               </label>
 
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Birth date</span>
+                <span className="text-sm font-medium text-slate-700">Fecha de nacimiento</span>
                 <input
                   defaultValue={member.birth_date ?? ""}
                   name="birth_date"
@@ -167,35 +167,35 @@ export function MemberDetailPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Role</span>
+                <span className="text-sm font-medium text-slate-700">Rol</span>
                 <select
                   defaultValue={member.role}
                   name="role"
                   className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
                 >
-                  <option value="member">Member</option>
+                  <option value="member">Miembro</option>
                   <option value="instructor">Instructor</option>
-                  <option value="admin">Admin</option>
+                  <option value="admin">Administrador</option>
                 </select>
               </label>
 
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Membership status</span>
+                <span className="text-sm font-medium text-slate-700">Estado de membresía</span>
                 <select
                   defaultValue={member.membership_status}
                   name="membership_status"
                   className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
                 >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                  <option value="cancelled">Cancelado</option>
                 </select>
               </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Membership plan ID</span>
+                <span className="text-sm font-medium text-slate-700">ID del plan de membresía</span>
                 <input
                   defaultValue={member.membership_plan?.id ?? ""}
                   name="membership_plan_id"
@@ -204,7 +204,7 @@ export function MemberDetailPage() {
               </label>
 
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Reset password</span>
+                <span className="text-sm font-medium text-slate-700">Restablecer contraseña</span>
                 <input
                   minLength={8}
                   name="password"
@@ -216,11 +216,11 @@ export function MemberDetailPage() {
 
             <label className="flex items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700">
               <input defaultChecked={member.is_active} name="is_active" type="checkbox" />
-              Account is active
+              La cuenta está activa
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Emergency contact</span>
+              <span className="text-sm font-medium text-slate-700">Contacto de emergencia</span>
               <input
                 defaultValue={member.emergency_contact ?? ""}
                 name="emergency_contact"
@@ -229,7 +229,7 @@ export function MemberDetailPage() {
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Medical notes</span>
+              <span className="text-sm font-medium text-slate-700">Notas médicas</span>
               <textarea
                 rows={4}
                 defaultValue={member.notes ?? ""}
@@ -239,7 +239,7 @@ export function MemberDetailPage() {
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Instructor bio</span>
+              <span className="text-sm font-medium text-slate-700">Biografía del instructor</span>
               <textarea
                 rows={3}
                 defaultValue={member.instructor_profile?.bio ?? ""}
@@ -249,7 +249,7 @@ export function MemberDetailPage() {
             </label>
 
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-700">Instructor specialties</span>
+              <span className="text-sm font-medium text-slate-700">Especialidades del instructor</span>
               <input
                 defaultValue={member.instructor_profile?.specialties ?? ""}
                 name="instructor_specialties"
@@ -271,10 +271,10 @@ export function MemberDetailPage() {
 
         <div className="space-y-6">
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Subscription</h2>
+            <h2 className="text-xl font-semibold text-slate-900">Suscripción</h2>
             <div className="mt-4 space-y-3">
               <div className="rounded-2xl border border-slate-200 px-4 py-4">
-                <p className="font-semibold text-slate-900">{subscription?.plan.name ?? "No active subscription"}</p>
+                <p className="font-semibold text-slate-900">{subscription?.plan.name ?? "Sin suscripción activa"}</p>
                 <p className="mt-2 text-sm text-slate-500">
                   {subscription?.plan.allows_free_pass
                     ? "Unlimited booking while spots remain available."
@@ -302,13 +302,13 @@ export function MemberDetailPage() {
                   }}
                 >
                   <label className="block space-y-2">
-                    <span className="text-sm font-medium text-slate-700">Assign plan</span>
+                    <span className="text-sm font-medium text-slate-700">Asignar plan</span>
                     <select
                       className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
                       defaultValue={subscription?.plan_id ?? ""}
                       name="plan_id"
                     >
-                      <option value="">Select a plan</option>
+                      <option value="">Selecciona un plan</option>
                       {(plansQuery.data ?? []).map((plan) => (
                         <option key={plan.id} value={plan.id}>
                           {plan.name}
@@ -318,7 +318,7 @@ export function MemberDetailPage() {
                   </label>
                   <div className="flex flex-wrap gap-3">
                     <Button disabled={assignSubscription.isPending} loading={assignSubscription.isPending} type="submit" variant="primary">
-                      {assignSubscription.isPending ? "Assigning..." : "Assign subscription"}
+                      {assignSubscription.isPending ? "Asignando..." : "Asignar suscripción"}
                     </Button>
                     <Button
                       disabled={cancelSubscription.isPending || !subscription}
@@ -329,7 +329,7 @@ export function MemberDetailPage() {
                       type="button"
                       variant="danger"
                     >
-                      Cancel subscription
+                      Cancelar suscripción
                     </Button>
                   </div>
                 </form>
@@ -338,7 +338,7 @@ export function MemberDetailPage() {
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Booking history</h2>
+            <h2 className="text-xl font-semibold text-slate-900">Historial de reservas</h2>
             <div className="mt-4 space-y-3">
               {bookings.map((booking) => (
                 <div key={booking.id} className="rounded-2xl border border-slate-200 px-4 py-4">
@@ -348,11 +348,11 @@ export function MemberDetailPage() {
                         {booking.gym_class?.name ?? `Class ${booking.class_id}`}
                       </p>
                       <p className="text-sm text-slate-500">
-                        Reserved on {formatDateTime(booking.booked_at)}
+                        Reservado el {formatDateTime(booking.booked_at)}
                       </p>
                       <p className="text-sm text-slate-500">
                         {booking.booking_type}
-                        {booking.credits_consumed ? ` · ${booking.credits_consumed} credit used` : ""}
+                        {booking.credits_consumed ? ` · ${booking.credits_consumed} ${booking.credits_consumed === 1 ? 'crédito usado' : 'créditos usados'}` : ""}
                       </p>
                     </div>
                     <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-800">
@@ -369,14 +369,14 @@ export function MemberDetailPage() {
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Attendance log</h2>
+            <h2 className="text-xl font-semibold text-slate-900">Registro de asistencia</h2>
             <div className="mt-4 space-y-3">
               {(attendanceQuery.data ?? []).map((record) => (
                 <div key={record.id} className="rounded-2xl border border-slate-200 px-4 py-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="font-semibold text-slate-900">{record.class_id}</p>
-                      <p className="text-sm text-slate-500">Marked {formatDateTime(record.marked_at)}</p>
+                       <p className="text-sm text-slate-500">Marcado el {formatDateTime(record.marked_at)}</p>
                     </div>
                     <span
                       className={`rounded-full px-3 py-1 text-sm font-medium ${
@@ -385,20 +385,20 @@ export function MemberDetailPage() {
                           : "bg-rose-100 text-rose-800"
                       }`}
                     >
-                      {record.status}
+                       {record.status === "present" ? "presente" : "ausente"}
                     </span>
                   </div>
                 </div>
               ))}
-              {attendanceQuery.isLoading ? <p className="text-sm text-slate-500">Loading attendance...</p> : null}
-              {!attendanceQuery.isLoading && (attendanceQuery.data ?? []).length === 0 ? (
-                <p className="text-sm text-slate-500">No attendance records yet.</p>
-              ) : null}
+               {attendanceQuery.isLoading ? <p className="text-sm text-slate-500">Cargando asistencia...</p> : null}
+               {!attendanceQuery.isLoading && (attendanceQuery.data ?? []).length === 0 ? (
+                 <p className="text-sm text-slate-500">Sin registros de asistencia aún.</p>
+               ) : null}
             </div>
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Activity feed</h2>
+            <h2 className="text-xl font-semibold text-slate-900">Feed de actividad</h2>
             <div className="mt-4 space-y-3">
               {(activitiesQuery.data ?? []).map((activity) => (
                 <div key={activity.id} className="rounded-2xl border border-slate-200 px-4 py-4">

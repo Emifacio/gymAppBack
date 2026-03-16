@@ -23,7 +23,7 @@ export function BookingEligibilityModal({
     >
       <div className="glass-panel w-full max-w-lg rounded-[2rem] p-8 shadow-[0_30px_80px_rgba(19,34,56,0.25)]">
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-          Booking unavailable
+          Reserva no disponible
         </p>
         <h2 className="section-title mt-4 text-3xl font-semibold">{title}</h2>
         <p className="mt-4 text-sm leading-8 text-[var(--muted)]">{description}</p>
@@ -34,7 +34,7 @@ export function BookingEligibilityModal({
             onClick={onClose}
             type="button"
           >
-            Close
+            Cerrar
           </button>
         </div>
       </div>

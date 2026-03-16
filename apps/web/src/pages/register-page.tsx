@@ -19,11 +19,11 @@ export function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12">
       <section className="glass-panel w-full max-w-2xl rounded-[2.5rem] p-8 md:p-10">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Register</p>
-        <h1 className="section-title mt-4 text-4xl font-semibold">Create a new member account</h1>
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Registro</p>
+        <h1 className="section-title mt-4 text-4xl font-semibold">Crear una nueva cuenta de miembro</h1>
         <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-          The first registered user becomes admin on the backend, so this screen is useful for bootstrapping
-          local environments too.
+          El primer usuario registrado se convierte en administrador en el backend, por lo que esta pantalla también es útil para
+          configurar entornos locales.
         </p>
 
         <form
@@ -48,7 +48,7 @@ export function RegisterPage() {
           }}
         >
           <label className="block">
-            <span className="mb-2 block text-sm font-medium">Full name</span>
+            <span className="mb-2 block text-sm font-medium">Nombre completo</span>
             <input
               className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 outline-none transition focus:border-[var(--accent)]"
               minLength={2}
@@ -59,7 +59,7 @@ export function RegisterPage() {
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-medium">Email</span>
+            <span className="mb-2 block text-sm font-medium">Correo electrónico</span>
             <input
               className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 outline-none transition focus:border-[var(--accent)]"
               name="email"
@@ -69,7 +69,7 @@ export function RegisterPage() {
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-medium">Phone</span>
+            <span className="mb-2 block text-sm font-medium">Teléfono</span>
             <input
               className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 outline-none transition focus:border-[var(--accent)]"
               name="phone"
@@ -78,7 +78,7 @@ export function RegisterPage() {
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-medium">Password</span>
+            <span className="mb-2 block text-sm font-medium">Contraseña</span>
             <input
               className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 outline-none transition focus:border-[var(--accent)]"
               minLength={8}
@@ -91,22 +91,22 @@ export function RegisterPage() {
           {register.error ? (
             <div className="rounded-2xl border border-[rgba(255,122,89,0.2)] bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--accent)] md:col-span-2">
               {isApiResponseError(register.error)
-                ? "Registration failed. Check the backend validation rules or whether the email already exists."
+                ? "Error al registrarse. Verifica las reglas de validación del backend o si el correo ya existe."
                 : register.error.message}
             </div>
           ) : null}
 
           <div className="md:col-span-2">
             <Button className="w-full" disabled={register.isPending} loading={register.isPending} type="submit" variant="primary">
-              {register.isPending ? "Creating account..." : "Create account"}
+              {register.isPending ? "Creando cuenta..." : "Crear cuenta"}
             </Button>
           </div>
         </form>
 
         <p className="mt-5 text-sm text-[var(--muted)]">
-          Already have an account?{" "}
+          ¿Ya tienes una cuenta?{" "}
           <Link className="font-semibold text-[var(--accent)]" to="/login">
-            Back to sign in
+            Volver al inicio de sesión
           </Link>
         </p>
       </section>

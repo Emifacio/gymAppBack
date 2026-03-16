@@ -14,8 +14,8 @@ interface WorkoutCardProps {
 export function WorkoutCard({ workout, actionLabel = "View session" }: WorkoutCardProps) {
   const availabilityLabel =
     typeof workout.available_spots === "number"
-      ? `${workout.available_spots} spots remaining`
-      : `${workout.capacity} total spots`;
+      ? `${workout.available_spots} lugares libres`
+      : `${workout.capacity} lugares totales`;
 
   return (
     <article className="apple-card p-5 lg:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all active:scale-[0.98] lg:hover:translate-y-[-2px] lg:hover:shadow-md">
@@ -45,7 +45,7 @@ export function WorkoutCard({ workout, actionLabel = "View session" }: WorkoutCa
           </div>
           <div className="flex items-center gap-2">
             <Ticket className="h-4 w-4 shrink-0 text-[var(--primary)]" />
-            <span className="font-bold text-[var(--ink-700)]">1 credit</span>
+            <span className="font-bold text-[var(--ink-700)]">1 crédito</span>
           </div>
         </div>
       </div>

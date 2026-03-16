@@ -32,21 +32,21 @@ export function PlansPage() {
     <div className="space-y-8">
       <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-amber-700">
-          Membership plans
+          Planes de membresía
         </p>
-        <h1 className="mt-2 text-3xl font-semibold text-slate-900">Plan catalogue</h1>
+        <h1 className="mt-2 text-3xl font-semibold text-slate-900">Catálogo de planes</h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-600">
-          Create reusable weekly or monthly plans, set credit limits, and keep free-pass rules
-          separate from the day-to-day member subscription workflow.
+          Crea planes semanales o mensuales reutilizables, establece límites de créditos y mantén las reglas
+          de pases libres separadas del flujo diario de suscripciones de miembros.
         </p>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">Create a new plan</h2>
+            <h2 className="text-xl font-semibold text-slate-900">Crear un nuevo plan</h2>
             <p className="mt-1 text-sm text-slate-500">
-              These plans are the source of truth for new member subscriptions.
+              Estos planes son la fuente de verdad para las nuevas suscripciones de miembros.
             </p>
           </div>
 
@@ -71,20 +71,20 @@ export function PlansPage() {
             <input
               className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
               name="name"
-              placeholder="Plan name"
+              placeholder="Nombre del plan"
               required
             />
             <textarea
               className="min-h-28 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
               name="description"
-              placeholder="Description"
+              placeholder="Descripción"
             />
             <div className="grid gap-4 md:grid-cols-2">
               <input
                 className="rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
                 min={0}
                 name="credits_per_period"
-                placeholder="Credits per period"
+                placeholder="Créditos por periodo"
                 required
                 type="number"
               />
@@ -93,24 +93,24 @@ export function PlansPage() {
                 defaultValue="weekly"
                 name="period_type"
               >
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
+                <option value="weekly">Semanal</option>
+                <option value="monthly">Mensual</option>
               </select>
             </div>
             <label className="flex items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700">
               <input name="allows_free_pass" type="checkbox" />
-              Unlimited free-pass booking mode
+              Modo de reserva de pase libre ilimitado
             </label>
             <label className="flex items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700">
               <input defaultChecked name="active" type="checkbox" />
-              Plan is active
+              El plan está activo
             </label>
             <button
               className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
               disabled={createPlan.isPending}
               type="submit"
             >
-              {createPlan.isPending ? "Creating plan..." : "Create plan"}
+              {createPlan.isPending ? "Creando plan..." : "Crear plan"}
             </button>
           </form>
         </div>
@@ -121,13 +121,13 @@ export function PlansPage() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-700">
-                    {plan.active ? "Active plan" : "Inactive plan"}
+                    {plan.active ? "Plan activo" : "Plan inactivo"}
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-900">{plan.name}</h2>
                   <p className="mt-2 text-sm text-slate-500">
                     {plan.allows_free_pass
-                      ? "Unlimited bookings while spots remain available."
-                      : `${plan.credits_per_period} credits per ${formatPlanPeriod(plan.period_type).toLowerCase()}.`}
+                      ? "Reservas ilimitadas mientras queden lugares disponibles."
+                      : `${plan.credits_per_period} créditos por ${formatPlanPeriod(plan.period_type).toLowerCase()}.`}
                   </p>
                 </div>
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-600">
@@ -178,18 +178,18 @@ export function PlansPage() {
                     defaultValue={plan.period_type}
                     name="period_type"
                   >
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensual</option>
                   </select>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <label className="flex items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700">
                     <input defaultChecked={plan.allows_free_pass} name="allows_free_pass" type="checkbox" />
-                    Free pass
+                    Pase libre
                   </label>
                   <label className="flex items-center gap-3 rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700">
                     <input defaultChecked={plan.active} name="active" type="checkbox" />
-                    Active
+                    Activo
                   </label>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -198,7 +198,7 @@ export function PlansPage() {
                     disabled={updatePlan.isPending}
                     type="submit"
                   >
-                    {updatePlan.isPending ? "Saving..." : "Save changes"}
+                    {updatePlan.isPending ? "Guardando..." : "Guardar cambios"}
                   </button>
                   <button
                     className="rounded-full border border-rose-200 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
@@ -217,7 +217,7 @@ export function PlansPage() {
 
           {!plans.length && !plansQuery.isLoading ? (
             <div className="rounded-3xl border border-dashed border-slate-300 bg-white/70 px-5 py-6 text-sm text-slate-500">
-              No plans created yet.
+              Aún no se han creado planes.
             </div>
           ) : null}
         </div>

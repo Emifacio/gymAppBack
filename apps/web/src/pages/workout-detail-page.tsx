@@ -58,16 +58,16 @@ export function WorkoutDetailPage() {
   const precheckErrorCode = getPrecheckErrorCode(subscription);
   const reserveLabel =
     bookingMutation.isPending
-      ? "Reserving..."
+      ? "Reservando..."
       : isCheckingEligibility
-      ? "Checking eligibility..."
+      ? "Verificando elegibilidad..."
       : workout?.member_booking_status === "confirmed"
-      ? "Already booked"
+      ? "Ya reservado"
       : workout?.member_booking_status === "waitlisted"
-        ? "Already on the waitlist"
+        ? "Ya en la lista de espera"
         : (workout?.available_spots ?? 0) > 0
-          ? "Reserve class"
-          : "Join waitlist";
+          ? "Reservar clase"
+          : "Unirse a la lista de espera";
   const bookingErrorCode = getApiErrorCode(bookingMutation.error);
   const bookingErrorMessage =
     bookingMutation.error && !getBookingEligibilityModalContent(bookingErrorCode)
@@ -75,15 +75,15 @@ export function WorkoutDetailPage() {
       : null;
   const bookingFeedbackMessage = bookingMutation.data
     ? bookingMutation.data.state === "ADDED_TO_WAITLIST"
-      ? "Added to waitlist. We'll promote you automatically if a spot opens."
-      : "Booking confirmed. Your reservation and credits are now in sync."
+      ? "Agregado a la lista de espera. Te promoveremos automáticamente si se abre un lugar."
+      : "Reserva confirmada. Tu reserva y créditos ahora están sincronizados."
     : null;
 
   function openEligibilityModal(errorCode: string | undefined) {
     if (errorCode === "DUPLICATE_BOOKING") {
       setEligibilityModal({
-        title: "Already reserved",
-        description: "You already have a confirmed booking or an active waitlist entry for this class."
+        title: "Ya reservado",
+        description: "Ya tienes una reserva confirmada o una entrada activa en la lista de espera para esta clase."
       });
       return;
     }
@@ -98,9 +98,9 @@ export function WorkoutDetailPage() {
   if (!workout && workoutQuery.isSuccess) {
     return (
       <EmptyState
-        eyebrow="Not found"
-        title="This class no longer exists"
-        description="The route is wired correctly, but the backend did not return a matching class for the provided id."
+        eyebrow="No encontrado"
+        title="Esta clase ya no existe"
+        description="La ruta está conectada correctamente, pero el backend no devolvió una clase coincidente para el id proporcionado."
       />
     );
   }
@@ -112,72 +112,72 @@ export function WorkoutDetailPage() {
   return (
     <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
       <section className="glass-panel rounded-[2.25rem] p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Class detail</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Detalle de la clase</p>
         <h1 className="section-title mt-4 text-4xl font-semibold">{workout.name}</h1>
         <p className="mt-4 text-base leading-8 text-[var(--muted)]">
           {workout.description ??
-            "This class is rendered from the backend schedule with live availability, waitlist, and booking status information."}
+            "Esta clase se renderiza desde el horario del backend con información de disponibilidad en vivo, lista de espera y estado de reserva."}
         </p>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           <div className="rounded-[1.75rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Schedule</p>
+            <p className="text-sm font-semibold text-[var(--ink)]">Horario</p>
             <p className="mt-2 text-sm text-[var(--muted)]">{formatWorkoutSchedule(workout.scheduled_at)}</p>
           </div>
           <div className="rounded-[1.75rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Location</p>
+            <p className="text-sm font-semibold text-[var(--ink)]">Ubicación</p>
             <p className="mt-2 text-sm text-[var(--muted)]">{workout.location}</p>
           </div>
           <div className="rounded-[1.75rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Availability</p>
+            <p className="text-sm font-semibold text-[var(--ink)]">Disponibilidad</p>
             <p className="mt-2 text-sm text-[var(--muted)]">
               {typeof workout.available_spots === "number"
-                ? `${workout.available_spots} spot${workout.available_spots === 1 ? "" : "s"} left`
-                : `${workout.capacity} total spots`}
+                ? `${workout.available_spots} ${workout.available_spots === 1 ? "lugar restante" : "lugares restantes"}`
+                : `${workout.capacity} lugares totales`}
             </p>
           </div>
           <div className="rounded-[1.75rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Waitlist</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">{workout.waitlist_size ?? 0} members waiting</p>
+            <p className="text-sm font-semibold text-[var(--ink)]">Lista de espera</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">{workout.waitlist_size ?? 0} miembros esperando</p>
           </div>
           <div className="rounded-[1.75rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Duration</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">{workout.duration_minutes} minutes</p>
+            <p className="text-sm font-semibold text-[var(--ink)]">Duración</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">{workout.duration_minutes} minutos</p>
           </div>
           <div className="rounded-[1.75rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Your status</p>
+            <p className="text-sm font-semibold text-[var(--ink)]">Tu estado</p>
             <p className="mt-2 text-sm capitalize text-[var(--muted)]">
-              {workout.member_booking_status ?? "not booked"}
+              {workout.member_booking_status ?? "no reservado"}
             </p>
           </div>
         </div>
       </section>
 
       <aside className="glass-panel rounded-[2.25rem] p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Reservation flow</p>
-        <h2 className="section-title mt-4 text-3xl font-semibold">Reserve your spot</h2>
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Flujo de reserva</p>
+        <h2 className="section-title mt-4 text-3xl font-semibold">Reserva tu lugar</h2>
         <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-          Book instantly when capacity exists, join the waitlist when a class is full, and keep your
-          credits aligned with the active subscription on your account.
+          Reserva al instante cuando haya capacidad, únete a la lista de espera cuando la clase esté llena y mantén tus
+          créditos alineados con la suscripción activa en tu cuenta.
         </p>
 
         <div className="mt-6 rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
-          <p className="font-semibold text-[var(--ink)]">Active subscription</p>
+          <p className="font-semibold text-[var(--ink)]">Suscripción activa</p>
           <p className="mt-2">
             {subscription?.active_plan
-              ? subscription.plan_name ?? "Assigned plan"
+              ? subscription.plan_name ?? "Plan asignado"
               : subscription?.error_code === "PLAN_EXPIRED"
-                ? "Plan expired"
-                : "No subscription assigned"}
+                ? "Plan expirado"
+                : "Sin suscripción asignada"}
           </p>
           <p className="mt-1">
             {subscription?.active_plan
               ? subscription.allows_free_pass
-                ? "Unlimited while capacity remains available"
+                ? "Ilimitado mientras haya capacidad disponible"
                 : formatCredits(subscription.active_credits)
-              : "Booking is blocked until your plan is active."}
+              : "La reserva está bloqueada hasta que tu plan esté activo."}
           </p>
-          <p className="mt-1">Period end: {formatDateTime(subscription?.period_end)}</p>
+          <p className="mt-1">Fin del periodo: {formatDateTime(subscription?.period_end)}</p>
         </div>
 
         <form
@@ -217,7 +217,7 @@ export function WorkoutDetailPage() {
           </Button>
           {precheckErrorCode ? (
             <p className="text-sm text-[var(--accent)]">
-              Booking will stay blocked until your membership access is restored.
+              La reserva permanecerá bloqueada hasta que se restaure el acceso a tu membresía.
             </p>
           ) : null}
         </form>
@@ -251,16 +251,16 @@ export function WorkoutDetailPage() {
             }}
           >
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-              Manual assignment
+              Asignación manual
             </p>
             <input
               className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3"
               name="member_id"
-              placeholder="Member ID"
+              placeholder="ID del miembro"
               required
             />
             <Button className="w-full" loading={assignMemberMutation.isPending} type="submit" variant="secondary">
-              {assignMemberMutation.isPending ? "Assigning..." : "Assign member to class"}
+              {assignMemberMutation.isPending ? "Asignando..." : "Asignar miembro a la clase"}
             </Button>
             {assignMemberMutation.data ? (
               <div className="rounded-2xl bg-[rgba(23,184,156,0.12)] px-4 py-3 text-sm text-[var(--highlight)]">
@@ -293,11 +293,11 @@ export function WorkoutDetailPage() {
             }}
           >
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-              Class management
+              Gestión de clase
             </p>
             <input className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" defaultValue={workout.name} name="name" required />
             <input className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" defaultValue={workout.location} name="location" required />
-            <input className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" defaultValue={workout.instructor_id ?? ""} name="instructor_id" placeholder="Instructor ID" />
+            <input className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" defaultValue={workout.instructor_id ?? ""} name="instructor_id" placeholder="ID del instructor" />
             <input className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" defaultValue={toDateTimeLocalValue(workout.scheduled_at)} name="scheduled_at" required type="datetime-local" />
             <textarea className="min-h-28 w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" defaultValue={workout.description ?? ""} name="description" />
             <div className="grid gap-4 md:grid-cols-2">
@@ -305,13 +305,13 @@ export function WorkoutDetailPage() {
               <input className="rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" defaultValue={workout.capacity} min={1} name="capacity" type="number" />
             </div>
             <select className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" defaultValue={workout.status} name="status">
-              <option value="scheduled">scheduled</option>
-              <option value="cancelled">cancelled</option>
-              <option value="completed">completed</option>
+              <option value="scheduled">programado</option>
+              <option value="cancelled">cancelado</option>
+              <option value="completed">completado</option>
             </select>
             <div className="flex flex-wrap gap-3">
               <Button loading={updateWorkout.isPending} type="submit" variant="primary">
-                {updateWorkout.isPending ? "Saving..." : "Save changes"}
+                {updateWorkout.isPending ? "Guardando..." : "Guardar cambios"}
               </Button>
               <Button
                 disabled={deleteWorkout.isPending}
@@ -329,7 +329,7 @@ export function WorkoutDetailPage() {
                 type="button"
                 variant="danger"
               >
-                {deleteWorkout.isPending ? "Deleting..." : "Delete class"}
+                {deleteWorkout.isPending ? "Eliminando..." : "Eliminar clase"}
               </Button>
             </div>
           </form>
@@ -340,42 +340,42 @@ export function WorkoutDetailPage() {
         <section className="glass-panel rounded-[2.25rem] p-8 xl:col-span-2">
           <div className="grid gap-6 xl:grid-cols-2">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Roster</p>
-              <h2 className="section-title mt-3 text-3xl font-semibold">Confirmed members</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Lista de inscritos</p>
+              <h2 className="section-title mt-3 text-3xl font-semibold">Miembros confirmados</h2>
               <div className="mt-6 grid gap-4">
                 {(classMembersQuery.data ?? []).map((member) => (
                   <div key={member.booking_id} className="rounded-[1.5rem] bg-white/80 p-5">
                     <p className="text-sm font-semibold text-[var(--ink)]">{member.full_name}</p>
                     <p className="mt-2 text-sm text-[var(--muted)]">{member.email}</p>
                     <p className="mt-1 text-sm text-[var(--muted)]">
-                      {member.booking_type} booking
-                      {member.credits_consumed ? ` · ${member.credits_consumed} credit used` : ""}
+                      reserva de {member.booking_type}
+                      {member.credits_consumed ? ` · ${member.credits_consumed} ${member.credits_consumed === 1 ? 'crédito usado' : 'créditos usados'}` : ""}
                     </p>
                   </div>
                 ))}
                 {!classMembersQuery.data?.length ? (
                   <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
-                    No members are confirmed for this class yet.
+                    Aún no hay miembros confirmados para esta clase.
                   </div>
                 ) : null}
               </div>
             </div>
 
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Attendance</p>
-              <h2 className="section-title mt-3 text-3xl font-semibold">Class attendance snapshot</h2>
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Asistencia</p>
+              <h2 className="section-title mt-3 text-3xl font-semibold">Resumen de asistencia</h2>
               <div className="mt-6 grid gap-4">
                 {(classAttendanceQuery.data ?? []).map((record) => (
                   <div key={record.id} className="rounded-[1.5rem] bg-white/80 p-5">
                     <p className="text-sm font-semibold text-[var(--ink)]">{record.member_id}</p>
                     <p className="mt-2 text-sm text-[var(--muted)]">
-                      Status: {record.status} · Marked {formatWorkoutSchedule(record.marked_at)}
+                      Estado: {record.status === "present" ? "presente" : record.status === "absent" ? "ausente" : record.status} · Marcado el {formatWorkoutSchedule(record.marked_at)}
                     </p>
                   </div>
                 ))}
                 {!classAttendanceQuery.data?.length ? (
                   <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
-                    No attendance has been marked for this class yet.
+                    Aún no se ha marcado asistencia para esta clase.
                   </div>
                 ) : null}
               </div>
