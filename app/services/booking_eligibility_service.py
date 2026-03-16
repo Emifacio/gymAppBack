@@ -185,7 +185,7 @@ class BookingEligibilityService:
                     message="Not enough credits",
                 )
 
-        confirmed_count = await self.booking_repository.count_confirmed_for_class(class_id)
+        confirmed_count = await self.booking_repository.count_confirmed_bookings(class_id)
         if confirmed_count >= gym_class.capacity:
             return BookingEligibilityDecision(
                 outcome=BookingEligibilityOutcome.WAITLIST_ALLOWED,

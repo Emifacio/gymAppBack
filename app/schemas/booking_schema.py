@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -49,10 +50,8 @@ class BookingActionResponse(BaseModel):
 
 
 class BookingCancellationResponse(BaseModel):
-    booking_id: UUID
-    cancelled: bool
-    message: str
-    credit_restored: bool = False
+    status: Literal["cancelled"]
+    credit_restored: bool
     promoted_booking: BookingRead | None = None
 
 

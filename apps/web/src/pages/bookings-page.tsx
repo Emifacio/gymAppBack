@@ -57,8 +57,9 @@ export function BookingsPage() {
 
         {cancelBooking.data ? (
           <div className="mt-6 rounded-[1.5rem] bg-[rgba(23,184,156,0.12)] px-4 py-3 text-sm text-[var(--highlight)]">
-            {cancelBooking.data.message}
+            Cancellation completed.
             {cancelBooking.data.credit_restored ? " Credit restored to your subscription." : ""}
+            {cancelBooking.data.promoted_booking ? " The next eligible waitlist member was promoted." : ""}
           </div>
         ) : null}
       </section>
@@ -93,7 +94,7 @@ export function BookingsPage() {
                   }}
                   type="button"
                 >
-                  {booking.status === "confirmed" ? "Cancel booking" : "Already cancelled"}
+                  {booking.status === "confirmed" ? "Cancel booking" : "Not cancellable"}
                 </button>
               </div>
             ))}
@@ -117,6 +118,19 @@ export function BookingsPage() {
                 <p className="mt-2 text-sm text-[var(--muted)]">
                   Position {entry.position} · Status {entry.status}
                 </p>
+                <button
+                  className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
+                  disabled={cancelBooking.isPending || entry.status !== "waiting"}
+                  onClick={() => {
+                    cancelBooking.mutate({
+                      bookingId: entry.id,
+                      memberId: session!.member.id
+                    });
+                  }}
+                  type="button"
+                >
+                  {entry.status === "waiting" ? "Leave waitlist" : "Not cancellable"}
+                </button>
               </div>
             ))}
 

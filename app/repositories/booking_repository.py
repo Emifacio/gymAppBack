@@ -50,12 +50,15 @@ class BookingRepository(BaseRepository[Booking]):
         result = await self.session.scalars(stmt)
         return list(result.unique().all())
 
-    async def count_confirmed_for_class(self, class_id: UUID) -> int:
+    async def count_confirmed_bookings(self, class_id: UUID) -> int:
         stmt = select(func.count()).select_from(Booking).where(
             Booking.class_id == class_id,
             Booking.status == BookingStatus.CONFIRMED,
         )
         return await self.session.scalar(stmt) or 0
+
+    async def count_confirmed_for_class(self, class_id: UUID) -> int:
+        return await self.count_confirmed_bookings(class_id)
 
     async def list_confirmed_for_class(self, class_id: UUID) -> list[Booking]:
         stmt = (

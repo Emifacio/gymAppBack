@@ -70,3 +70,34 @@ class MemberSubscriptionRepository(BaseRepository[MemberSubscription]):
         )
         result = await self.session.scalars(stmt)
         return list(result.unique().all())
+
+    async def restore_member_credit(
+        self,
+        member_id: UUID,
+        *,
+        credits: int = 1,
+        for_update: bool = False,
+    ) -> MemberSubscription | None:
+        subscription = await self.get_active_for_member(member_id, for_update=for_update)
+        if subscription is None or subscription.plan is None:
+            return None
+
+        subscription.active_credits = min(
+            subscription.plan.credits_per_period,
+            subscription.active_credits + credits,
+        )
+        return subscription
+
+    async def consume_member_credit(
+        self,
+        member_id: UUID,
+        *,
+        credits: int = 1,
+        for_update: bool = False,
+    ) -> MemberSubscription | None:
+        subscription = await self.get_active_for_member(member_id, for_update=for_update)
+        if subscription is None or subscription.plan is None or subscription.active_credits < credits:
+            return None
+
+        subscription.active_credits -= credits
+        return subscription

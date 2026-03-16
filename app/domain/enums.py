@@ -33,7 +33,10 @@ class ClassStatus(StrEnum):
 
 class BookingStatus(StrEnum):
     CONFIRMED = "confirmed"
+    WAITLIST = "waitlist"
     CANCELLED = "cancelled"
+    ATTENDED = "attended"
+    NO_SHOW = "no_show"
 
 
 class BookingType(StrEnum):

@@ -19,6 +19,12 @@ class WaitlistRepository(BaseRepository[Waitlist]):
             .selectinload(Instructor.member),
         )
 
+    async def get_by_id(self, waitlist_id: UUID, *, for_update: bool = False) -> Waitlist | None:
+        stmt = self._detail_query().where(Waitlist.id == waitlist_id)
+        if for_update:
+            stmt = stmt.with_for_update()
+        return await self.session.scalar(stmt)
+
     async def get_by_member_and_class(
         self,
         member_id: UUID,
@@ -48,16 +54,27 @@ class WaitlistRepository(BaseRepository[Waitlist]):
         current_max = await self.session.scalar(stmt)
         return (current_max or 0) + 1
 
-    async def next_waiting_for_class(self, class_id: UUID, *, for_update: bool = False) -> Waitlist | None:
+    async def get_next_waitlist_booking(
+        self,
+        class_id: UUID,
+        *,
+        for_update: bool = False,
+        excluded_ids: set[UUID] | None = None,
+    ) -> Waitlist | None:
         stmt = (
             self._detail_query()
             .where(Waitlist.class_id == class_id, Waitlist.status == WaitlistStatus.WAITING)
             .order_by(Waitlist.position.asc(), Waitlist.joined_at.asc())
             .limit(1)
         )
+        if excluded_ids:
+            stmt = stmt.where(Waitlist.id.notin_(excluded_ids))
         if for_update:
             stmt = stmt.with_for_update()
         return await self.session.scalar(stmt)
+
+    async def next_waiting_for_class(self, class_id: UUID, *, for_update: bool = False) -> Waitlist | None:
+        return await self.get_next_waitlist_booking(class_id, for_update=for_update)
 
     async def list_waiting_for_class(self, class_id: UUID, *, for_update: bool = False) -> list[Waitlist]:
         stmt = (

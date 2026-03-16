@@ -88,3 +88,12 @@ class BookingNotAllowedError(AppException):
             status_code=status.HTTP_409_CONFLICT,
             code=BookingEligibilityOutcome.BOOKING_NOT_ALLOWED.value,
         )
+
+
+class BookingNotCancellableError(AppException):
+    def __init__(self, detail: str = "Booking cannot be cancelled") -> None:
+        super().__init__(
+            detail=detail,
+            status_code=status.HTTP_409_CONFLICT,
+            code="booking_not_cancellable",
+        )

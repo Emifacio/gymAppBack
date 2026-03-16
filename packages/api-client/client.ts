@@ -116,7 +116,8 @@ export type BookingAction = components["schemas"]["BookingActionResponse"] & {
   waitlist_entry?: WaitlistEntry | null;
 };
 export type BookingCancellation = components["schemas"]["BookingCancellationResponse"] & {
-  credit_restored?: boolean;
+  status: "cancelled";
+  credit_restored: boolean;
   promoted_booking?: BookingRecord | null;
 };
 export interface MemberBookings {

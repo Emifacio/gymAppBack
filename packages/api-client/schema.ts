@@ -394,15 +394,10 @@ export interface components {
         };
         /** BookingCancellationResponse */
         BookingCancellationResponse: {
-            /**
-             * Booking Id
-             * Format: uuid
-             */
-            booking_id: string;
-            /** Cancelled */
-            cancelled: boolean;
-            /** Message */
-            message: string;
+            /** Status */
+            status: "cancelled";
+            /** Credit Restored */
+            credit_restored: boolean;
             promoted_booking?: components["schemas"]["BookingRead"] | null;
         };
         /** BookingCreate */
@@ -446,7 +441,7 @@ export interface components {
          * BookingStatus
          * @enum {string}
          */
-        BookingStatus: "confirmed" | "cancelled";
+        BookingStatus: "confirmed" | "waitlist" | "cancelled" | "attended" | "no_show";
         /** ClassCreate */
         ClassCreate: {
             /** Name */
