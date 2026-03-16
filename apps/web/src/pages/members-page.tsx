@@ -89,24 +89,24 @@ export function MembersPage() {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-[var(--section-gap)]">
       <header>
-        <h1 className="section-title text-4xl font-extrabold text-[var(--ink-900)] tracking-tight">Members</h1>
-        <p className="mt-2 text-base font-medium text-[var(--ink-500)]">
+        <h1 className="section-title text-[var(--font-size-4xl)]">Members</h1>
+        <p className="mt-2 text-sm font-medium text-[var(--ink-500)] lg:text-base">
           Manage your athlete community, instructor staff, and administrative accounts.
         </p>
       </header>
 
-      <section className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="apple-card p-8">
+      <div className="grid gap-[var(--section-gap)] lg:grid-cols-[1.2fr_0.8fr]">
+        <section className="apple-card">
           <div>
-            <h2 className="text-xl font-bold text-[var(--ink-900)]">Current Directory</h2>
+            <h2 className="section-title text-[var(--font-size-xl)] text-[var(--ink-900)]">Directory</h2>
             <p className="mt-1 text-sm font-medium text-[var(--ink-500)]">
               Real-time member tracking and status overview.
             </p>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Role</span>
               <select
@@ -176,7 +176,7 @@ export function MembersPage() {
               </div>
             )}
           </div>
-        </div>
+        </section>
 
         <section className="apple-card p-8">
           <div>
@@ -277,7 +277,7 @@ export function MembersPage() {
             </Button>
           </form>
         </section>
-      </section>
+      </div>
     </div>
   );
 }

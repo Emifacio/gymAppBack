@@ -7,10 +7,20 @@ interface StatCardProps {
 
 export function StatCard({ label, value, detail }: StatCardProps) {
   return (
-    <article className="apple-card p-6">
-      <p className="text-sm font-medium text-[var(--ink-500)] uppercase tracking-wider">{label}</p>
-      <p className="section-title mt-2 text-4xl font-bold text-[var(--ink-900)] tracking-tight">{value}</p>
-      <p className="mt-4 text-xs font-medium text-[var(--ink-500)] leading-relaxed">{detail}</p>
-    </article>
+    <div className="apple-card flex flex-col justify-between">
+      <div>
+        <h3 className="section-title text-[var(--font-size-sm)] uppercase tracking-[0.16em] text-[var(--ink-500)]">
+          {label}
+        </h3>
+        <p className="mt-2 text-[var(--font-size-2xl)] font-semibold text-[var(--ink-900)] tracking-tight">
+          {value}
+        </p>
+      </div>
+      {detail && (
+        <p className="mt-4 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--ink-300)] border-t border-[var(--surface-outline)] pt-4">
+          {detail}
+        </p>
+      )}
+    </div>
   );
 }

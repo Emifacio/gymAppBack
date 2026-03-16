@@ -34,22 +34,22 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="space-y-10">
-      <header className="flex items-center gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">
+    <div className="space-y-[var(--section-gap)]">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
           <Sparkles className="h-7 w-7" />
         </div>
         <div>
-          <h2 className="section-title text-4xl font-extrabold text-[var(--ink-900)] tracking-tight">
+          <h2 className="section-title text-[var(--font-size-2xl)]">
             Good morning, {session?.member.full_name.split(' ')[0]}
           </h2>
-          <p className="mt-1 text-base font-medium text-[var(--ink-500)]">
+          <p className="mt-1 text-sm font-medium text-[var(--ink-500)] lg:text-base">
             You have {confirmedBookings.length} classes scheduled for this week.
           </p>
         </div>
       </header>
 
-      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="grid gap-[var(--stack-gap)] sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           detail={
             subscription?.active_plan
@@ -77,62 +77,62 @@ export function DashboardPage() {
         />
       </section>
 
-      <section className="grid gap-8 lg:grid-cols-2">
-        <div className="glass-panel rounded-[2rem] p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
+      <section className="grid gap-[var(--section-gap)] lg:grid-cols-2">
+        <div className="apple-card">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
             Subscription
           </p>
-          <h2 className="section-title mt-3 text-3xl font-semibold">Membership snapshot</h2>
+          <h2 className="section-title mt-2 text-[var(--font-size-xl)]">Membership snapshot</h2>
           {subscription?.active_plan ? (
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <div className="rounded-[1.5rem] bg-white/80 p-5">
-                <p className="text-sm font-semibold text-[var(--ink)]">Plan</p>
-                <p className="mt-2 text-sm text-[var(--muted)]">{subscription.plan_name}</p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
+                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Plan</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{subscription.plan_name}</p>
               </div>
-              <div className="rounded-[1.5rem] bg-white/80 p-5">
-                <p className="text-sm font-semibold text-[var(--ink)]">Remaining credits</p>
-                <p className="mt-2 text-sm text-[var(--muted)]">
+              <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
+                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Remaining credits</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">
                   {subscription.allows_free_pass
-                    ? "Unlimited while spots remain"
+                    ? "Unlimited"
                     : formatCredits(subscription.active_credits)}
                 </p>
               </div>
-              <div className="rounded-[1.5rem] bg-white/80 p-5">
-                <p className="text-sm font-semibold text-[var(--ink)]">Period end</p>
-                <p className="mt-2 text-sm text-[var(--muted)]">{formatDateTime(subscription.period_end)}</p>
+              <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
+                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Period end</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{formatDateTime(subscription.period_end)}</p>
               </div>
-              <div className="rounded-[1.5rem] bg-white/80 p-5">
-                <p className="text-sm font-semibold text-[var(--ink)]">Waitlist entries</p>
-                <p className="mt-2 text-sm text-[var(--muted)]">{activeWaitlist.length}</p>
+              <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
+                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Waitlist</p>
+                <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{activeWaitlist.length} entries</p>
               </div>
             </div>
           ) : (
-            <div className="mt-6 rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
+            <div className="mt-6 rounded-[1.25rem] bg-[var(--bg-main)] p-5 text-sm font-medium text-[var(--ink-500)]">
               {subscription?.error_code === "PLAN_EXPIRED"
                 ? `Your last plan expired on ${formatDateTime(subscription.period_end)}.`
-                : "No active subscription is assigned to this member yet."}
+                : "No active subscription is assigned yet."}
             </div>
           )}
         </div>
 
-        <div className="glass-panel rounded-[2rem] p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
+        <div className="apple-card">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
             Booking status
           </p>
-          <h2 className="section-title mt-3 text-3xl font-semibold">Reservation overview</h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.5rem] bg-white/80 p-5">
-              <p className="text-sm font-semibold text-[var(--ink)]">Confirmed</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">{confirmedBookings.length} active bookings</p>
+          <h2 className="section-title mt-2 text-[var(--font-size-xl)]">Reservation overview</h2>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
+              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Confirmed</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{confirmedBookings.length} bookings</p>
             </div>
-            <div className="rounded-[1.5rem] bg-white/80 p-5">
-              <p className="text-sm font-semibold text-[var(--ink)]">Waitlist</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">{activeWaitlist.length} pending promotions</p>
+            <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
+              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Waitlist</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{activeWaitlist.length} pending</p>
             </div>
-            <div className="rounded-[1.5rem] bg-white/80 p-5 md:col-span-2">
-              <p className="text-sm font-semibold text-[var(--ink)]">Next class</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">
-                {upcomingWorkout ? formatRelativeSlot(upcomingWorkout.scheduled_at) : "No scheduled classes yet."}
+            <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4 sm:col-span-2">
+              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Next class</p>
+              <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">
+                {upcomingWorkout ? formatRelativeSlot(upcomingWorkout.scheduled_at) : "No classes yet."}
               </p>
             </div>
           </div>

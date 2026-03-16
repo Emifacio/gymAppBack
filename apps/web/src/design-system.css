@@ -33,16 +33,50 @@
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.12);
+
+  /* Responsive Spacing & Layout Tokens */
+  --container-px: 1rem;
+  --section-gap: 2rem;
+  --stack-gap: 1.5rem;
+
+  /* Typography Scale (Fluid) */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: clamp(1.125rem, 2vw + 1rem, 1.25rem);
+  --font-size-xl: clamp(1.25rem, 3vw + 1rem, 1.5rem);
+  --font-size-2xl: clamp(1.5rem, 4vw + 1rem, 2rem);
+  --font-size-4xl: clamp(2.25rem, 6vw + 1rem, 3.5rem);
+
+  /* Radius System (Refined for Mobile) */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --container-px: 2rem;
+    --section-gap: 3rem;
+  }
 }
 
 /* Base Components Styles */
 .apple-card {
   background: var(--bg-card);
-  backdrop-filter: var(--surface-blur);
   border: 1px solid var(--surface-outline);
-  border-radius: var(--radius-card);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+}
+
+@media (min-width: 1024px) {
+  .apple-card {
+    padding: 2rem;
+  }
 }
 
 .apple-card:hover {
