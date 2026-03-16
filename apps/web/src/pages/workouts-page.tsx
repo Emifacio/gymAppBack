@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
 import { WorkoutCard } from "@/components/workout-card";
+import { StatCard } from "@/components/stat-card";
 import { useAuth } from "@/hooks/use-auth";
 import { useCreateWorkout, useMySubscriptionStatus, useWorkouts } from "@/hooks/use-workouts";
 import { formatCredits, formatDateTime } from "@/lib/format";
@@ -34,47 +35,55 @@ export function WorkoutsPage() {
   const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
 
   return (
-    <section className="space-y-5">
-      <div className="glass-panel rounded-[2rem] p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Classes API</p>
-        <h1 className="section-title mt-3 text-4xl font-semibold">Class schedule</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-8 text-[var(--muted)]">
-          Browse live class availability, current waitlist pressure, and your personal booking status from
-          the backend `/classes` endpoint.
+    <div className="space-y-10">
+      <header>
+        <h1 className="section-title text-4xl font-extrabold text-[var(--ink-900)] tracking-tight">Schedule</h1>
+        <p className="mt-2 text-base font-medium text-[var(--ink-500)]">
+          Explore upcoming classes, manage your bookings, and track your training journey.
         </p>
+      </header>
 
-        <div className="mt-6 grid gap-4 rounded-[1.5rem] bg-white/70 p-4 md:grid-cols-3">
-          <div className="rounded-[1.25rem] bg-white px-4 py-4">
-            <p className="text-sm font-semibold text-[var(--ink)]">Active plan</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              {subscription?.active_plan
-                ? subscription.plan_name ?? "Assigned"
-                : subscription?.error_code === "PLAN_EXPIRED"
-                  ? "Plan expired"
-                  : "No active plan"}
-            </p>
-          </div>
-          <div className="rounded-[1.25rem] bg-white px-4 py-4">
-            <p className="text-sm font-semibold text-[var(--ink)]">Remaining credits</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              {subscription?.active_plan
-                ? subscription.allows_free_pass
-                  ? "Unlimited while capacity exists"
-                  : formatCredits(subscription.active_credits)
-                : "Booking unavailable"}
-            </p>
-          </div>
-          <div className="rounded-[1.25rem] bg-white px-4 py-4">
-            <p className="text-sm font-semibold text-[var(--ink)]">Period end</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">{formatDateTime(subscription?.period_end)}</p>
+      <section className="grid gap-6 md:grid-cols-3">
+        <StatCard
+          detail={
+            subscription?.active_plan
+              ? subscription.plan_name ?? "Assigned"
+              : "No active plan"
+          }
+          label="Active plan"
+          value={subscription?.active_plan ? "Assigned" : "None"}
+        />
+        <StatCard
+          detail={
+            subscription?.active_plan
+              ? subscription.allows_free_pass
+                ? "Unlimited capacity"
+                : `${formatCredits(subscription.active_credits)} remaining`
+              : "Booking locked"
+          }
+          label="Credits"
+          value={subscription?.active_plan ? String(subscription.active_credits) : "0"}
+        />
+        <StatCard
+          detail={formatDateTime(subscription?.period_end)}
+          label="Renewal"
+          value="Period end"
+        />
+      </section>
+
+      <section className="apple-card p-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-xl font-bold text-[var(--ink-900)]">Refine Schedule</h2>
+            <p className="mt-1 text-sm font-medium text-[var(--ink-500)]">Filter by class status and availability.</p>
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 rounded-[1.5rem] bg-white/70 p-4 md:grid-cols-3">
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium">Status filter</span>
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Status</span>
             <select
-              className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3"
+              className="w-full rounded-xl border border-[var(--surface-outline)] bg-[var(--bg-main)] px-4 py-3 text-sm font-medium outline-none transition focus:border-[var(--primary)]"
               value={filters.status}
               onChange={(event) =>
                 setFilters((current) => ({
@@ -88,51 +97,20 @@ export function WorkoutsPage() {
               <option value="cancelled">Cancelled</option>
               <option value="completed">Completed</option>
             </select>
-          </label>
-
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium">Offset</span>
-            <input
-              className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3"
-              min={0}
-              type="number"
-              value={filters.offset}
-              onChange={(event) =>
-                setFilters((current) => ({ ...current, offset: Number(event.target.value || 0) }))
-              }
-            />
-          </label>
-
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium">Limit</span>
-            <input
-              className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3"
-              min={1}
-              type="number"
-              value={filters.limit}
-              onChange={(event) =>
-                setFilters((current) => ({ ...current, limit: Number(event.target.value || 1) }))
-              }
-            />
-          </label>
+          </div>
+          {/* Pagination inputs omitted for cleaner UI, can be added back if needed */}
         </div>
-      </div>
+      </section>
 
-      {canManage ? (
-        <section className="glass-panel rounded-[2rem] p-8">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-              Manage classes
-            </p>
-            <h2 className="section-title text-3xl font-semibold">Create a workout</h2>
-            <p className="text-sm leading-7 text-[var(--muted)]">
-              Admins can create classes for any instructor. Instructors can leave the instructor field blank
-              to create sessions for themselves.
-            </p>
+      {canManage && (
+        <section className="apple-card p-8 bg-[var(--bg-main)]/50">
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-[var(--ink-900)]">Create Workout</h2>
+            <p className="mt-1 text-sm font-medium text-[var(--ink-500)]">Schedule a new training session for the community.</p>
           </div>
 
           <form
-            className="mt-6 grid gap-4 md:grid-cols-2"
+            className="grid gap-6 md:grid-cols-2"
             onSubmit={(event) => {
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
@@ -153,53 +131,36 @@ export function WorkoutsPage() {
               event.currentTarget.reset();
             }}
           >
-            <input className="rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" name="name" placeholder="Workout name" required />
-            <input className="rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" name="location" placeholder="Location" required />
-            <input className="rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" name="instructor_id" placeholder="Instructor ID (optional)" />
-            <input className="rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" min={15} name="duration_minutes" placeholder="Duration (minutes)" required type="number" />
-            <input className="rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" min={1} name="capacity" placeholder="Capacity" required type="number" />
-            <input className="rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 md:col-span-2" name="scheduled_at" required type="datetime-local" />
-            <textarea className="min-h-28 rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 md:col-span-2" name="description" placeholder="Description" />
-            <select className="rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 md:col-span-2" defaultValue="scheduled" name="status">
-              <option value="scheduled">scheduled</option>
-              <option value="cancelled">cancelled</option>
-              <option value="completed">completed</option>
-            </select>
+            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="name" placeholder="Workout name" required />
+            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="location" placeholder="Location" required />
+            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="instructor_id" placeholder="Instructor ID (optional)" />
+            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" min={15} name="duration_minutes" placeholder="Duration (minutes)" required type="number" />
+            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" min={1} name="capacity" placeholder="Capacity" required type="number" />
+            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="scheduled_at" required type="datetime-local" />
+            <textarea className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium md:col-span-2" name="description" placeholder="Description" />
+            
             <div className="md:col-span-2">
-              <Button loading={createWorkout.isPending} type="submit" variant="primary">
-                {createWorkout.isPending ? "Creating..." : "Create workout"}
+              <Button className="w-full h-12" loading={createWorkout.isPending} type="submit" variant="primary">
+                {createWorkout.isPending ? "Scheduling..." : "Create workout"}
               </Button>
             </div>
           </form>
-
-          {createWorkout.data ? (
-            <p className="mt-4 text-sm text-[var(--highlight)]">
-              Created {createWorkout.data.name}.{" "}
-              <Link className="font-semibold text-[var(--ink)]" to={`/workouts/${createWorkout.data.id}`}>
-                Open detail
-              </Link>
-            </p>
-          ) : null}
         </section>
-      ) : null}
+      )}
 
       {showEmptyState ? (
         <EmptyState
-          eyebrow="Nothing scheduled"
-          title="Your workout catalogue is still empty"
-          description={
-            canManage
-              ? "Create the first class with the form above and it will appear here automatically."
-              : "Classes created in the backend will appear here automatically through the shared OpenAPI contract."
-          }
+          eyebrow="Availability"
+          title="No classes scheduled"
+          description="Check back later or contact administrators for the upcoming training block."
         />
       ) : (
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div className="grid gap-6">
           {workouts.map((workout) => (
             <WorkoutCard key={workout.id} workout={workout} />
           ))}
         </div>
       )}
-    </section>
+    </div>
   );
 }

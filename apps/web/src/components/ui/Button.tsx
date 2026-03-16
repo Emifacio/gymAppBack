@@ -22,18 +22,17 @@ const base =
   "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "min-h-9 px-3 py-2 text-sm",
-  md: "min-h-10 px-4 py-2.5 text-sm",
-  lg: "min-h-11 px-5 py-3 text-base"
+  sm: "h-8 px-3 text-xs",
+  md: "h-10 px-4 text-sm",
+  lg: "h-12 px-6 text-base"
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
-  secondary: "bg-gray-100 text-gray-800 hover:bg-gray-200 focus:ring-gray-400",
-  danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
-  outline:
-    "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-400",
-  ghost: "bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-400"
+  primary: "bg-[var(--primary)] text-white hover:opacity-90 active:scale-95 transition-all",
+  secondary: "bg-[var(--ink-100)] text-[var(--ink-900)] hover:bg-[var(--ink-300)] active:scale-95 transition-all",
+  danger: "bg-[#FF3B30] text-white hover:opacity-90 active:scale-95 transition-all",
+  outline: "border border-[var(--ink-300)] bg-transparent text-[var(--ink-900)] hover:bg-[var(--ink-100)] active:scale-95 transition-all",
+  ghost: "bg-transparent text-[var(--ink-700)] hover:bg-[var(--ink-100)] active:scale-95 transition-all"
 };
 
 export function buttonClassName({

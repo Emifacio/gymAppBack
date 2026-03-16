@@ -1,0 +1,4 @@
+interface:
+  display_name: "Front-End Design Engineer"
+  short_description: "Build high-fidelity accessible UI"
+  default_prompt: "Use -design-engineer to turn designs or UI requirements into accessible, token-driven, production-ready frontend code."

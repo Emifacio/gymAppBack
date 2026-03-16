@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Clock, MapPin, Users, Ticket } from "lucide-react";
 
 import type { Workout } from "@gym/api-client";
 
@@ -13,61 +14,50 @@ interface WorkoutCardProps {
 export function WorkoutCard({ workout, actionLabel = "View session" }: WorkoutCardProps) {
   const availabilityLabel =
     typeof workout.available_spots === "number"
-      ? `${workout.available_spots} spot${workout.available_spots === 1 ? "" : "s"} left`
+      ? `${workout.available_spots} spots remaining`
       : `${workout.capacity} total spots`;
-  const waitlistLabel =
-    (workout.available_spots ?? 0) > 0
-      ? `${workout.waitlist_size ?? 0} waiting`
-      : `Waitlist open · ${workout.waitlist_size ?? 0} waiting`;
 
   return (
-    <article className="glass-panel rounded-[2rem] p-6 transition-transform duration-200 hover:-translate-y-1">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
+    <article className="apple-card p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex-1">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex rounded-lg bg-[var(--accent-soft)] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--primary)]">
             {workout.status}
-          </p>
-          <h3 className="section-title mt-2 text-2xl font-semibold">{workout.name}</h3>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-[var(--muted)]">
-            {workout.description ?? "High-energy training block with guided pacing and coaching."}
-          </p>
+          </span>
+          <span className="text-xs font-medium text-[var(--ink-500)]">
+            {workout.duration_minutes} min
+          </span>
         </div>
-        <span className="rounded-full bg-[rgba(19,34,56,0.08)] px-3 py-1 text-xs font-medium text-[var(--ink)]">
-          {workout.duration_minutes} min
-        </span>
-      </div>
-
-      <div className="mt-6 grid gap-4 text-sm text-[var(--muted)] md:grid-cols-3">
-        <div>
-          <p className="font-semibold text-[var(--ink)]">Schedule</p>
-          <p className="mt-1">{formatWorkoutSchedule(workout.scheduled_at)}</p>
-        </div>
-        <div>
-          <p className="font-semibold text-[var(--ink)]">Location</p>
-          <p className="mt-1">{workout.location}</p>
-        </div>
-        <div>
-          <p className="font-semibold text-[var(--ink)]">Capacity</p>
-          <p className="mt-1">{availabilityLabel}</p>
-        </div>
-        <div>
-          <p className="font-semibold text-[var(--ink)]">Waitlist</p>
-          <p className="mt-1">{waitlistLabel}</p>
-        </div>
-        <div>
-          <p className="font-semibold text-[var(--ink)]">Credit cost</p>
-          <p className="mt-1">1 credit</p>
+        <h3 className="section-title mt-2 text-xl font-bold text-[var(--ink-900)]">{workout.name}</h3>
+        
+        <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[var(--ink-500)]">
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-4 w-4" />
+            <span>{formatWorkoutSchedule(workout.scheduled_at)}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <MapPin className="h-4 w-4" />
+            <span>{workout.location}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Users className="h-4 w-4" />
+            <span>{availabilityLabel}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Ticket className="h-4 w-4" />
+            <span>1 credit</span>
+          </div>
         </div>
       </div>
 
-      <div className="mt-6 flex items-center justify-between">
-        <p className="text-xs font-medium uppercase tracking-[0.22em] text-[var(--muted)]">
-          {workout.member_booking_status
-            ? `Your status: ${workout.member_booking_status}`
-            : "Ready for booking"}
-        </p>
+      <div className="flex items-center gap-4">
+        {workout.member_booking_status && (
+          <span className="text-xs font-bold text-[var(--primary)] bg-[var(--accent-soft)] px-3 py-2 rounded-xl">
+            {workout.member_booking_status.toUpperCase()}
+          </span>
+        )}
         <Link
-          className={buttonClassName({ size: "sm", variant: "secondary" })}
+          className={buttonClassName({ size: "md", variant: "secondary" })}
           to={`/workouts/${workout.id}`}
         >
           {actionLabel}

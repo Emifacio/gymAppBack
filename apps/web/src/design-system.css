@@ -1,0 +1,68 @@
+:root {
+  /* Apple-Grade Palette */
+  --primary: #007AFF;
+  --primary-hover: #0062CC;
+  --indigo: #5856D6;
+  
+  /* Neutrals */
+  --ink-900: #1C1C1E;
+  --ink-700: #3A3A3C;
+  --ink-500: #8E8E93;
+  --ink-300: #C7C7CC;
+  --ink-100: #F2F2F7;
+  
+  /* Backgrounds */
+  --bg-main: #FAFAFA;
+  --bg-card: rgba(255, 255, 255, 0.75);
+  --bg-sidebar: #FFFFFF;
+  
+  /* Surfaces & Outlines */
+  --surface-outline: rgba(0, 0, 0, 0.05);
+  --surface-blur: blur(20px);
+  
+  /* Spacing & Radius (8px Grid) */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --radius-button: 12px;
+  --radius-card: 20px;
+  --radius-panel: 24px;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.12);
+}
+
+/* Base Components Styles */
+.apple-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--surface-blur);
+  border: 1px solid var(--surface-outline);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.apple-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.apple-button-primary {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-radius: var(--radius-button);
+  font-weight: 600;
+  padding: 10px 20px;
+  transition: background 0.2s ease, transform 0.1s active;
+}
+
+.apple-button-primary:hover {
+  background: var(--primary-hover);
+}
+
+.apple-button-primary:active {
+  transform: scale(0.98);
+}

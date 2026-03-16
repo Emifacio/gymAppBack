@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Sparkles } from "lucide-react";
 
 import { buttonClassName } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
@@ -33,88 +34,50 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
-        <div className="glass-panel overflow-hidden rounded-[2.5rem] p-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-                Typed training command center
-              </p>
-              <h2 className="section-title mt-4 text-4xl font-semibold md:text-5xl">
-                Real backend data, one shared contract, zero duplicated types.
-              </h2>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-[var(--muted)]">
-                This dashboard is powered by the generated OpenAPI client, TanStack Query, shared session
-                state, and the same reusable hooks your mobile app uses.
-              </p>
-            </div>
-
-            <Link
-              className={buttonClassName({ variant: "primary" })}
-              to="/workouts"
-            >
-              Explore all workouts
-            </Link>
-          </div>
-
-          {upcomingWorkout ? (
-            <div className="mt-8 rounded-[2rem] bg-[linear-gradient(135deg,#132238_0%,#1e3555_100%)] p-6 text-white">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white/70">
-                Next available training block
-              </p>
-              <div className="mt-3 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <h3 className="section-title text-3xl font-semibold">{upcomingWorkout.name}</h3>
-                  <p className="mt-2 text-sm text-white/75">{formatRelativeSlot(upcomingWorkout.scheduled_at)}</p>
-                </div>
-                <Link
-                  className={buttonClassName({ size: "sm", variant: "secondary" })}
-                  to={`/workouts/${upcomingWorkout.id}`}
-                >
-                  Open details
-                </Link>
-              </div>
-            </div>
-          ) : null}
+    <div className="space-y-10">
+      <header className="flex items-center gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-600">
+          <Sparkles className="h-7 w-7" />
         </div>
-
-        <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-          <StatCard
-            detail={
-              subscription?.active_plan
-                ? `Renews on ${formatDateTime(subscription.period_end)}.`
-                : subscription?.error_code === "PLAN_EXPIRED"
-                  ? "Your last assigned plan has expired."
-                  : "Assign a subscription to unlock bookings."
-            }
-            label={subscription?.plan_name ?? "Active plan"}
-            tone="accent"
-            value={
-              subscription?.active_plan
-                ? subscription.allows_free_pass
-                  ? "Free pass"
-                  : formatCredits(subscription.active_credits)
-                : subscription?.error_code === "PLAN_EXPIRED"
-                  ? "Expired"
-                  : "No active plan"
-            }
-          />
-          <StatCard
-            detail="Confirmed reservations in the current booking feed."
-            label="Your bookings"
-            tone="highlight"
-            value={String(confirmedBookings.length)}
-          />
-          <StatCard
-            detail="Live availability from the current schedule response."
-            label="Upcoming classes"
-            value={String(workouts.length)}
-          />
+        <div>
+          <h2 className="section-title text-4xl font-extrabold text-[var(--ink-900)] tracking-tight">
+            Good morning, {session?.member.full_name.split(' ')[0]}
+          </h2>
+          <p className="mt-1 text-base font-medium text-[var(--ink-500)]">
+            You have {confirmedBookings.length} classes scheduled for this week.
+          </p>
         </div>
+      </header>
+
+      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <StatCard
+          detail={
+            subscription?.active_plan
+              ? `Renews on ${formatDateTime(subscription.period_end)}.`
+              : "Assign a subscription to unlock bookings."
+          }
+          label={subscription?.plan_name ?? "Active plan"}
+          value={
+            subscription?.active_plan
+              ? subscription.allows_free_pass
+                ? "Free pass"
+                : formatCredits(subscription.active_credits)
+              : "No active plan"
+          }
+        />
+        <StatCard
+          detail="Confirmed reservations in your feed."
+          label="Your bookings"
+          value={String(confirmedBookings.length)}
+        />
+        <StatCard
+          detail="Classes available for booking today."
+          label="Upcoming classes"
+          value={String(workouts.length)}
+        />
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-2">
+      <section className="grid gap-8 lg:grid-cols-2">
         <div className="glass-panel rounded-[2rem] p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
             Subscription

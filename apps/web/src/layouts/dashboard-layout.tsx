@@ -1,4 +1,4 @@
-import { LogOut, Sparkles } from "lucide-react";
+import { LayoutDashboard, Calendar, BookCheck, Puzzle, CreditCard, Users, History, LogOut, Sparkles } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -6,67 +6,68 @@ import { canManageOperations, canManagePlans } from "@/lib/roles";
 
 function linkClassName(isActive: boolean) {
   return isActive
-    ? "rounded-full bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-white"
-    : "rounded-full px-4 py-2 text-sm font-semibold text-[var(--muted)] transition hover:bg-white/70 hover:text-[var(--ink)]";
+    ? "flex items-center gap-3 rounded-xl bg-[var(--accent-soft)] px-4 py-3 text-sm font-semibold text-[var(--primary)]"
+    : "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[var(--ink-700)] transition-all hover:bg-[var(--ink-100)] hover:text-[var(--ink-900)]";
 }
 
 export function DashboardLayout() {
   const { logout, session } = useAuth();
   const navigation = [
-    { label: "Dashboard", to: "/" },
-    { label: "Classes", to: "/workouts" },
-    { label: "Reservations", to: "/bookings" },
-    { label: "Integrations", to: "/integrations" },
-    ...(canManagePlans(session?.member) ? [{ label: "Plans", to: "/plans" }] : []),
+    { label: "Dashboard", to: "/", icon: LayoutDashboard },
+    { label: "Classes", to: "/workouts", icon: Calendar },
+    { label: "Reservations", to: "/bookings", icon: BookCheck },
+    { label: "Integrations", to: "/integrations", icon: Puzzle },
+    ...(canManagePlans(session?.member) ? [{ label: "Plans", to: "/plans", icon: CreditCard }] : []),
     ...(canManageOperations(session?.member)
       ? [
-          { label: "Members", to: "/members" },
-          { label: "Attendance", to: "/attendance" }
+          { label: "Members", to: "/members", icon: Users },
+          { label: "Attendance", to: "/attendance", icon: History }
         ]
       : [])
   ];
 
   return (
-    <div className="page-shell min-h-screen px-4 py-4 md:px-8 md:py-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <header className="glass-panel flex flex-col gap-5 rounded-[2rem] px-6 py-5 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-[var(--accent)]">
-              <Sparkles className="h-3.5 w-3.5" />
-              Contract-first fitness ops
-            </div>
-            <h1 className="section-title mt-4 text-3xl font-semibold md:text-4xl">Gym Platform</h1>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              Welcome back, {session?.member.full_name}. Your web and mobile clients are sharing the same
-              typed backend contract.
-            </p>
+    <div className="flex min-h-screen bg-[var(--bg-main)]">
+      {/* Sidebar navigation */}
+      <aside className="fixed inset-y-0 left-0 w-64 border-r border-[var(--surface-outline)] bg-[var(--bg-sidebar)] px-6 py-8 flex flex-col">
+        <div className="flex items-center gap-2 px-2 mb-10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary)] text-white">
+            <Sparkles className="h-6 w-6" />
           </div>
+          <span className="text-xl font-bold tracking-tight text-[var(--ink-900)]">Gym Platform</span>
+        </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <nav className="flex flex-wrap items-center gap-2 rounded-full bg-[rgba(255,255,255,0.7)] p-2">
-              {navigation.map((item) => (
-                <NavLink key={item.to} className={({ isActive }) => linkClassName(isActive)} to={item.to}>
-                  {item.label}
-                </NavLink>
-              ))}
-            </nav>
-            <button
-              className="inline-flex items-center gap-2 rounded-full border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
-              onClick={() => {
-                void logout();
-              }}
-              type="button"
-            >
-              <LogOut className="h-4 w-4" />
-              Logout
-            </button>
+        <nav className="flex-1 space-y-1">
+          {navigation.map((item) => (
+            <NavLink key={item.to} className={({ isActive }) => linkClassName(isActive)} to={item.to}>
+              <item.icon className="h-5 w-5" />
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="mt-auto border-t border-[var(--surface-outline)] pt-6">
+          <div className="px-4 mb-4">
+            <p className="text-xs font-semibold text-[var(--ink-500)] uppercase tracking-wider">User</p>
+            <p className="text-sm font-medium text-[var(--ink-900)] mt-1 truncate">{session?.member.full_name}</p>
           </div>
-        </header>
+          <button
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[#FF3B30] transition-colors hover:bg-red-50"
+            onClick={() => {
+              void logout();
+            }}
+            type="button"
+          >
+            <LogOut className="h-5 w-5" />
+            Logout
+          </button>
+        </div>
+      </aside>
 
-        <main>
-          <Outlet />
-        </main>
-      </div>
+      {/* Main content area */}
+      <main className="ml-64 flex-1 px-8 py-10 max-w-6xl mx-auto">
+        <Outlet />
+      </main>
     </div>
   );
 }
