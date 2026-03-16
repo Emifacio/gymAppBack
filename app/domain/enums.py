@@ -14,6 +14,17 @@ class MembershipStatus(StrEnum):
     CANCELLED = "cancelled"
 
 
+class PlanPeriodType(StrEnum):
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+
+
+class SubscriptionStatus(StrEnum):
+    ACTIVE = "active"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+
+
 class ClassStatus(StrEnum):
     SCHEDULED = "scheduled"
     CANCELLED = "cancelled"
@@ -23,6 +34,12 @@ class ClassStatus(StrEnum):
 class BookingStatus(StrEnum):
     CONFIRMED = "confirmed"
     CANCELLED = "cancelled"
+
+
+class BookingType(StrEnum):
+    CREDIT = "credit"
+    FREE_PASS = "free_pass"
+    WAITLIST = "waitlist"
 
 
 class WaitlistStatus(StrEnum):

@@ -8,16 +8,20 @@ from app.api.dependencies import (
     get_booking_service,
     get_current_user,
     get_member_service,
+    get_subscription_service,
     require_roles,
 )
+from app.core.exceptions import ForbiddenError
 from app.domain.enums import MemberRole, MembershipStatus
 from app.domain.models.member import Member
 from app.schemas.activity_schema import ActivityRead
 from app.schemas.booking_schema import MemberBookingsResponse
 from app.schemas.member_schema import MemberCreate, MemberRead, MemberUpdate
+from app.schemas.subscription_schema import MemberSubscriptionRead, SubscriptionAssign
 from app.services.activity_service import ActivityService
 from app.services.booking_service import BookingService
 from app.services.member_service import MemberService
+from app.services.subscription_service import SubscriptionService
 
 router = APIRouter(prefix="/members", tags=["members"])
 
@@ -96,3 +100,38 @@ async def get_member_activities(
     enforce_member_access(current_user, member_id)
     return await service.list_member_activities(member_id)
 
+
+@router.post(
+    "/{member_id}/subscription",
+    response_model=MemberSubscriptionRead,
+    dependencies=[Depends(require_roles(MemberRole.ADMIN))],
+)
+async def assign_member_subscription(
+    member_id: UUID,
+    payload: SubscriptionAssign,
+    service: SubscriptionService = Depends(get_subscription_service),
+) -> MemberSubscriptionRead:
+    return await service.assign_subscription(member_id, payload.plan_id)
+
+
+@router.get("/{member_id}/subscription", response_model=MemberSubscriptionRead)
+async def get_member_subscription(
+    member_id: UUID,
+    current_user: Member = Depends(get_current_user),
+    service: SubscriptionService = Depends(get_subscription_service),
+) -> MemberSubscriptionRead:
+    if current_user.role != MemberRole.ADMIN and current_user.id != member_id:
+        raise ForbiddenError("You can only access your own subscription")
+    return await service.get_member_subscription(member_id)
+
+
+@router.delete(
+    "/{member_id}/subscription",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_roles(MemberRole.ADMIN))],
+)
+async def cancel_member_subscription(
+    member_id: UUID,
+    service: SubscriptionService = Depends(get_subscription_service),
+) -> None:
+    await service.cancel_subscription(member_id)

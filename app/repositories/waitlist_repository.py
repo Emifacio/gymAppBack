@@ -13,6 +13,7 @@ from app.repositories.base_repository import BaseRepository
 class WaitlistRepository(BaseRepository[Waitlist]):
     def _detail_query(self) -> Select[tuple[Waitlist]]:
         return select(Waitlist).options(
+            selectinload(Waitlist.member),
             selectinload(Waitlist.gym_class)
             .selectinload(GymClass.instructor)
             .selectinload(Instructor.member),
@@ -57,3 +58,46 @@ class WaitlistRepository(BaseRepository[Waitlist]):
         if for_update:
             stmt = stmt.with_for_update()
         return await self.session.scalar(stmt)
+
+    async def list_waiting_for_class(self, class_id: UUID, *, for_update: bool = False) -> list[Waitlist]:
+        stmt = (
+            self._detail_query()
+            .where(Waitlist.class_id == class_id, Waitlist.status == WaitlistStatus.WAITING)
+            .order_by(Waitlist.position.asc(), Waitlist.joined_at.asc())
+        )
+        if for_update:
+            stmt = stmt.with_for_update()
+        result = await self.session.scalars(stmt)
+        return list(result.unique().all())
+
+    async def count_waiting_for_class_ids(self, class_ids: list[UUID]) -> dict[UUID, int]:
+        if not class_ids:
+            return {}
+        stmt = (
+            select(Waitlist.class_id, func.count())
+            .where(
+                Waitlist.class_id.in_(class_ids),
+                Waitlist.status == WaitlistStatus.WAITING,
+            )
+            .group_by(Waitlist.class_id)
+        )
+        rows = await self.session.execute(stmt)
+        return {class_id: count for class_id, count in rows.all()}
+
+    async def list_waiting_for_member_and_class_ids(
+        self,
+        member_id: UUID,
+        class_ids: list[UUID],
+    ) -> list[Waitlist]:
+        if not class_ids:
+            return []
+        stmt = (
+            self._detail_query()
+            .where(
+                Waitlist.member_id == member_id,
+                Waitlist.class_id.in_(class_ids),
+                Waitlist.status == WaitlistStatus.WAITING,
+            )
+        )
+        result = await self.session.scalars(stmt)
+        return list(result.unique().all())

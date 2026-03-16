@@ -11,6 +11,8 @@ import {
   type BookingAction,
   type BookingCancellation,
   type BookingPayload,
+  type ClassAssignmentPayload,
+  type ClassMember,
   type GymApiClient,
   type HealthStatus,
   type IntegrationAccount,
@@ -20,8 +22,13 @@ import {
   type MemberBookings,
   type MemberCreatePayload,
   type MemberFilters,
+  type MemberSubscription,
   type MemberUpdatePayload,
+  type Plan,
+  type PlanCreatePayload,
+  type PlanUpdatePayload,
   type RegisterPayload,
+  type SubscriptionAssignPayload,
   type Workout,
   type WorkoutCreatePayload,
   type WorkoutFilters,
@@ -37,9 +44,14 @@ export const gymKeys = {
   memberList: (filters: MemberFilters = {}) => [...gymKeys.members(), "list", filters] as const,
   memberDetail: (memberId: string) => [...gymKeys.members(), "detail", memberId] as const,
   memberBookings: (memberId: string) => [...gymKeys.all, "member-bookings", memberId] as const,
+  memberSubscription: (memberId: string) => [...gymKeys.all, "member-subscription", memberId] as const,
   memberAttendance: (memberId: string) => [...gymKeys.all, "member-attendance", memberId] as const,
   classAttendance: (classId: string) => [...gymKeys.all, "class-attendance", classId] as const,
+  classMembers: (classId: string) => [...gymKeys.all, "class-members", classId] as const,
   memberActivities: (memberId: string) => [...gymKeys.all, "member-activities", memberId] as const,
+  plans: () => [...gymKeys.all, "plans"] as const,
+  planList: (filters: { active?: boolean | null; offset?: number; limit?: number } = {}) =>
+    [...gymKeys.plans(), "list", filters] as const,
   health: () => [...gymKeys.all, "health"] as const,
   dashboard: (memberId: string | undefined) =>
     [...gymKeys.all, "dashboard", memberId ?? "anonymous"] as const
@@ -83,11 +95,27 @@ export function getMemberQueryOptions(client: GymApiClient, memberId: string) {
 }
 
 export function getMemberBookingsQueryOptions(client: GymApiClient, memberId: string) {
+  const untypedClient = client as any;
   return queryOptions({
     queryKey: gymKeys.memberBookings(memberId),
     queryFn: () =>
       unwrapResult<MemberBookings>(
-        client.GET("/members/{member_id}/bookings", { params: { path: { member_id: memberId } } })
+        untypedClient.GET("/members/{member_id}/bookings", {
+          params: { path: { member_id: memberId } }
+        })
+      )
+  });
+}
+
+export function getMemberSubscriptionQueryOptions(client: GymApiClient, memberId: string) {
+  const untypedClient = client as any;
+  return queryOptions({
+    queryKey: gymKeys.memberSubscription(memberId),
+    queryFn: () =>
+      unwrapResult<MemberSubscription>(
+        untypedClient.GET("/members/{member_id}/subscription", {
+          params: { path: { member_id: memberId } }
+        })
       )
   });
 }
@@ -112,12 +140,44 @@ export function getClassAttendanceQueryOptions(client: GymApiClient, classId: st
   });
 }
 
+export function getClassMembersQueryOptions(client: GymApiClient, classId: string) {
+  const untypedClient = client as any;
+  return queryOptions({
+    queryKey: gymKeys.classMembers(classId),
+    queryFn: () =>
+      unwrapResult<ClassMember[]>(
+        untypedClient.GET("/classes/{class_id}/members", {
+          params: { path: { class_id: classId } }
+        })
+      )
+  });
+}
+
 export function getMemberActivitiesQueryOptions(client: GymApiClient, memberId: string) {
   return queryOptions({
     queryKey: gymKeys.memberActivities(memberId),
     queryFn: () =>
       unwrapResult<ActivityRecord[]>(
         client.GET("/members/{member_id}/activities", { params: { path: { member_id: memberId } } })
+      )
+  });
+}
+
+export function getPlansQueryOptions(
+  client: GymApiClient,
+  filters: { active?: boolean | null; offset?: number; limit?: number } = {}
+) {
+  const untypedClient = client as any;
+  const query = Object.fromEntries(
+    Object.entries(filters).filter(([, value]) => value !== null && value !== undefined)
+  );
+  return queryOptions({
+    queryKey: gymKeys.planList(filters),
+    queryFn: () =>
+      unwrapResult<Plan[]>(
+        untypedClient.GET("/plans", {
+          params: { query }
+        })
       )
   });
 }
@@ -150,16 +210,34 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     return useQuery(getMemberBookingsQueryOptions(client, memberId));
   }
 
+  function useMemberSubscription(memberId: string) {
+    return useQuery(getMemberSubscriptionQueryOptions(client, memberId));
+  }
+
   function useMemberAttendance(memberId: string) {
     return useQuery(getMemberAttendanceQueryOptions(client, memberId));
   }
 
-  function useClassAttendance(classId: string) {
-    return useQuery(getClassAttendanceQueryOptions(client, classId));
+  function useClassAttendance(classId: string, enabled = true) {
+    return useQuery({
+      ...getClassAttendanceQueryOptions(client, classId),
+      enabled
+    });
+  }
+
+  function useClassMembers(classId: string, enabled = true) {
+    return useQuery({
+      ...getClassMembersQueryOptions(client, classId),
+      enabled
+    });
   }
 
   function useMemberActivities(memberId: string) {
     return useQuery(getMemberActivitiesQueryOptions(client, memberId));
+  }
+
+  function usePlans(filters: { active?: boolean | null; offset?: number; limit?: number } = {}) {
+    return useQuery(getPlansQueryOptions(client, filters));
   }
 
   function useHealth() {
@@ -223,14 +301,21 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
 
     return useMutation({
       mutationFn: (payload: BookingPayload) =>
-        unwrapResult<BookingAction>(client.POST("/bookings", { body: payload })),
+        unwrapResult<BookingAction>((client as any).POST("/bookings", { body: payload })),
       ...options,
       onSuccess: async (result, variables, onMutateResult, context) => {
         await queryClient.invalidateQueries({ queryKey: gymKeys.workouts() });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.workoutDetail(variables.class_id) });
 
         if (variables.member_id) {
           await queryClient.invalidateQueries({
             queryKey: gymKeys.memberBookings(variables.member_id)
+          });
+          await queryClient.invalidateQueries({
+            queryKey: gymKeys.memberSubscription(variables.member_id)
+          });
+          await queryClient.invalidateQueries({
+            queryKey: gymKeys.dashboard(variables.member_id)
           });
         }
 
@@ -247,12 +332,16 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     return useMutation({
       mutationFn: ({ bookingId }) =>
         unwrapResult<BookingCancellation>(
-          client.DELETE("/bookings/{booking_id}", { params: { path: { booking_id: bookingId } } })
+          (client as any).DELETE("/bookings/{booking_id}", {
+            params: { path: { booking_id: bookingId } }
+          })
         ),
       ...options,
       onSuccess: async (result, variables, onMutateResult, context) => {
         await queryClient.invalidateQueries({ queryKey: gymKeys.workouts() });
         await queryClient.invalidateQueries({ queryKey: gymKeys.memberBookings(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSubscription(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(variables.memberId) });
         await options.onSuccess?.(result, variables, onMutateResult, context);
       }
     });
@@ -406,15 +495,174 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     });
   }
 
+  function useCreatePlan(
+    options: Omit<UseMutationOptions<Plan, Error, PlanCreatePayload>, "mutationFn"> = {}
+  ) {
+    const queryClient = useQueryClient();
+    const untypedClient = client as any;
+
+    return useMutation({
+      mutationFn: (payload: PlanCreatePayload) =>
+        unwrapResult<Plan>(untypedClient.POST("/plans", { body: payload })),
+      ...options,
+      onSuccess: async (result, variables, onMutateResult, context) => {
+        await queryClient.invalidateQueries({ queryKey: gymKeys.plans() });
+        await options.onSuccess?.(result, variables, onMutateResult, context);
+      }
+    });
+  }
+
+  function useUpdatePlan(
+    options: Omit<
+      UseMutationOptions<Plan, Error, { planId: string; payload: PlanUpdatePayload }>,
+      "mutationFn"
+    > = {}
+  ) {
+    const queryClient = useQueryClient();
+    const untypedClient = client as any;
+
+    return useMutation({
+      mutationFn: ({ planId, payload }) =>
+        unwrapResult<Plan>(
+          untypedClient.PATCH("/plans/{plan_id}", {
+            params: { path: { plan_id: planId } },
+            body: payload
+          })
+        ),
+      ...options,
+      onSuccess: async (result, variables, onMutateResult, context) => {
+        await queryClient.invalidateQueries({ queryKey: gymKeys.plans() });
+        await options.onSuccess?.(result, variables, onMutateResult, context);
+      }
+    });
+  }
+
+  function useDeactivatePlan(
+    options: Omit<UseMutationOptions<void, Error, { planId: string }>, "mutationFn"> = {}
+  ) {
+    const queryClient = useQueryClient();
+    const untypedClient = client as any;
+
+    return useMutation({
+      mutationFn: async ({ planId }) => {
+        await unwrapResult(
+          untypedClient.DELETE("/plans/{plan_id}", {
+            params: { path: { plan_id: planId } }
+          })
+        );
+      },
+      ...options,
+      onSuccess: async (result, variables, onMutateResult, context) => {
+        await queryClient.invalidateQueries({ queryKey: gymKeys.plans() });
+        await options.onSuccess?.(result, variables, onMutateResult, context);
+      }
+    });
+  }
+
+  function useAssignSubscription(
+    options: Omit<
+      UseMutationOptions<
+        MemberSubscription,
+        Error,
+        { memberId: string; payload: SubscriptionAssignPayload }
+      >,
+      "mutationFn"
+    > = {}
+  ) {
+    const queryClient = useQueryClient();
+    const untypedClient = client as any;
+
+    return useMutation({
+      mutationFn: ({ memberId, payload }) =>
+        unwrapResult<MemberSubscription>(
+          untypedClient.POST("/members/{member_id}/subscription", {
+            params: { path: { member_id: memberId } },
+            body: payload
+          })
+        ),
+      ...options,
+      onSuccess: async (result, variables, onMutateResult, context) => {
+        await queryClient.invalidateQueries({
+          queryKey: gymKeys.memberSubscription(variables.memberId)
+        });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberDetail(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(variables.memberId) });
+        await options.onSuccess?.(result, variables, onMutateResult, context);
+      }
+    });
+  }
+
+  function useCancelSubscription(
+    options: Omit<UseMutationOptions<void, Error, { memberId: string }>, "mutationFn"> = {}
+  ) {
+    const queryClient = useQueryClient();
+    const untypedClient = client as any;
+
+    return useMutation({
+      mutationFn: async ({ memberId }) => {
+        await unwrapResult(
+          untypedClient.DELETE("/members/{member_id}/subscription", {
+            params: { path: { member_id: memberId } }
+          })
+        );
+      },
+      ...options,
+      onSuccess: async (result, variables, onMutateResult, context) => {
+        await queryClient.invalidateQueries({
+          queryKey: gymKeys.memberSubscription(variables.memberId)
+        });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberDetail(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(variables.memberId) });
+        await options.onSuccess?.(result, variables, onMutateResult, context);
+      }
+    });
+  }
+
+  function useAssignMemberToClass(
+    options: Omit<
+      UseMutationOptions<
+        BookingAction,
+        Error,
+        { classId: string; payload: ClassAssignmentPayload; memberId: string }
+      >,
+      "mutationFn"
+    > = {}
+  ) {
+    const queryClient = useQueryClient();
+    const untypedClient = client as any;
+
+    return useMutation({
+      mutationFn: ({ classId, payload }) =>
+        unwrapResult<BookingAction>(
+          untypedClient.POST("/classes/{class_id}/assign-member", {
+            params: { path: { class_id: classId } },
+            body: payload
+          })
+        ),
+      ...options,
+      onSuccess: async (result, variables, onMutateResult, context) => {
+        await queryClient.invalidateQueries({ queryKey: gymKeys.workouts() });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.workoutDetail(variables.classId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.classMembers(variables.classId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberBookings(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSubscription(variables.memberId) });
+        await options.onSuccess?.(result, variables, onMutateResult, context);
+      }
+    });
+  }
+
   return {
     useWorkouts,
     useWorkout,
     useMembers,
     useMember,
     useMemberBookings,
+    useMemberSubscription,
     useMemberAttendance,
     useClassAttendance,
+    useClassMembers,
     useMemberActivities,
+    usePlans,
     useHealth,
     useLogin,
     useRegister,
@@ -427,6 +675,12 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     useDeleteWorkout,
     useMarkAttendance,
     useConnectStrava,
-    useSyncActivities
+    useSyncActivities,
+    useCreatePlan,
+    useUpdatePlan,
+    useDeactivatePlan,
+    useAssignSubscription,
+    useCancelSubscription,
+    useAssignMemberToClass
   };
 }

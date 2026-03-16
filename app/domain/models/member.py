@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import Boolean, Date, Enum, ForeignKey, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.domain.enums import MemberRole, MembershipStatus, enum_values
+from app.domain.enums import MemberRole, MembershipStatus, SubscriptionStatus, enum_values
 from app.infrastructure.database.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
@@ -13,7 +13,9 @@ if TYPE_CHECKING:
     from app.domain.models.booking import Booking
     from app.domain.models.integration_account import IntegrationAccount
     from app.domain.models.instructor import Instructor
+    from app.domain.models.member_subscription import MemberSubscription
     from app.domain.models.membership_plan import MembershipPlan
+    from app.domain.models.plan import Plan
     from app.domain.models.waitlist import Waitlist
 
 
@@ -50,8 +52,24 @@ class Member(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    subscriptions: Mapped[list["MemberSubscription"]] = relationship(
+        back_populates="member",
+        cascade="all, delete-orphan",
+    )
     bookings: Mapped[list["Booking"]] = relationship(back_populates="member")
     waitlist_entries: Mapped[list["Waitlist"]] = relationship(back_populates="member")
     attendance_records: Mapped[list["Attendance"]] = relationship(back_populates="member")
     activities: Mapped[list["Activity"]] = relationship(back_populates="member")
     integration_accounts: Mapped[list["IntegrationAccount"]] = relationship(back_populates="member")
+
+    @property
+    def active_subscription(self) -> "MemberSubscription | None":
+        active_subscriptions = [
+            subscription
+            for subscription in self.subscriptions
+            if subscription.status == SubscriptionStatus.ACTIVE
+        ]
+        if not active_subscriptions:
+            return None
+        active_subscriptions.sort(key=lambda subscription: subscription.created_at, reverse=True)
+        return active_subscriptions[0]

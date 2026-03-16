@@ -203,6 +203,9 @@ export function MembersPage() {
                   <div>
                     <p className="text-base font-semibold text-slate-900">{member.full_name}</p>
                     <p className="text-sm text-slate-500">{member.email}</p>
+                    <p className="text-sm text-slate-500">
+                      {member.active_subscription?.plan.name ?? "No active subscription"}
+                    </p>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <span className="rounded-full bg-amber-100 px-3 py-1 font-medium capitalize text-amber-800">
@@ -338,7 +341,7 @@ export function MembersPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Membership plan ID</span>
+                <span className="text-sm font-medium text-slate-700">Legacy membership plan ID</span>
                 <input
                   value={formState.membership_plan_id}
                   onChange={(event) =>

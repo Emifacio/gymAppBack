@@ -5,6 +5,8 @@ from sqlalchemy.orm import selectinload
 
 from app.domain.enums import MemberRole, MembershipStatus
 from app.domain.models.member import Member
+from app.domain.models.member_subscription import MemberSubscription
+from app.domain.models.plan import Plan
 from app.repositories.base_repository import BaseRepository
 
 
@@ -13,6 +15,7 @@ class MemberRepository(BaseRepository[Member]):
         return select(Member).options(
             selectinload(Member.membership_plan),
             selectinload(Member.instructor_profile),
+            selectinload(Member.subscriptions).selectinload(MemberSubscription.plan),
         )
 
     async def count(self) -> int:
@@ -43,4 +46,3 @@ class MemberRepository(BaseRepository[Member]):
             stmt = stmt.where(Member.membership_status == membership_status)
         result = await self.session.scalars(stmt)
         return list(result.unique().all())
-

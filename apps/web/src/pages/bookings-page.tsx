@@ -1,16 +1,23 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useCancelBooking, useMemberAttendance, useMemberBookings } from "@/hooks/use-workouts";
-import { formatWorkoutSchedule } from "@/lib/format";
+import {
+  useCancelBooking,
+  useMemberAttendance,
+  useMemberBookings,
+  useMemberSubscription
+} from "@/hooks/use-workouts";
+import { formatCredits, formatDateTime, formatWorkoutSchedule } from "@/lib/format";
 
 export function BookingsPage() {
   const { session } = useAuth();
   const bookingsQuery = useMemberBookings(session!.member.id);
   const attendanceQuery = useMemberAttendance(session!.member.id);
+  const subscriptionQuery = useMemberSubscription(session!.member.id);
   const cancelBooking = useCancelBooking();
 
   const bookings = bookingsQuery.data?.bookings ?? [];
   const waitlist = bookingsQuery.data?.waitlist ?? [];
   const attendance = attendanceQuery.data ?? [];
+  const subscription = subscriptionQuery.data;
 
   return (
     <div className="space-y-6">
@@ -18,9 +25,32 @@ export function BookingsPage() {
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Member operations</p>
         <h1 className="section-title mt-3 text-4xl font-semibold">Your bookings and history</h1>
         <p className="mt-3 max-w-3xl text-sm leading-8 text-[var(--muted)]">
-          This page exposes the backend member booking and attendance endpoints so members can finally use more
-          than the initial demo flow.
+          Track confirmed bookings, waitlists, and how your plan credits change as classes are reserved,
+          cancelled, or promoted from the waitlist.
         </p>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-[1.5rem] bg-white/80 p-5">
+            <p className="text-sm font-semibold text-[var(--ink)]">Plan</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">{subscription?.plan.name ?? "No subscription"}</p>
+          </div>
+          <div className="rounded-[1.5rem] bg-white/80 p-5">
+            <p className="text-sm font-semibold text-[var(--ink)]">Credits</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              {subscription?.plan.allows_free_pass ? "Unlimited while spots remain" : formatCredits(subscription?.active_credits)}
+            </p>
+          </div>
+          <div className="rounded-[1.5rem] bg-white/80 p-5">
+            <p className="text-sm font-semibold text-[var(--ink)]">Period end</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">{formatDateTime(subscription?.period_end)}</p>
+          </div>
+        </div>
+
+        {cancelBooking.data ? (
+          <div className="mt-6 rounded-[1.5rem] bg-[rgba(23,184,156,0.12)] px-4 py-3 text-sm text-[var(--highlight)]">
+            {cancelBooking.data.message}
+            {cancelBooking.data.credit_restored ? " Credit restored to your subscription." : ""}
+          </div>
+        ) : null}
       </section>
 
       <section className="grid gap-6 xl:grid-cols-2">
@@ -38,6 +68,10 @@ export function BookingsPage() {
                     : formatWorkoutSchedule(booking.booked_at)}
                 </p>
                 <p className="mt-1 text-sm text-[var(--muted)]">Status: {booking.status}</p>
+                <p className="mt-1 text-sm text-[var(--muted)]">
+                  Booking type: {booking.booking_type}
+                  {booking.credits_consumed ? ` · Credits used: ${booking.credits_consumed}` : ""}
+                </p>
                 <button
                   className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
                   disabled={cancelBooking.isPending}

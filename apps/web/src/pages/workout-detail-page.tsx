@@ -3,13 +3,21 @@ import { useNavigate, useParams } from "react-router-dom";
 import { EmptyState } from "@/components/empty-state";
 import { useAuth } from "@/hooks/use-auth";
 import {
+  useAssignMemberToClass,
   useClassAttendance,
+  useClassMembers,
   useCreateBooking,
   useDeleteWorkout,
+  useMemberSubscription,
   useUpdateWorkout,
   useWorkout
 } from "@/hooks/use-workouts";
-import { formatWorkoutSchedule, toDateTimeLocalValue } from "@/lib/format";
+import {
+  formatCredits,
+  formatDateTime,
+  formatWorkoutSchedule,
+  toDateTimeLocalValue
+} from "@/lib/format";
 import { canManageOperations } from "@/lib/roles";
 
 function getFormValue(formData: FormData, key: string) {
@@ -22,19 +30,23 @@ export function WorkoutDetailPage() {
   const { workoutId = "" } = useParams();
   const { session } = useAuth();
   const workoutQuery = useWorkout(workoutId);
-  const classAttendanceQuery = useClassAttendance(workoutId);
+  const canManage = canManageOperations(session?.member);
+  const classAttendanceQuery = useClassAttendance(workoutId, canManage);
+  const classMembersQuery = useClassMembers(workoutId, canManage);
+  const subscriptionQuery = useMemberSubscription(session!.member.id);
   const bookingMutation = useCreateBooking();
+  const assignMemberMutation = useAssignMemberToClass();
   const updateWorkout = useUpdateWorkout();
   const deleteWorkout = useDeleteWorkout();
-  const canManage = canManageOperations(session?.member);
 
   const workout = workoutQuery.data;
+  const subscription = subscriptionQuery.data;
 
   if (!workout && workoutQuery.isSuccess) {
     return (
       <EmptyState
         eyebrow="Not found"
-        title="This workout no longer exists"
+        title="This class no longer exists"
         description="The route is wired correctly, but the backend did not return a matching class for the provided id."
       />
     );
@@ -47,11 +59,11 @@ export function WorkoutDetailPage() {
   return (
     <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
       <section className="glass-panel rounded-[2.25rem] p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Workout detail</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Class detail</p>
         <h1 className="section-title mt-4 text-4xl font-semibold">{workout.name}</h1>
         <p className="mt-4 text-base leading-8 text-[var(--muted)]">
           {workout.description ??
-            "This workout is coming from the backend classes resource and is rendered through the shared OpenAPI client."}
+            "This class is rendered from the backend schedule with live availability, waitlist, and booking status information."}
         </p>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
@@ -64,59 +76,75 @@ export function WorkoutDetailPage() {
             <p className="mt-2 text-sm text-[var(--muted)]">{workout.location}</p>
           </div>
           <div className="rounded-[1.75rem] bg-white/80 p-5">
+            <p className="text-sm font-semibold text-[var(--ink)]">Availability</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              {typeof workout.available_spots === "number"
+                ? `${workout.available_spots} spot${workout.available_spots === 1 ? "" : "s"} left`
+                : `${workout.capacity} total spots`}
+            </p>
+          </div>
+          <div className="rounded-[1.75rem] bg-white/80 p-5">
+            <p className="text-sm font-semibold text-[var(--ink)]">Waitlist</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">{workout.waitlist_size ?? 0} members waiting</p>
+          </div>
+          <div className="rounded-[1.75rem] bg-white/80 p-5">
             <p className="text-sm font-semibold text-[var(--ink)]">Duration</p>
             <p className="mt-2 text-sm text-[var(--muted)]">{workout.duration_minutes} minutes</p>
           </div>
           <div className="rounded-[1.75rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Capacity</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">{workout.capacity} athletes</p>
-          </div>
-          <div className="rounded-[1.75rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Instructor ID</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">{workout.instructor_id ?? "Unassigned"}</p>
-          </div>
-          <div className="rounded-[1.75rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Status</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">{workout.status}</p>
+            <p className="text-sm font-semibold text-[var(--ink)]">Your status</p>
+            <p className="mt-2 text-sm capitalize text-[var(--muted)]">
+              {workout.member_booking_status ?? "not booked"}
+            </p>
           </div>
         </div>
       </section>
 
       <aside className="glass-panel rounded-[2.25rem] p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Booking action</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Reservation flow</p>
         <h2 className="section-title mt-4 text-3xl font-semibold">Reserve your spot</h2>
         <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-          This action uses the shared `useCreateBooking` hook, which invalidates both the workouts list and
-          member bookings after success.
+          Book instantly when capacity exists, join the waitlist when a class is full, and keep your
+          credits aligned with the active subscription on your account.
         </p>
+
+        <div className="mt-6 rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
+          <p className="font-semibold text-[var(--ink)]">Active subscription</p>
+          <p className="mt-2">{subscription?.plan.name ?? "No subscription assigned"}</p>
+          <p className="mt-1">
+            {subscription?.plan.allows_free_pass
+              ? "Unlimited while capacity remains available"
+              : formatCredits(subscription?.active_credits)}
+          </p>
+          <p className="mt-1">Renews: {formatDateTime(subscription?.period_end)}</p>
+        </div>
 
         <form
           className="mt-8 space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
-            const formData = new FormData(event.currentTarget);
-            const memberId = getFormValue(formData, "member_id");
-
             bookingMutation.mutate({
               class_id: workout.id,
-              member_id: memberId || session!.member.id
+              member_id: session!.member.id
             });
           }}
         >
-          {canManage ? (
-            <input
-              className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3"
-              defaultValue={session?.member.id}
-              name="member_id"
-              placeholder="Member ID override"
-            />
-          ) : null}
           <button
             className="w-full rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#ff6942] disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={bookingMutation.isPending}
+            disabled={
+              bookingMutation.isPending ||
+              workout.member_booking_status === "confirmed" ||
+              workout.member_booking_status === "waitlisted"
+            }
             type="submit"
           >
-            {bookingMutation.isPending ? "Booking..." : "Book workout"}
+            {workout.member_booking_status === "confirmed"
+              ? "Already booked"
+              : workout.member_booking_status === "waitlisted"
+                ? "Already on the waitlist"
+              : (workout.available_spots ?? 0) > 0
+                ? "Reserve class"
+                : "Join waitlist"}
           </button>
         </form>
 
@@ -130,6 +158,46 @@ export function WorkoutDetailPage() {
           <div className="mt-4 rounded-2xl bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--accent)]">
             {bookingMutation.error.message}
           </div>
+        ) : null}
+
+        {canManage ? (
+          <form
+            className="mt-8 space-y-4 border-t border-[rgba(19,34,56,0.08)] pt-8"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              const memberId = getFormValue(formData, "member_id");
+
+              assignMemberMutation.mutate({
+                classId: workout.id,
+                memberId,
+                payload: { member_id: memberId }
+              });
+              event.currentTarget.reset();
+            }}
+          >
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
+              Manual assignment
+            </p>
+            <input
+              className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3"
+              name="member_id"
+              placeholder="Member ID"
+              required
+            />
+            <button
+              className="w-full rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1f3453] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={assignMemberMutation.isPending}
+              type="submit"
+            >
+              {assignMemberMutation.isPending ? "Assigning..." : "Assign member to class"}
+            </button>
+            {assignMemberMutation.data ? (
+              <div className="rounded-2xl bg-[rgba(23,184,156,0.12)] px-4 py-3 text-sm text-[var(--highlight)]">
+                {assignMemberMutation.data.message}
+              </div>
+            ) : null}
+          </form>
         ) : null}
 
         {canManage ? (
@@ -155,7 +223,7 @@ export function WorkoutDetailPage() {
             }}
           >
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-              Management
+              Class management
             </p>
             <input className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" defaultValue={workout.name} name="name" required />
             <input className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" defaultValue={workout.location} name="location" required />
@@ -190,7 +258,7 @@ export function WorkoutDetailPage() {
                 }}
                 type="button"
               >
-                Delete workout
+                Delete class
               </button>
             </div>
           </form>
@@ -199,22 +267,48 @@ export function WorkoutDetailPage() {
 
       {canManage ? (
         <section className="glass-panel rounded-[2.25rem] p-8 xl:col-span-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Attendance</p>
-          <h2 className="section-title mt-3 text-3xl font-semibold">Class attendance snapshot</h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            {(classAttendanceQuery.data ?? []).map((record) => (
-              <div key={record.id} className="rounded-[1.5rem] bg-white/80 p-5">
-                <p className="text-sm font-semibold text-[var(--ink)]">{record.member_id}</p>
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  Status: {record.status} · Marked {formatWorkoutSchedule(record.marked_at)}
-                </p>
+          <div className="grid gap-6 xl:grid-cols-2">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Roster</p>
+              <h2 className="section-title mt-3 text-3xl font-semibold">Confirmed members</h2>
+              <div className="mt-6 grid gap-4">
+                {(classMembersQuery.data ?? []).map((member) => (
+                  <div key={member.booking_id} className="rounded-[1.5rem] bg-white/80 p-5">
+                    <p className="text-sm font-semibold text-[var(--ink)]">{member.full_name}</p>
+                    <p className="mt-2 text-sm text-[var(--muted)]">{member.email}</p>
+                    <p className="mt-1 text-sm text-[var(--muted)]">
+                      {member.booking_type} booking
+                      {member.credits_consumed ? ` · ${member.credits_consumed} credit used` : ""}
+                    </p>
+                  </div>
+                ))}
+                {!classMembersQuery.data?.length ? (
+                  <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
+                    No members are confirmed for this class yet.
+                  </div>
+                ) : null}
               </div>
-            ))}
-            {!classAttendanceQuery.data?.length ? (
-              <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
-                No attendance has been marked for this class yet.
+            </div>
+
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Attendance</p>
+              <h2 className="section-title mt-3 text-3xl font-semibold">Class attendance snapshot</h2>
+              <div className="mt-6 grid gap-4">
+                {(classAttendanceQuery.data ?? []).map((record) => (
+                  <div key={record.id} className="rounded-[1.5rem] bg-white/80 p-5">
+                    <p className="text-sm font-semibold text-[var(--ink)]">{record.member_id}</p>
+                    <p className="mt-2 text-sm text-[var(--muted)]">
+                      Status: {record.status} · Marked {formatWorkoutSchedule(record.marked_at)}
+                    </p>
+                  </div>
+                ))}
+                {!classAttendanceQuery.data?.length ? (
+                  <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
+                    No attendance has been marked for this class yet.
+                  </div>
+                ) : null}
               </div>
-            ) : null}
+            </div>
           </div>
         </section>
       ) : null}

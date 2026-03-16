@@ -27,25 +27,16 @@ export function WorkoutsPage() {
   const createWorkout = useCreateWorkout();
   const workouts = workoutsQuery.data ?? [];
   const canManage = canManageOperations(session?.member);
-
-  if (!workouts.length && workoutsQuery.isSuccess) {
-    return (
-      <EmptyState
-        eyebrow="Nothing scheduled"
-        title="Your workout catalogue is still empty"
-        description="Create classes in the FastAPI backend and they’ll show up here automatically through the generated OpenAPI contract."
-      />
-    );
-  }
+  const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
 
   return (
     <section className="space-y-5">
       <div className="glass-panel rounded-[2rem] p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Classes API</p>
-        <h1 className="section-title mt-3 text-4xl font-semibold">Workouts list</h1>
+        <h1 className="section-title mt-3 text-4xl font-semibold">Class schedule</h1>
         <p className="mt-3 max-w-3xl text-sm leading-8 text-[var(--muted)]">
-          This page is intentionally named “workouts” in the UI, while the backend resource remains
-          `/classes`. The shared API package bridges that language without duplicating types.
+          Browse live class availability, current waitlist pressure, and your personal booking status from
+          the backend `/classes` endpoint.
         </p>
 
         <div className="mt-6 grid gap-4 rounded-[1.5rem] bg-white/70 p-4 md:grid-cols-3">
@@ -104,8 +95,8 @@ export function WorkoutsPage() {
             </p>
             <h2 className="section-title text-3xl font-semibold">Create a workout</h2>
             <p className="text-sm leading-7 text-[var(--muted)]">
-              This form now exposes every class creation parameter, including optional instructor and
-              status fields.
+              Admins can create classes for any instructor. Instructors can leave the instructor field blank
+              to create sessions for themselves.
             </p>
           </div>
 
@@ -161,11 +152,23 @@ export function WorkoutsPage() {
         </section>
       ) : null}
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        {workouts.map((workout) => (
-          <WorkoutCard key={workout.id} workout={workout} />
-        ))}
-      </div>
+      {showEmptyState ? (
+        <EmptyState
+          eyebrow="Nothing scheduled"
+          title="Your workout catalogue is still empty"
+          description={
+            canManage
+              ? "Create the first class with the form above and it will appear here automatically."
+              : "Classes created in the backend will appear here automatically through the shared OpenAPI contract."
+          }
+        />
+      ) : (
+        <div className="grid gap-5 lg:grid-cols-2">
+          {workouts.map((workout) => (
+            <WorkoutCard key={workout.id} workout={workout} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

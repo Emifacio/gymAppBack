@@ -3,12 +3,12 @@
 > vite
 
 
-  [32m[1mVITE[22m v7.3.1[39m  [2mready in [0m[1m374[22m[2m[0m ms[22m
+  [32m[1mVITE[22m v7.3.1[39m  [2mready in [0m[1m391[22m[2m[0m ms[22m
 
-  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
-[2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
-[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
-^CC:\Users\Pc\Documents\P.A.R.A. Method\PROJECTS(Projectos en marcha)\GymApp\apps\web:
- ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @gym/web@0.1.0 dev: `vite`
-Exit status 3221225786
-^C
+  [32mÔ×£[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+[2m  [32mÔ×£[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[2m[32m  Ô×£[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m10:21:05 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/pages/workouts-page.tsx, /src/styles.css[22m
+[2m10:31:42 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/styles.css, /src/providers/auth-provider.tsx, /src/pages/system-status-page.tsx, /src/pages/login-page.tsx, /src/pages/register-page.tsx, /src/pages/bookings-page.tsx, /src/pages/dashboard-page.tsx, /src/pages/plans-page.tsx, /src/pages/workouts-page.tsx, /src/pages/integrations-page.tsx, /src/pages/attendance-page.tsx, /src/pages/members-page.tsx, /src/pages/workout-detail-page.tsx, /src/pages/member-detail-page.tsx[22m
+[2m10:35:41 AM[22m [36m[1m[vite][22m[39m [32m.env.local changed, restarting server...[39m
+[2m10:35:41 AM[22m [36m[1m[vite][22m[39m server restarted.

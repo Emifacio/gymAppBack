@@ -53,3 +53,21 @@ export function formatDistanceMeters(value: number | null | undefined) {
 
   return `${(value / 1000).toFixed(1)} km`;
 }
+
+export function formatCredits(value: number | null | undefined) {
+  if (value == null) {
+    return "No subscription";
+  }
+
+  return `${value} credit${value === 1 ? "" : "s"}`;
+}
+
+export function formatPlanPeriod(periodType: "weekly" | "monthly" | null | undefined) {
+  if (periodType === "weekly") {
+    return "Weekly";
+  }
+  if (periodType === "monthly") {
+    return "Monthly";
+  }
+  return "Not set";
+}

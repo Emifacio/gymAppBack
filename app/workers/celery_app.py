@@ -11,7 +11,9 @@ celery_app = Celery(
     backend=settings.celery_result_backend,
     include=[
         "app.workers.tasks.activity_sync",
+        "app.workers.tasks.notifications",
         "app.workers.tasks.reminders",
+        "app.workers.tasks.subscriptions",
     ],
 )
 
@@ -26,6 +28,9 @@ celery_app.conf.update(
             "task": "app.tasks.send_class_reminders",
             "schedule": crontab(minute="*/30"),
         },
+        "reset-subscription-credits": {
+            "task": "app.tasks.reset_subscription_credits",
+            "schedule": crontab(minute=0),
+        },
     },
 )
-

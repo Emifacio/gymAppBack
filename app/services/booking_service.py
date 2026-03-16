@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +21,7 @@ from app.schemas.booking_schema import (
     MemberBookingsResponse,
     WaitlistRead,
 )
+from app.services.subscription_service import SubscriptionService
 
 
 class BookingService:
@@ -31,6 +32,7 @@ class BookingService:
         member_repository: MemberRepository,
         booking_repository: BookingRepository,
         waitlist_repository: WaitlistRepository,
+        subscription_service: SubscriptionService,
         cache: RedisCache,
     ) -> None:
         self.session = session
@@ -38,11 +40,20 @@ class BookingService:
         self.member_repository = member_repository
         self.booking_repository = booking_repository
         self.waitlist_repository = waitlist_repository
+        self.subscription_service = subscription_service
         self.cache = cache
 
-    async def create_booking(self, payload: BookingCreate, actor: Member) -> BookingActionResponse:
+    async def create_booking(
+        self,
+        payload: BookingCreate,
+        actor: Member,
+        *,
+        allow_staff_override: bool = False,
+    ) -> BookingActionResponse:
         member_id = payload.member_id or actor.id
-        if member_id != actor.id and actor.role != MemberRole.ADMIN:
+        if member_id != actor.id and not (
+            actor.role == MemberRole.ADMIN or (allow_staff_override and actor.role == MemberRole.INSTRUCTOR)
+        ):
             raise ForbiddenError("You can only create bookings for your own account")
 
         booked_id: UUID | None = None
@@ -63,6 +74,13 @@ class BookingService:
             if gym_class.status != ClassStatus.SCHEDULED:
                 raise ConflictError("Only scheduled classes can be booked")
 
+            subscription = await self.subscription_service.get_active_subscription_for_booking(
+                member_id,
+                for_update=True,
+                reference_time=now,
+            )
+            if not subscription.is_free_pass and subscription.active_credits <= 0:
+                raise ConflictError("No credits left in the current plan period")
             existing_booking = await self.booking_repository.get_by_member_and_class(
                 member_id,
                 payload.class_id,
@@ -81,19 +99,27 @@ class BookingService:
 
             confirmed_count = await self.booking_repository.count_confirmed_for_class(payload.class_id)
             if confirmed_count < gym_class.capacity:
+                booking_type, credits_consumed = self.subscription_service.consume_credit_for_booking(
+                    subscription
+                )
                 booking = existing_booking or Booking(
                     member_id=member_id,
                     class_id=payload.class_id,
-                    status=BookingStatus.CONFIRMED,
                     booked_at=now,
                 )
                 booking.status = BookingStatus.CONFIRMED
+                booking.booking_type = booking_type
+                booking.credits_consumed = credits_consumed
+                booking.subscription_id = subscription.id
                 booking.booked_at = now
                 booking.cancelled_at = None
                 if existing_booking is None:
                     await self.booking_repository.add(booking)
                 booked_id = booking.id
             else:
+                if subscription.is_free_pass:
+                    raise ConflictError("Free pass bookings require an available class spot")
+
                 position = await self.waitlist_repository.next_position(payload.class_id)
                 waitlist_entry = existing_waitlist or Waitlist(
                     member_id=member_id,
@@ -133,6 +159,8 @@ class BookingService:
         promoted_booking_id: UUID | None = None
         related_member_ids: set[UUID] = set()
         related_class_id: UUID | None = None
+        notification_booking_id: UUID | None = None
+        credit_restored = False
         actor_id = actor.id
         actor_role = actor.role
 
@@ -149,42 +177,32 @@ class BookingService:
 
             related_member_ids.add(booking.member_id)
             related_class_id = booking.class_id
-            await self.class_repository.get_by_id(booking.class_id, for_update=True)
+            gym_class = await self.class_repository.get_by_id(booking.class_id, for_update=True)
+            if gym_class is None:
+                raise NotFoundError("Class not found")
 
             now = datetime.now(timezone.utc)
+            should_restore_credit = gym_class.scheduled_at - now >= timedelta(hours=24)
+            if should_restore_credit:
+                credit_restored = await self.subscription_service.restore_credit_for_booking_cancellation(
+                    booking
+                )
+
             booking.status = BookingStatus.CANCELLED
             booking.cancelled_at = now
 
-            next_waitlist_entry = await self.waitlist_repository.next_waiting_for_class(
-                booking.class_id,
-                for_update=True,
+            promoted_booking_id = await self._promote_next_waitlist_member(
+                class_id=booking.class_id,
+                now=now,
+                related_member_ids=related_member_ids,
             )
-            if next_waitlist_entry is not None:
-                next_waitlist_entry.status = WaitlistStatus.PROMOTED
-                next_waitlist_entry.promoted_at = now
-                related_member_ids.add(next_waitlist_entry.member_id)
-
-                promoted_booking = await self.booking_repository.get_by_member_and_class(
-                    next_waitlist_entry.member_id,
-                    booking.class_id,
-                    for_update=True,
-                )
-                if promoted_booking is None:
-                    promoted_booking = Booking(
-                        member_id=next_waitlist_entry.member_id,
-                        class_id=booking.class_id,
-                        status=BookingStatus.CONFIRMED,
-                        booked_at=now,
-                    )
-                    await self.booking_repository.add(promoted_booking)
-                else:
-                    promoted_booking.status = BookingStatus.CONFIRMED
-                    promoted_booking.booked_at = now
-                    promoted_booking.cancelled_at = None
-                promoted_booking_id = promoted_booking.id
+            notification_booking_id = promoted_booking_id
 
         if related_class_id is not None:
             await self._invalidate_related_cache(related_class_id, list(related_member_ids))
+
+        if notification_booking_id is not None:
+            await self._enqueue_waitlist_notification(notification_booking_id)
 
         promoted_schema = None
         if promoted_booking_id is not None:
@@ -196,6 +214,7 @@ class BookingService:
             booking_id=booking_id,
             cancelled=True,
             message="Booking cancelled successfully",
+            credit_restored=credit_restored,
             promoted_booking=promoted_schema,
         )
 
@@ -210,6 +229,66 @@ class BookingService:
             bookings=[BookingRead.model_validate(item) for item in bookings],
             waitlist=[WaitlistRead.model_validate(item) for item in waitlist_entries],
         )
+
+    async def _promote_next_waitlist_member(
+        self,
+        *,
+        class_id: UUID,
+        now: datetime,
+        related_member_ids: set[UUID],
+    ) -> UUID | None:
+        waiting_entries = await self.waitlist_repository.list_waiting_for_class(class_id, for_update=True)
+        for waitlist_entry in waiting_entries:
+            member = await self.member_repository.get_by_id(waitlist_entry.member_id, for_update=True)
+            related_member_ids.add(waitlist_entry.member_id)
+            if member is None or member.membership_status != MembershipStatus.ACTIVE or not member.is_active:
+                waitlist_entry.status = WaitlistStatus.CANCELLED
+                waitlist_entry.cancelled_at = now
+                continue
+
+            try:
+                subscription = await self.subscription_service.get_active_subscription_for_booking(
+                    waitlist_entry.member_id,
+                    for_update=True,
+                    reference_time=now,
+                )
+                booking_type, credits_consumed = self.subscription_service.consume_credit_for_booking(
+                    subscription
+                )
+            except ConflictError:
+                waitlist_entry.status = WaitlistStatus.CANCELLED
+                waitlist_entry.cancelled_at = now
+                continue
+
+            waitlist_entry.status = WaitlistStatus.PROMOTED
+            waitlist_entry.promoted_at = now
+
+            promoted_booking = await self.booking_repository.get_by_member_and_class(
+                waitlist_entry.member_id,
+                class_id,
+                for_update=True,
+            )
+            if promoted_booking is None:
+                promoted_booking = Booking(
+                    member_id=waitlist_entry.member_id,
+                    class_id=class_id,
+                    booked_at=now,
+                )
+                await self.booking_repository.add(promoted_booking)
+
+            promoted_booking.status = BookingStatus.CONFIRMED
+            promoted_booking.booking_type = booking_type
+            promoted_booking.credits_consumed = credits_consumed
+            promoted_booking.subscription_id = subscription.id
+            promoted_booking.booked_at = now
+            promoted_booking.cancelled_at = None
+            return promoted_booking.id
+        return None
+
+    async def _enqueue_waitlist_notification(self, booking_id: UUID) -> None:
+        from app.workers.tasks.notifications import send_waitlist_notifications
+
+        send_waitlist_notifications.delay(str(booking_id))
 
     async def _invalidate_related_cache(self, class_id: UUID, member_ids: list[UUID]) -> None:
         keys = [f"class:{class_id}"]

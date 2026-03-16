@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.domain.enums import BookingType
 from app.domain.enums import ClassStatus
 
 
@@ -37,6 +38,20 @@ class ClassUpdate(BaseModel):
     status: ClassStatus | None = None
 
 
+class ClassAssignmentCreate(BaseModel):
+    member_id: UUID
+
+
+class ClassMemberRead(BaseModel):
+    booking_id: UUID
+    member_id: UUID
+    full_name: str
+    email: str
+    booked_at: datetime
+    booking_type: BookingType
+    credits_consumed: int
+
+
 class ClassRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -50,6 +65,8 @@ class ClassRead(BaseModel):
     capacity: int
     location: str
     status: ClassStatus
+    available_spots: int | None = None
+    waitlist_size: int = 0
+    member_booking_status: str | None = None
     created_at: datetime
     updated_at: datetime
-

@@ -4,17 +4,19 @@ import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
 import { WorkoutCard } from "@/components/workout-card";
 import { useAuth } from "@/hooks/use-auth";
-import { useMemberBookings, useWorkouts } from "@/hooks/use-workouts";
-import { formatRelativeSlot } from "@/lib/format";
+import { useMemberBookings, useMemberSubscription, useWorkouts } from "@/hooks/use-workouts";
+import { formatCredits, formatDateTime, formatRelativeSlot } from "@/lib/format";
 
 export function DashboardPage() {
   const { session } = useAuth();
   const workoutsQuery = useWorkouts({ limit: 6 });
   const bookingsQuery = useMemberBookings(session!.member.id);
+  const subscriptionQuery = useMemberSubscription(session!.member.id);
 
   const workouts = workoutsQuery.data ?? [];
   const bookings = bookingsQuery.data?.bookings ?? [];
   const waitlist = bookingsQuery.data?.waitlist ?? [];
+  const subscription = subscriptionQuery.data;
   const upcomingWorkout = workouts[0];
 
   if (!workouts.length && workoutsQuery.isSuccess) {
@@ -76,22 +78,84 @@ export function DashboardPage() {
 
         <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
           <StatCard
-            detail="Live count from the `/classes` endpoint."
-            label="Scheduled workouts"
+            detail={
+              subscription
+                ? `Renews on ${formatDateTime(subscription.period_end)}.`
+                : "Assign a subscription to unlock bookings."
+            }
+            label={subscription?.plan.name ?? "Active plan"}
             tone="accent"
-            value={String(workouts.length)}
+            value={subscription?.plan.allows_free_pass ? "Free pass" : formatCredits(subscription?.active_credits)}
           />
           <StatCard
-            detail="Fetched from `/members/{id}/bookings`."
+            detail="Confirmed reservations in the current booking feed."
             label="Your bookings"
             tone="highlight"
             value={String(bookings.length)}
           />
           <StatCard
-            detail="Shared auth/session state across routes."
-            label="Waitlist entries"
-            value={String(waitlist.length)}
+            detail="Live availability from the current schedule response."
+            label="Upcoming classes"
+            value={String(workouts.length)}
           />
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div className="glass-panel rounded-[2rem] p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
+            Subscription
+          </p>
+          <h2 className="section-title mt-3 text-3xl font-semibold">Membership snapshot</h2>
+          {subscription ? (
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="rounded-[1.5rem] bg-white/80 p-5">
+                <p className="text-sm font-semibold text-[var(--ink)]">Plan</p>
+                <p className="mt-2 text-sm text-[var(--muted)]">{subscription.plan.name}</p>
+              </div>
+              <div className="rounded-[1.5rem] bg-white/80 p-5">
+                <p className="text-sm font-semibold text-[var(--ink)]">Remaining credits</p>
+                <p className="mt-2 text-sm text-[var(--muted)]">
+                  {subscription.plan.allows_free_pass ? "Unlimited while spots remain" : formatCredits(subscription.active_credits)}
+                </p>
+              </div>
+              <div className="rounded-[1.5rem] bg-white/80 p-5">
+                <p className="text-sm font-semibold text-[var(--ink)]">Period end</p>
+                <p className="mt-2 text-sm text-[var(--muted)]">{formatDateTime(subscription.period_end)}</p>
+              </div>
+              <div className="rounded-[1.5rem] bg-white/80 p-5">
+                <p className="text-sm font-semibold text-[var(--ink)]">Waitlist entries</p>
+                <p className="mt-2 text-sm text-[var(--muted)]">{waitlist.length}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-6 rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
+              No active subscription is assigned to this member yet.
+            </div>
+          )}
+        </div>
+
+        <div className="glass-panel rounded-[2rem] p-8">
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
+            Booking status
+          </p>
+          <h2 className="section-title mt-3 text-3xl font-semibold">Reservation overview</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div className="rounded-[1.5rem] bg-white/80 p-5">
+              <p className="text-sm font-semibold text-[var(--ink)]">Confirmed</p>
+              <p className="mt-2 text-sm text-[var(--muted)]">{bookings.length} active bookings</p>
+            </div>
+            <div className="rounded-[1.5rem] bg-white/80 p-5">
+              <p className="text-sm font-semibold text-[var(--ink)]">Waitlist</p>
+              <p className="mt-2 text-sm text-[var(--muted)]">{waitlist.length} pending promotions</p>
+            </div>
+            <div className="rounded-[1.5rem] bg-white/80 p-5 md:col-span-2">
+              <p className="text-sm font-semibold text-[var(--ink)]">Next class</p>
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                {upcomingWorkout ? formatRelativeSlot(upcomingWorkout.scheduled_at) : "No scheduled classes yet."}
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

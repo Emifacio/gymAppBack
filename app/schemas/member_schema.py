@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.domain.enums import MemberRole, MembershipStatus
+from app.schemas.subscription_schema import MemberSubscriptionRead
 
 
 class MembershipPlanRead(BaseModel):
@@ -74,7 +75,7 @@ class MemberRead(BaseModel):
     membership_status: MembershipStatus
     is_active: bool
     membership_plan: MembershipPlanRead | None = None
+    active_subscription: MemberSubscriptionRead | None = None
     instructor_profile: InstructorProfileRead | None = None
     created_at: datetime
     updated_at: datetime
-

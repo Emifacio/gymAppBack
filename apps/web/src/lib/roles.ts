@@ -11,3 +11,7 @@ export function isInstructor(member: Member | null | undefined) {
 export function canManageOperations(member: Member | null | undefined) {
   return isAdmin(member) || isInstructor(member);
 }
+
+export function canManagePlans(member: Member | null | undefined) {
+  return isAdmin(member);
+}

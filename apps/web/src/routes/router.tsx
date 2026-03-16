@@ -9,6 +9,7 @@ import { IntegrationsPage } from "@/pages/integrations-page";
 import { LoginPage } from "@/pages/login-page";
 import { MemberDetailPage } from "@/pages/member-detail-page";
 import { MembersPage } from "@/pages/members-page";
+import { PlansPage } from "@/pages/plans-page";
 import { RegisterPage } from "@/pages/register-page";
 import { SystemStatusPage } from "@/pages/system-status-page";
 import { WorkoutDetailPage } from "@/pages/workout-detail-page";
@@ -48,6 +49,10 @@ export const router = createBrowserRouter([
           {
             path: "/members",
             element: <MembersPage />
+          },
+          {
+            path: "/plans",
+            element: <PlansPage />
           },
           {
             path: "/members/:memberId",

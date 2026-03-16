@@ -2,15 +2,19 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import type { Member } from "@gym/api-client";
 
 import {
+  useAssignSubscription,
+  useCancelSubscription,
   useMember,
   useMemberActivities,
   useMemberAttendance,
   useMemberBookings,
+  useMemberSubscription,
+  usePlans,
   useUpdateMember
 } from "@/hooks/use-workouts";
 import { useAuth } from "@/hooks/use-auth";
-import { formatDateTime, formatDistanceMeters } from "@/lib/format";
-import { canManageOperations } from "@/lib/roles";
+import { formatCredits, formatDateTime, formatDistanceMeters } from "@/lib/format";
+import { canManageOperations, isAdmin } from "@/lib/roles";
 
 type MemberRole = Member["role"];
 type MembershipStatus = Member["membership_status"];
@@ -22,10 +26,15 @@ export function MemberDetailPage() {
   const bookingsQuery = useMemberBookings(memberId);
   const attendanceQuery = useMemberAttendance(memberId);
   const activitiesQuery = useMemberActivities(memberId);
+  const subscriptionQuery = useMemberSubscription(memberId);
+  const plansQuery = usePlans({ active: true, limit: 100 });
   const updateMember = useUpdateMember();
+  const assignSubscription = useAssignSubscription();
+  const cancelSubscription = useCancelSubscription();
 
   const member = memberQuery.data;
   const bookings = bookingsQuery.data?.bookings ?? [];
+  const subscription = subscriptionQuery.data;
   const canView =
     session &&
     (canManageOperations(session.member) || session.member.id === memberId);
@@ -265,6 +274,76 @@ export function MemberDetailPage() {
 
         <div className="space-y-6">
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">Subscription</h2>
+            <div className="mt-4 space-y-3">
+              <div className="rounded-2xl border border-slate-200 px-4 py-4">
+                <p className="font-semibold text-slate-900">{subscription?.plan.name ?? "No active subscription"}</p>
+                <p className="mt-2 text-sm text-slate-500">
+                  {subscription?.plan.allows_free_pass
+                    ? "Unlimited booking while spots remain available."
+                    : formatCredits(subscription?.active_credits)}
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  Period ends {formatDateTime(subscription?.period_end)}
+                </p>
+              </div>
+
+              {isAdmin(session?.member) ? (
+                <form
+                  className="space-y-3 rounded-2xl border border-slate-200 px-4 py-4"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const formData = new FormData(event.currentTarget);
+                    const planId = formData.get("plan_id");
+                    if (typeof planId !== "string" || !planId) {
+                      return;
+                    }
+                    assignSubscription.mutate({
+                      memberId,
+                      payload: { plan_id: planId }
+                    });
+                  }}
+                >
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium text-slate-700">Assign plan</span>
+                    <select
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
+                      defaultValue={subscription?.plan_id ?? ""}
+                      name="plan_id"
+                    >
+                      <option value="">Select a plan</option>
+                      {(plansQuery.data ?? []).map((plan) => (
+                        <option key={plan.id} value={plan.id}>
+                          {plan.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      disabled={assignSubscription.isPending}
+                      type="submit"
+                    >
+                      {assignSubscription.isPending ? "Assigning..." : "Assign subscription"}
+                    </button>
+                    <button
+                      className="rounded-full border border-rose-200 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={cancelSubscription.isPending || !subscription}
+                      onClick={() => {
+                        cancelSubscription.mutate({ memberId });
+                      }}
+                      type="button"
+                    >
+                      Cancel subscription
+                    </button>
+                  </div>
+                </form>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">Booking history</h2>
             <div className="mt-4 space-y-3">
               {bookings.map((booking) => (
@@ -276,6 +355,10 @@ export function MemberDetailPage() {
                       </p>
                       <p className="text-sm text-slate-500">
                         Reserved on {formatDateTime(booking.booked_at)}
+                      </p>
+                      <p className="text-sm text-slate-500">
+                        {booking.booking_type}
+                        {booking.credits_consumed ? ` · ${booking.credits_consumed} credit used` : ""}
                       </p>
                     </div>
                     <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-medium text-emerald-800">

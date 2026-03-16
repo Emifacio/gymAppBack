@@ -8,17 +8,100 @@ export const DEFAULT_API_BASE_URL = "https://gymappback-production-7f4e.up.railw
 const RETRY_HEADER = "x-gym-platform-retried";
 
 export type GymApiClient = Client<paths>;
-export type Workout = components["schemas"]["ClassRead"];
+export interface Plan {
+  id: string;
+  name: string;
+  description?: string | null;
+  credits_per_period: number;
+  period_type: "weekly" | "monthly";
+  allows_free_pass: boolean;
+  active: boolean;
+  created_at: string;
+}
+
+export interface PlanCreatePayload {
+  name: string;
+  description?: string | null;
+  credits_per_period: number;
+  period_type: "weekly" | "monthly";
+  allows_free_pass?: boolean;
+  active?: boolean;
+}
+
+export interface PlanUpdatePayload {
+  name?: string | null;
+  description?: string | null;
+  credits_per_period?: number | null;
+  period_type?: "weekly" | "monthly" | null;
+  allows_free_pass?: boolean | null;
+  active?: boolean | null;
+}
+
+export interface MemberSubscription {
+  id: string;
+  member_id: string;
+  plan_id: string;
+  active_credits: number;
+  period_start: string;
+  period_end: string;
+  status: "active" | "expired" | "cancelled";
+  created_at: string;
+  plan: Plan;
+}
+
+export interface SubscriptionAssignPayload {
+  plan_id: string;
+}
+
+export interface ClassMember {
+  booking_id: string;
+  member_id: string;
+  full_name: string;
+  email: string;
+  booked_at: string;
+  booking_type: "credit" | "free_pass" | "waitlist";
+  credits_consumed: number;
+}
+
+export interface ClassAssignmentPayload {
+  member_id: string;
+}
+
+export type Workout = components["schemas"]["ClassRead"] & {
+  available_spots?: number | null;
+  waitlist_size?: number;
+  member_booking_status?: string | null;
+};
 export type WorkoutFilters = NonNullable<paths["/classes"]["get"]["parameters"]["query"]>;
 export type WorkoutCreatePayload = components["schemas"]["ClassCreate"];
 export type WorkoutUpdatePayload = components["schemas"]["ClassUpdate"];
 export type LoginPayload = components["schemas"]["LoginRequest"];
 export type RegisterPayload = components["schemas"]["RegisterRequest"];
 export type BookingPayload = components["schemas"]["BookingCreate"];
-export type BookingAction = components["schemas"]["BookingActionResponse"];
-export type BookingCancellation = components["schemas"]["BookingCancellationResponse"];
-export type MemberBookings = components["schemas"]["MemberBookingsResponse"];
-export type Member = components["schemas"]["MemberRead"];
+export type BookingRecord = components["schemas"]["BookingRead"] & {
+  subscription_id?: string | null;
+  booking_type: "credit" | "free_pass" | "waitlist";
+  credits_consumed: number;
+  gym_class?: Workout | null;
+};
+export type WaitlistEntry = components["schemas"]["WaitlistRead"] & {
+  gym_class?: Workout | null;
+};
+export type BookingAction = components["schemas"]["BookingActionResponse"] & {
+  booking?: BookingRecord | null;
+  waitlist_entry?: WaitlistEntry | null;
+};
+export type BookingCancellation = components["schemas"]["BookingCancellationResponse"] & {
+  credit_restored?: boolean;
+  promoted_booking?: BookingRecord | null;
+};
+export interface MemberBookings {
+  bookings: BookingRecord[];
+  waitlist: WaitlistEntry[];
+}
+export type Member = components["schemas"]["MemberRead"] & {
+  active_subscription?: MemberSubscription | null;
+};
 export type MemberFilters = NonNullable<paths["/members"]["get"]["parameters"]["query"]>;
 export type MemberCreatePayload = components["schemas"]["MemberCreate"];
 export type MemberUpdatePayload = components["schemas"]["MemberUpdate"];

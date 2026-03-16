@@ -5,7 +5,9 @@ from app.domain.models.gym_class import GymClass
 from app.domain.models.integration_account import IntegrationAccount
 from app.domain.models.instructor import Instructor
 from app.domain.models.member import Member
+from app.domain.models.member_subscription import MemberSubscription
 from app.domain.models.membership_plan import MembershipPlan
+from app.domain.models.plan import Plan
 from app.domain.models.waitlist import Waitlist
 
 __all__ = [
@@ -16,7 +18,8 @@ __all__ = [
     "IntegrationAccount",
     "Instructor",
     "Member",
+    "MemberSubscription",
     "MembershipPlan",
+    "Plan",
     "Waitlist",
 ]
-

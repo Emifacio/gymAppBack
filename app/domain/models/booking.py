@@ -1,15 +1,16 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.domain.enums import BookingStatus, enum_values
+from app.domain.enums import BookingStatus, BookingType, enum_values
 from app.infrastructure.database.base import Base, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
     from app.domain.models.gym_class import GymClass
     from app.domain.models.member import Member
+    from app.domain.models.member_subscription import MemberSubscription
 
 
 class Booking(UUIDPrimaryKeyMixin, Base):
@@ -18,14 +19,27 @@ class Booking(UUIDPrimaryKeyMixin, Base):
 
     member_id = mapped_column(ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True)
     class_id = mapped_column(ForeignKey("classes.id", ondelete="CASCADE"), nullable=False, index=True)
+    subscription_id = mapped_column(
+        ForeignKey("member_subscriptions.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     status: Mapped[BookingStatus] = mapped_column(
         Enum(BookingStatus, name="booking_status", values_callable=enum_values),
         default=BookingStatus.CONFIRMED,
         nullable=False,
         index=True,
     )
+    booking_type: Mapped[BookingType] = mapped_column(
+        Enum(BookingType, name="booking_type", values_callable=enum_values),
+        default=BookingType.CREDIT,
+        nullable=False,
+        index=True,
+    )
+    credits_consumed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     booked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     member: Mapped["Member"] = relationship(back_populates="bookings")
     gym_class: Mapped["GymClass"] = relationship(back_populates="bookings")
+    subscription: Mapped["MemberSubscription | None"] = relationship(back_populates="bookings")
