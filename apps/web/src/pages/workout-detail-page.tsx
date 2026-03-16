@@ -192,8 +192,8 @@ export function WorkoutDetailPage() {
               return;
             }
             bookingMutation.mutate({
-              class_id: workout.id,
-              member_id: session!.member.id
+              classId: workout.id,
+              memberId: session!.member.id
             }, {
               onError: (error) => {
                 openEligibilityModal(getApiErrorCode(error));

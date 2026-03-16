@@ -310,27 +310,31 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
   }
 
   function useCreateBooking(
-    options: Omit<UseMutationOptions<BookingAction, Error, BookingPayload>, "mutationFn"> = {}
+    options: Omit<UseMutationOptions<BookingAction, Error, { classId: string; memberId?: string }>, "mutationFn"> = {}
   ) {
     const queryClient = useQueryClient();
 
     return useMutation({
-      mutationFn: (payload: BookingPayload) =>
-        unwrapResult<BookingAction>((client as any).POST("/bookings", { body: payload })),
+      mutationFn: ({ classId, memberId }) =>
+        unwrapResult<BookingAction>(
+          (client as any).POST("/bookings", {
+            body: { class_id: classId, member_id: memberId }
+          })
+        ),
       ...options,
       onSuccess: async (result, variables, onMutateResult, context) => {
         await queryClient.invalidateQueries({ queryKey: gymKeys.workouts() });
-        await queryClient.invalidateQueries({ queryKey: gymKeys.workoutDetail(variables.class_id) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.workoutDetail(variables.classId) });
 
-        if (variables.member_id) {
+        if (variables.memberId) {
           await queryClient.invalidateQueries({
-            queryKey: gymKeys.memberBookings(variables.member_id)
+            queryKey: gymKeys.memberBookings(variables.memberId)
           });
           await queryClient.invalidateQueries({
-            queryKey: gymKeys.memberSubscription(variables.member_id)
+            queryKey: gymKeys.memberSubscription(variables.memberId)
           });
           await queryClient.invalidateQueries({
-            queryKey: gymKeys.dashboard(variables.member_id)
+            queryKey: gymKeys.dashboard(variables.memberId)
           });
         }
         await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });

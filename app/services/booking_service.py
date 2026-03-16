@@ -72,13 +72,6 @@ class BookingService:
         self.subscription_service = subscription_service
         self.cache = cache
 
-    @asynccontextmanager
-    async def _transaction(self):
-        if self.session.in_transaction():
-            yield
-            return
-        async with self.session.begin():
-            yield
 
     async def create_booking(
         self,
@@ -97,7 +90,14 @@ class BookingService:
         waitlist_id: UUID | None = None
         now = datetime.now(timezone.utc)
 
-        async with self._transaction():
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"booking_start member_id={member_id} class_id={payload.class_id}")
+
+        if self.session.in_transaction():
+            await self.session.rollback()
+
+        async with self.session.begin():
             locked_class = await self.class_repository.get_by_id(payload.class_id, for_update=True)
             if locked_class is None:
                 raise NotFoundError("Class not found")
@@ -126,6 +126,7 @@ class BookingService:
                     existing_booking=existing_booking,
                 )
                 booked_id = booking.id
+                logger.info(f"booking_created booking_id={booked_id} member_id={member_id} credits_consumed={booking.credits_consumed}")
             else:
                 waitlist_entry = await self._upsert_waitlist_entry(
                     member_id=member_id,
@@ -134,6 +135,11 @@ class BookingService:
                     existing_waitlist=existing_waitlist,
                 )
                 waitlist_id = waitlist_entry.id
+                logger.info(f"waitlist_added waitlist_id={waitlist_id} member_id={member_id}")
+
+            # Flush is handled by session.begin() context manager (it commits/flushes)
+        
+        logger.info(f"transaction_commit member_id={member_id} class_id={payload.class_id}")
 
         await self._invalidate_related_cache(payload.class_id, [member_id])
 
@@ -165,7 +171,10 @@ class BookingService:
         actor_id = actor.id
         actor_role = actor.role
 
-        async with self._transaction():
+        if self.session.in_transaction():
+            await self.session.rollback()
+
+        async with self.session.begin():
             now = datetime.now(timezone.utc)
             booking = await self.booking_repository.get_by_id(booking_id)
             if booking is not None:
