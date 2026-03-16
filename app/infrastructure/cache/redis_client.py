@@ -9,12 +9,15 @@ logger = logging.getLogger(__name__)
 
 
 class RedisCache:
-    def __init__(self, redis_url: str, default_ttl: int = 300) -> None:
+    def __init__(self, redis_url: str | None, default_ttl: int = 300) -> None:
         self.redis_url = redis_url
         self.default_ttl = default_ttl
         self.client: Redis | None = None
 
     async def connect(self) -> None:
+        if not self.redis_url:
+            logger.info("redis_connection_skipped")
+            return
         try:
             self.client = Redis.from_url(self.redis_url, encoding="utf-8", decode_responses=True)
             await self.client.ping()

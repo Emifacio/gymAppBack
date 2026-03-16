@@ -33,3 +33,11 @@ class BadRequestError(AppException):
     def __init__(self, detail: str = "Bad request") -> None:
         super().__init__(detail=detail, status_code=status.HTTP_400_BAD_REQUEST, code="bad_request")
 
+
+class ServiceUnavailableError(AppException):
+    def __init__(self, detail: str = "Service unavailable") -> None:
+        super().__init__(
+            detail=detail,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="service_unavailable",
+        )

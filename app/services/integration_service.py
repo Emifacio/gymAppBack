@@ -2,7 +2,8 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ForbiddenError, NotFoundError
+from app.core.config import get_settings
+from app.core.exceptions import ForbiddenError, NotFoundError, ServiceUnavailableError
 from app.domain.enums import IntegrationProvider, IntegrationStatus, MemberRole
 from app.domain.models.integration_account import IntegrationAccount
 from app.domain.models.member import Member
@@ -68,6 +69,11 @@ class IntegrationService:
         return IntegrationAccountRead.model_validate(refreshed)
 
     async def enqueue_activity_sync(self, member_id: UUID, actor: Member) -> TaskEnqueueResponse:
+        settings = get_settings()
+        if not settings.redis_configured:
+            raise ServiceUnavailableError(
+                "Background jobs require Redis configuration. Set REDIS_URL on the web service first."
+            )
         if actor.role != MemberRole.ADMIN and actor.id != member_id:
             raise ForbiddenError("You can only sync activities for your own account")
         if await self.member_repository.get_by_id(member_id) is None:

@@ -38,12 +38,18 @@ def _describe_service_url(url: str | None) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(settings.log_level)
-    logger.info(
-        "redis_configuration_selected source=%s target=%s",
-        settings.redis_url_source or "unknown",
-        _describe_service_url(settings.redis_url),
-    )
-    redis_cache = RedisCache(settings.redis_url, default_ttl=settings.cache_ttl_seconds)
+    if settings.redis_configured:
+        logger.info(
+            "redis_configuration_selected source=%s target=%s",
+            settings.redis_url_source or "unknown",
+            _describe_service_url(settings.redis_url),
+        )
+    else:
+        logger.warning(
+            "redis_configuration_missing source=%s background_jobs_available=false cache_available=false",
+            settings.redis_url_source or "unknown",
+        )
+    redis_cache = RedisCache(settings.cache_redis_url, default_ttl=settings.cache_ttl_seconds)
     await redis_cache.connect()
     app.state.redis_cache = redis_cache
     yield

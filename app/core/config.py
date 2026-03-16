@@ -53,10 +53,18 @@ def _build_database_url_from_pg_env() -> str | None:
 def _build_redis_url_from_env() -> str | None:
     host = os.getenv("REDISHOST") or os.getenv("REDIS_HOST")
     port = os.getenv("REDISPORT") or os.getenv("REDIS_PORT") or "6379"
+    username = os.getenv("REDISUSER") or os.getenv("REDIS_USER")
     password = os.getenv("REDISPASSWORD") or os.getenv("REDIS_PASSWORD")
     if not host:
         return None
-    auth = f":{quote(password, safe='')}@" if password else ""
+    if username and password:
+        auth = f"{quote(username, safe='')}:{quote(password, safe='')}@"
+    elif username:
+        auth = f"{quote(username, safe='')}@"
+    elif password:
+        auth = f":{quote(password, safe='')}@"
+    else:
+        auth = ""
     return f"redis://{auth}{host}:{port}/0"
 
 
@@ -158,6 +166,16 @@ class Settings(BaseSettings):
         if not self.celery_result_backend:
             self.celery_result_backend = _next_redis_database_url(self.redis_url)
         return self
+
+    @property
+    def redis_configured(self) -> bool:
+        return bool(self.redis_url) and self.redis_url_source != "fallback-localhost"
+
+    @property
+    def cache_redis_url(self) -> str | None:
+        if not self.redis_configured:
+            return None
+        return self.redis_url
 
 
 @lru_cache
