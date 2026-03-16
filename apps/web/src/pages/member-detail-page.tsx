@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import type { Member } from "@gym/api-client";
 
+import { Button, buttonClassName } from "@/components/ui/Button";
 import {
   useAssignSubscription,
   useCancelSubscription,
@@ -56,7 +57,7 @@ export function MemberDetailPage() {
       <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <Link to="/members" className="text-sm font-medium text-amber-700 hover:text-amber-800">
+            <Link className={buttonClassName({ size: "sm", variant: "ghost" })} to="/members">
               Back to members
             </Link>
             <h1 className="mt-3 text-3xl font-semibold text-slate-900">{member.full_name}</h1>
@@ -262,13 +263,9 @@ export function MemberDetailPage() {
               </p>
             ) : null}
 
-            <button
-              type="submit"
-              disabled={updateMember.isPending}
-              className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
+            <Button className="w-full" disabled={updateMember.isPending} loading={updateMember.isPending} type="submit" variant="primary">
               {updateMember.isPending ? "Saving changes..." : "Save profile"}
-            </button>
+            </Button>
           </form>
         </div>
 
@@ -320,23 +317,20 @@ export function MemberDetailPage() {
                     </select>
                   </label>
                   <div className="flex flex-wrap gap-3">
-                    <button
-                      className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                      disabled={assignSubscription.isPending}
-                      type="submit"
-                    >
+                    <Button disabled={assignSubscription.isPending} loading={assignSubscription.isPending} type="submit" variant="primary">
                       {assignSubscription.isPending ? "Assigning..." : "Assign subscription"}
-                    </button>
-                    <button
-                      className="rounded-full border border-rose-200 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    </Button>
+                    <Button
                       disabled={cancelSubscription.isPending || !subscription}
+                      loading={cancelSubscription.isPending}
                       onClick={() => {
                         cancelSubscription.mutate({ memberId });
                       }}
                       type="button"
+                      variant="danger"
                     >
                       Cancel subscription
-                    </button>
+                    </Button>
                   </div>
                 </form>
               ) : null}

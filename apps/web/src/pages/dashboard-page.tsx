@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import { buttonClassName } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
 import { WorkoutCard } from "@/components/workout-card";
@@ -16,6 +17,8 @@ export function DashboardPage() {
   const workouts = workoutsQuery.data ?? [];
   const bookings = bookingsQuery.data?.bookings ?? [];
   const waitlist = bookingsQuery.data?.waitlist ?? [];
+  const confirmedBookings = bookings.filter((booking) => booking.status === "confirmed");
+  const activeWaitlist = waitlist.filter((entry) => entry.status === "waiting");
   const subscription = subscriptionQuery.data;
   const upcomingWorkout = workouts[0];
 
@@ -48,7 +51,7 @@ export function DashboardPage() {
             </div>
 
             <Link
-              className="inline-flex rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#ff6942]"
+              className={buttonClassName({ variant: "primary" })}
               to="/workouts"
             >
               Explore all workouts
@@ -66,7 +69,7 @@ export function DashboardPage() {
                   <p className="mt-2 text-sm text-white/75">{formatRelativeSlot(upcomingWorkout.scheduled_at)}</p>
                 </div>
                 <Link
-                  className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[var(--ink)]"
+                  className={buttonClassName({ size: "sm", variant: "secondary" })}
                   to={`/workouts/${upcomingWorkout.id}`}
                 >
                   Open details
@@ -101,7 +104,7 @@ export function DashboardPage() {
             detail="Confirmed reservations in the current booking feed."
             label="Your bookings"
             tone="highlight"
-            value={String(bookings.length)}
+            value={String(confirmedBookings.length)}
           />
           <StatCard
             detail="Live availability from the current schedule response."
@@ -137,7 +140,7 @@ export function DashboardPage() {
               </div>
               <div className="rounded-[1.5rem] bg-white/80 p-5">
                 <p className="text-sm font-semibold text-[var(--ink)]">Waitlist entries</p>
-                <p className="mt-2 text-sm text-[var(--muted)]">{waitlist.length}</p>
+                <p className="mt-2 text-sm text-[var(--muted)]">{activeWaitlist.length}</p>
               </div>
             </div>
           ) : (
@@ -157,11 +160,11 @@ export function DashboardPage() {
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-[1.5rem] bg-white/80 p-5">
               <p className="text-sm font-semibold text-[var(--ink)]">Confirmed</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">{bookings.length} active bookings</p>
+              <p className="mt-2 text-sm text-[var(--muted)]">{confirmedBookings.length} active bookings</p>
             </div>
             <div className="rounded-[1.5rem] bg-white/80 p-5">
               <p className="text-sm font-semibold text-[var(--ink)]">Waitlist</p>
-              <p className="mt-2 text-sm text-[var(--muted)]">{waitlist.length} pending promotions</p>
+              <p className="mt-2 text-sm text-[var(--muted)]">{activeWaitlist.length} pending promotions</p>
             </div>
             <div className="rounded-[1.5rem] bg-white/80 p-5 md:col-span-2">
               <p className="text-sm font-semibold text-[var(--ink)]">Next class</p>
@@ -179,7 +182,7 @@ export function DashboardPage() {
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Upcoming</p>
             <h2 className="section-title mt-1 text-3xl font-semibold">Workout sessions</h2>
           </div>
-          <Link className="text-sm font-semibold text-[var(--ink)]" to="/workouts">
+          <Link className={buttonClassName({ size: "sm", variant: "ghost" })} to="/workouts">
             View all
           </Link>
         </div>

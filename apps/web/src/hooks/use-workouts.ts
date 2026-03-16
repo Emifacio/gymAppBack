@@ -12,7 +12,6 @@ export const useClassAttendance = apiHooks.useClassAttendance;
 export const useClassMembers = apiHooks.useClassMembers;
 export const useMemberActivities = apiHooks.useMemberActivities;
 export const usePlans = apiHooks.usePlans;
-export const useHealth = apiHooks.useHealth;
 export const useLoginMutation = apiHooks.useLogin;
 export const useRegisterMutation = apiHooks.useRegister;
 export const useCreateBooking = apiHooks.useCreateBooking;

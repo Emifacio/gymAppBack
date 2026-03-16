@@ -15,7 +15,6 @@ import {
   type ClassAssignmentPayload,
   type ClassMember,
   type GymApiClient,
-  type HealthStatus,
   type IntegrationAccount,
   type IntegrationConnectPayload,
   type LoginPayload,
@@ -55,7 +54,6 @@ export const gymKeys = {
   plans: () => [...gymKeys.all, "plans"] as const,
   planList: (filters: { active?: boolean | null; offset?: number; limit?: number } = {}) =>
     [...gymKeys.plans(), "list", filters] as const,
-  health: () => [...gymKeys.all, "health"] as const,
   dashboard: (memberId: string | undefined) =>
     [...gymKeys.all, "dashboard", memberId ?? "anonymous"] as const
 };
@@ -204,13 +202,6 @@ export function getPlansQueryOptions(
   });
 }
 
-export function getHealthQueryOptions(client: GymApiClient) {
-  return queryOptions({
-    queryKey: gymKeys.health(),
-    queryFn: () => unwrapResult<HealthStatus>(client.GET("/health"))
-  });
-}
-
 export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions) {
   function useWorkouts(filters: WorkoutFilters = {}) {
     return useQuery(getWorkoutsQueryOptions(client, filters));
@@ -264,10 +255,6 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
 
   function usePlans(filters: { active?: boolean | null; offset?: number; limit?: number } = {}) {
     return useQuery(getPlansQueryOptions(client, filters));
-  }
-
-  function useHealth() {
-    return useQuery(getHealthQueryOptions(client));
   }
 
   function useLogin(
@@ -697,7 +684,6 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     useClassMembers,
     useMemberActivities,
     usePlans,
-    useHealth,
     useLogin,
     useRegister,
     useCreateBooking,

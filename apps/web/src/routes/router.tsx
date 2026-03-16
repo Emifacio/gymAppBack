@@ -11,7 +11,6 @@ import { MemberDetailPage } from "@/pages/member-detail-page";
 import { MembersPage } from "@/pages/members-page";
 import { PlansPage } from "@/pages/plans-page";
 import { RegisterPage } from "@/pages/register-page";
-import { SystemStatusPage } from "@/pages/system-status-page";
 import { WorkoutDetailPage } from "@/pages/workout-detail-page";
 import { WorkoutsPage } from "@/pages/workouts-page";
 
@@ -65,10 +64,6 @@ export const router = createBrowserRouter([
           {
             path: "/integrations",
             element: <IntegrationsPage />
-          },
-          {
-            path: "/status",
-            element: <SystemStatusPage />
           }
         ]
       }

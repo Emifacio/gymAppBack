@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate } from "react-router-dom";
 
+import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/use-auth";
 import { useCreateMember, useMembers } from "@/hooks/use-workouts";
 import { canManageOperations } from "@/lib/roles";
@@ -424,13 +425,9 @@ export function MembersPage() {
               </p>
             ) : null}
 
-            <button
-              type="submit"
-              disabled={createMember.isPending}
-              className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-            >
+            <Button className="w-full" disabled={createMember.isPending} loading={createMember.isPending} type="submit" variant="primary">
               {createMember.isPending ? "Creating account..." : "Create member"}
-            </button>
+            </Button>
           </form>
         </section>
       </section>

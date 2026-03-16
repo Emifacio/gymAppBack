@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { getApiErrorCode, getApiErrorMessage } from "@gym/api-client";
 
 import { BookingEligibilityModal } from "@/components/booking-eligibility-modal";
+import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -56,7 +57,9 @@ export function WorkoutDetailPage() {
   const isCheckingEligibility = subscriptionQuery.isPending;
   const precheckErrorCode = getPrecheckErrorCode(subscription);
   const reserveLabel =
-    isCheckingEligibility
+    bookingMutation.isPending
+      ? "Reserving..."
+      : isCheckingEligibility
       ? "Checking eligibility..."
       : workout?.member_booking_status === "confirmed"
       ? "Already booked"
@@ -185,18 +188,20 @@ export function WorkoutDetailPage() {
             });
           }}
         >
-          <button
-            className="w-full rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#ff6942] disabled:cursor-not-allowed disabled:opacity-60"
+          <Button
+            className="w-full"
             disabled={
               isCheckingEligibility ||
               bookingMutation.isPending ||
               workout.member_booking_status === "confirmed" ||
               workout.member_booking_status === "waitlisted"
             }
+            loading={bookingMutation.isPending}
             type="submit"
+            variant="primary"
           >
             {reserveLabel}
-          </button>
+          </Button>
           {precheckErrorCode ? (
             <p className="text-sm text-[var(--accent)]">
               Booking will stay blocked until your membership access is restored.
@@ -241,13 +246,9 @@ export function WorkoutDetailPage() {
               placeholder="Member ID"
               required
             />
-            <button
-              className="w-full rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1f3453] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={assignMemberMutation.isPending}
-              type="submit"
-            >
+            <Button className="w-full" loading={assignMemberMutation.isPending} type="submit" variant="secondary">
               {assignMemberMutation.isPending ? "Assigning..." : "Assign member to class"}
-            </button>
+            </Button>
             {assignMemberMutation.data ? (
               <div className="rounded-2xl bg-[rgba(23,184,156,0.12)] px-4 py-3 text-sm text-[var(--highlight)]">
                 {assignMemberMutation.data.message}
@@ -296,12 +297,12 @@ export function WorkoutDetailPage() {
               <option value="completed">completed</option>
             </select>
             <div className="flex flex-wrap gap-3">
-              <button className="rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white" disabled={updateWorkout.isPending} type="submit">
+              <Button loading={updateWorkout.isPending} type="submit" variant="primary">
                 {updateWorkout.isPending ? "Saving..." : "Save changes"}
-              </button>
-              <button
-                className="rounded-full border border-[rgba(255,122,89,0.3)] px-5 py-3 text-sm font-semibold text-[var(--accent)]"
+              </Button>
+              <Button
                 disabled={deleteWorkout.isPending}
+                loading={deleteWorkout.isPending}
                 onClick={() => {
                   deleteWorkout.mutate(
                     { workoutId: workout.id },
@@ -313,9 +314,10 @@ export function WorkoutDetailPage() {
                   );
                 }}
                 type="button"
+                variant="danger"
               >
-                Delete class
-              </button>
+                {deleteWorkout.isPending ? "Deleting..." : "Delete class"}
+              </Button>
             </div>
           </form>
         ) : null}

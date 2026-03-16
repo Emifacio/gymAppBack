@@ -17,7 +17,6 @@ export function DashboardLayout() {
     { label: "Classes", to: "/workouts" },
     { label: "Reservations", to: "/bookings" },
     { label: "Integrations", to: "/integrations" },
-    { label: "Status", to: "/status" },
     ...(canManagePlans(session?.member) ? [{ label: "Plans", to: "/plans" }] : []),
     ...(canManageOperations(session?.member)
       ? [

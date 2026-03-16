@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 
 import type { Workout } from "@gym/api-client";
 
+import { buttonClassName } from "@/components/ui/Button";
 import { formatWorkoutSchedule } from "@/lib/format";
 
 interface WorkoutCardProps {
@@ -66,7 +67,7 @@ export function WorkoutCard({ workout, actionLabel = "View session" }: WorkoutCa
             : "Ready for booking"}
         </p>
         <Link
-          className="rounded-full bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1f3453]"
+          className={buttonClassName({ size: "sm", variant: "secondary" })}
           to={`/workouts/${workout.id}`}
         >
           {actionLabel}

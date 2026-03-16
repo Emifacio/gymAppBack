@@ -2,6 +2,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 
 import { isApiResponseError } from "@gym/api-client";
 
+import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/use-auth";
 import { useRegisterMutation } from "@/hooks/use-workouts";
 import { getFormValue } from "@/lib/forms";
@@ -96,13 +97,9 @@ export function RegisterPage() {
           ) : null}
 
           <div className="md:col-span-2">
-            <button
-              className="w-full rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1f3453] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={register.isPending}
-              type="submit"
-            >
+            <Button className="w-full" disabled={register.isPending} loading={register.isPending} type="submit" variant="primary">
               {register.isPending ? "Creating account..." : "Create account"}
-            </button>
+            </Button>
           </div>
         </form>
 

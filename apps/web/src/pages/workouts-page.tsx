@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
+import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
 import { WorkoutCard } from "@/components/workout-card";
 import { useAuth } from "@/hooks/use-auth";
@@ -165,9 +166,9 @@ export function WorkoutsPage() {
               <option value="completed">completed</option>
             </select>
             <div className="md:col-span-2">
-              <button className="rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white" disabled={createWorkout.isPending} type="submit">
+              <Button loading={createWorkout.isPending} type="submit" variant="primary">
                 {createWorkout.isPending ? "Creating..." : "Create workout"}
-              </button>
+              </Button>
             </div>
           </form>
 
