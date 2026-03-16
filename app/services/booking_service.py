@@ -102,11 +102,11 @@ class BookingService:
             is_deleted = obj in self.session.deleted
             logger.debug(f"object_state name={name} id={getattr(obj, 'id', 'N/A')} new={is_new} dirty={is_dirty} deleted={is_deleted}")
 
-        # If already in a transaction, we should probably flush at the end but let the caller handle commit
-        # however, this service uses session.begin() which creates a subtransaction or a new one.
-        # The problem might be the rollback() at the start which clears the session.
+        # If already in a transaction, we MUST rollback before calling begin()
+        # to avoid 'InvalidRequestError: A transaction is already begun on this session'
         if self.session.in_transaction():
-            logger.warning(f"session_already_in_transaction session_id={id(self.session)}")
+            logger.warning(f"session_already_in_transaction session_id={id(self.session)} - rolling back")
+            await self.session.rollback()
 
         async with self.session.begin():
             locked_class = await self.class_repository.get_by_id(payload.class_id, for_update=True)
