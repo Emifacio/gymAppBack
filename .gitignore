@@ -10,4 +10,13 @@ venv/
 *.pyd
 *.db
 celerybeat-schedule
-
+node_modules/
+dist/
+.expo/
+.turbo/
+.vercel/
+coverage/
+.codex-skill-staging/
+apps/web/.env.local
+apps/mobile/.env.local
+apps/mobile/dist/

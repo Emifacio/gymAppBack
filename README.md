@@ -1,10 +1,10 @@
-# Gym Backend
+# Gym Platform
 
-Backend platform for gym operations built with FastAPI, PostgreSQL, SQLAlchemy async, Alembic, Redis, Celery, Docker, and JWT authentication.
+Contract-first full-stack gym platform built on an existing FastAPI backend with a pnpm monorepo for the React web app, Expo mobile app, and a shared generated API client.
 
 ## Overview
 
-This project implements the core backend domains for a gym management system:
+This project now combines the existing backend with a scalable frontend ecosystem:
 
 - member management
 - authentication and role-based access
@@ -14,8 +14,11 @@ This project implements the core backend domains for a gym management system:
 - Strava account connection and activity sync
 - Redis-backed caching
 - Celery workers for asynchronous jobs
+- React web dashboard powered by TanStack Query and React Router
+- Expo mobile app powered by React Navigation and TanStack Query
+- shared OpenAPI-generated TypeScript types and `openapi-fetch` client runtime
 
-The codebase is structured around a clean service/repository split so it stays maintainable as the product grows.
+The backend keeps its clean service/repository split, while the frontend apps share one generated contract so API types are not duplicated across platforms.
 
 ## Tech Stack
 
@@ -29,10 +32,25 @@ The codebase is structured around a clean service/repository split so it stays m
 - Docker Compose
 - Pydantic v2
 - JWT bearer auth
+- pnpm workspaces
+- React + Vite + TypeScript
+- Expo + React Native + TypeScript
+- TanStack Query
+- React Router
+- React Navigation
+- Tailwind CSS
+- openapi-typescript
+- openapi-fetch
 
 ## Project Layout
 
 ```text
+apps/
+  mobile/
+  web/
+packages/
+  api-client/
+  config/
 app/
   api/
     routes/
@@ -50,9 +68,13 @@ app/
 migrations/
 docker/
 docker-compose.yml
+package.json
+pnpm-workspace.yaml
 requirements.txt
 README.md
 ```
+
+The FastAPI backend intentionally stays at the repository root so Railway, Docker, and existing Python paths continue to work without backend logic changes.
 
 ## Architecture
 
@@ -64,6 +86,59 @@ README.md
 - `app/infrastructure`: DB session, Redis, external clients
 - `app/workers`: Celery app and background tasks
 - `migrations`: Alembic environment and schema revisions
+- `apps/web`: React + Vite dashboard using the shared API package
+- `apps/mobile`: Expo app using the same shared API hooks and auth model
+- `packages/api-client`: generated OpenAPI schema, typed client, shared auth/session utilities, and shared React Query hooks
+- `packages/config`: shared TypeScript, ESLint, and Prettier baselines
+
+## Frontend Workspace
+
+### Install
+
+```bash
+pnpm install
+```
+
+### Generate the API contract
+
+```bash
+pnpm generate:api
+```
+
+This runs:
+
+```bash
+openapi-typescript https://gymappback-production-7f4e.up.railway.app/openapi.json -o packages/api-client/schema.ts
+```
+
+### Run the apps
+
+```bash
+pnpm dev:web
+pnpm dev:mobile
+```
+
+### Verify the workspace
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm build:web
+pnpm build:mobile
+```
+
+`build:mobile` exports native bundles for iOS and Android into `apps/mobile/dist/`.
+
+## API Contract
+
+The shared contract-first layer lives in `packages/api-client`:
+
+- `schema.ts`: generated OpenAPI types
+- `client.ts`: `openapi-fetch` client factory with auth-aware request handling
+- `auth.ts`: platform-agnostic session storage and refresh-ready auth utilities
+- `hooks.ts`: shared TanStack Query hooks such as `useWorkouts`, `useWorkout`, `useLogin`, and `useCreateBooking`
+
+The web and mobile apps both consume the same package, so endpoint shapes, payloads, and response types stay aligned with the FastAPI contract.
 
 ## Local Development
 
@@ -71,6 +146,8 @@ README.md
 
 - Docker Desktop
 - Docker Compose
+- Node.js 22+
+- pnpm 10+
 
 ### Start the stack
 
@@ -83,6 +160,11 @@ docker compose up --build
 - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
 - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 - Health check: [http://localhost:8000/health](http://localhost:8000/health)
+
+### Open the frontends
+
+- Web app: `pnpm dev:web`
+- Mobile app: `pnpm dev:mobile`
 
 ### Stop the stack
 
@@ -150,7 +232,7 @@ docker compose down -v
 
 ## Environment
 
-The repository includes a ready-to-use `.env` for local development and a matching `.env.example`.
+The repository includes a ready-to-use backend `.env` for local development and a matching `.env.example`.
 
 Key variables:
 
@@ -159,6 +241,8 @@ Key variables:
 - `REDIS_URL`: Redis cache URL
 - `CELERY_BROKER_URL`: Redis broker URL for Celery
 - `CELERY_RESULT_BACKEND`: result backend URL for Celery
+- `VITE_API_URL`: base URL used by `apps/web`
+- `EXPO_PUBLIC_API_URL`: base URL used by `apps/mobile`
 - `STRAVA_CLIENT_ID`: optional Strava OAuth client id
 - `STRAVA_CLIENT_SECRET`: optional Strava OAuth client secret
 
@@ -168,6 +252,18 @@ Authentication uses bearer tokens.
 
 - `POST /auth/register`
 - `POST /auth/login`
+
+Frontend auth support includes:
+
+- login and logout flows
+- web token storage via `localStorage`
+- mobile token storage via `expo-secure-store`
+- refresh-ready session utilities in the shared API package
+
+Current backend contract note:
+
+- the FastAPI API currently returns an access token but does not expose a refresh-token endpoint
+- the shared auth layer is prepared for refresh token support, but today it falls back to clearing the session on `401` responses until the backend adds a refresh flow
 
 Behavior:
 
@@ -306,6 +402,30 @@ docker compose logs -f api
 docker compose logs -f celery_worker
 docker compose logs -f celery_beat
 ```
+
+## CI/CD
+
+- Railway continues to deploy the backend from the repository root.
+- Vercel can target `apps/web` for the web client.
+- Expo EAS is configured in `apps/mobile/eas.json` for mobile releases.
+- GitHub Actions frontend CI is available in `.github/workflows/frontend-ci.yml` and runs API generation, typechecking, linting, and both app builds.
+
+### Vercel web setup
+
+Prepare the Vercel project with these settings:
+
+- Framework Preset: `Vite`
+- Root Directory: `apps/web`
+- Node.js Version: `22.x`
+- Install Command: leave default to use `apps/web/vercel.json`, or set `cd ../.. && pnpm install --frozen-lockfile`
+- Build Command: leave default to use `apps/web/vercel.json`, or set `cd ../.. && pnpm vercel:build:web`
+- Output Directory: `dist`
+
+Required environment variable:
+
+- `VITE_API_URL=https://gymappback-production-7f4e.up.railway.app`
+
+The web app’s Vercel project config is committed at `apps/web/vercel.json`, so the monorepo can be deployed from this repository without moving the FastAPI backend out of the root.
 
 ## Notes
 

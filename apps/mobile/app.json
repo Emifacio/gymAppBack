@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Gym Platform",
+    "slug": "gym-platform",
+    "scheme": "gym-platform",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B1220"
+      }
+    },
+    "plugins": ["expo-secure-store"]
+  }
+}
