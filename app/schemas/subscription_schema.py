@@ -23,3 +23,13 @@ class MemberSubscriptionRead(BaseModel):
     status: SubscriptionStatus
     created_at: datetime
     plan: PlanRead
+
+
+class MemberSubscriptionStatusRead(BaseModel):
+    active_plan: bool
+    active_credits: int
+    period_end: datetime | None = None
+    plan_name: str | None = None
+    allows_free_pass: bool = False
+    status: SubscriptionStatus | None = None
+    error_code: str | None = None

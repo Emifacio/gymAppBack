@@ -1,5 +1,7 @@
 from fastapi import status
 
+from app.domain.enums import BookingEligibilityOutcome
+
 
 class AppException(Exception):
     def __init__(self, detail: str, status_code: int, code: str = "application_error") -> None:
@@ -40,4 +42,49 @@ class ServiceUnavailableError(AppException):
             detail=detail,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code="service_unavailable",
+        )
+
+
+class NoActivePlanError(AppException):
+    def __init__(self, detail: str = "Member has no active plan assigned") -> None:
+        super().__init__(
+            detail=detail,
+            status_code=status.HTTP_403_FORBIDDEN,
+            code=BookingEligibilityOutcome.NO_ACTIVE_PLAN.value,
+        )
+
+
+class PlanExpiredError(AppException):
+    def __init__(self, detail: str = "Member plan has expired") -> None:
+        super().__init__(
+            detail=detail,
+            status_code=status.HTTP_403_FORBIDDEN,
+            code=BookingEligibilityOutcome.PLAN_EXPIRED.value,
+        )
+
+
+class InsufficientCreditsError(AppException):
+    def __init__(self, detail: str = "Not enough credits") -> None:
+        super().__init__(
+            detail=detail,
+            status_code=status.HTTP_403_FORBIDDEN,
+            code=BookingEligibilityOutcome.INSUFFICIENT_CREDITS.value,
+        )
+
+
+class ClassFullError(AppException):
+    def __init__(self, detail: str = "Class is full") -> None:
+        super().__init__(
+            detail=detail,
+            status_code=status.HTTP_409_CONFLICT,
+            code=BookingEligibilityOutcome.CLASS_FULL.value,
+        )
+
+
+class BookingNotAllowedError(AppException):
+    def __init__(self, detail: str = "Booking is not allowed") -> None:
+        super().__init__(
+            detail=detail,
+            status_code=status.HTTP_409_CONFLICT,
+            code=BookingEligibilityOutcome.BOOKING_NOT_ALLOWED.value,
         )

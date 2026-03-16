@@ -1,5 +1,9 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { getApiErrorCode, getApiErrorMessage } from "@gym/api-client";
+
+import { BookingEligibilityModal } from "@/components/booking-eligibility-modal";
 import { EmptyState } from "@/components/empty-state";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -8,10 +12,14 @@ import {
   useClassMembers,
   useCreateBooking,
   useDeleteWorkout,
-  useMemberSubscription,
+  useMySubscriptionStatus,
   useUpdateWorkout,
   useWorkout
 } from "@/hooks/use-workouts";
+import {
+  getBookingEligibilityModalContent,
+  getPrecheckErrorCode
+} from "@/lib/booking-eligibility";
 import {
   formatCredits,
   formatDateTime,
@@ -29,11 +37,15 @@ export function WorkoutDetailPage() {
   const navigate = useNavigate();
   const { workoutId = "" } = useParams();
   const { session } = useAuth();
+  const [eligibilityModal, setEligibilityModal] = useState<{
+    title: string;
+    description: string;
+  } | null>(null);
   const workoutQuery = useWorkout(workoutId);
   const canManage = canManageOperations(session?.member);
   const classAttendanceQuery = useClassAttendance(workoutId, canManage);
   const classMembersQuery = useClassMembers(workoutId, canManage);
-  const subscriptionQuery = useMemberSubscription(session!.member.id);
+  const subscriptionQuery = useMySubscriptionStatus();
   const bookingMutation = useCreateBooking();
   const assignMemberMutation = useAssignMemberToClass();
   const updateWorkout = useUpdateWorkout();
@@ -41,6 +53,31 @@ export function WorkoutDetailPage() {
 
   const workout = workoutQuery.data;
   const subscription = subscriptionQuery.data;
+  const isCheckingEligibility = subscriptionQuery.isPending;
+  const precheckErrorCode = getPrecheckErrorCode(subscription);
+  const reserveLabel =
+    isCheckingEligibility
+      ? "Checking eligibility..."
+      : workout?.member_booking_status === "confirmed"
+      ? "Already booked"
+      : workout?.member_booking_status === "waitlisted"
+        ? "Already on the waitlist"
+        : (workout?.available_spots ?? 0) > 0
+          ? "Reserve class"
+          : "Join waitlist";
+  const bookingErrorCode = getApiErrorCode(bookingMutation.error);
+  const bookingErrorMessage =
+    bookingMutation.error && !getBookingEligibilityModalContent(bookingErrorCode)
+      ? getApiErrorMessage(bookingMutation.error)
+      : null;
+
+  function openEligibilityModal(errorCode: string | undefined) {
+    const content = getBookingEligibilityModalContent(errorCode);
+
+    if (content) {
+      setEligibilityModal(content);
+    }
+  }
 
   if (!workout && workoutQuery.isSuccess) {
     return (
@@ -110,42 +147,61 @@ export function WorkoutDetailPage() {
 
         <div className="mt-6 rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
           <p className="font-semibold text-[var(--ink)]">Active subscription</p>
-          <p className="mt-2">{subscription?.plan.name ?? "No subscription assigned"}</p>
-          <p className="mt-1">
-            {subscription?.plan.allows_free_pass
-              ? "Unlimited while capacity remains available"
-              : formatCredits(subscription?.active_credits)}
+          <p className="mt-2">
+            {subscription?.active_plan
+              ? subscription.plan_name ?? "Assigned plan"
+              : subscription?.error_code === "PLAN_EXPIRED"
+                ? "Plan expired"
+                : "No subscription assigned"}
           </p>
-          <p className="mt-1">Renews: {formatDateTime(subscription?.period_end)}</p>
+          <p className="mt-1">
+            {subscription?.active_plan
+              ? subscription.allows_free_pass
+                ? "Unlimited while capacity remains available"
+                : formatCredits(subscription.active_credits)
+              : "Booking is blocked until your plan is active."}
+          </p>
+          <p className="mt-1">Period end: {formatDateTime(subscription?.period_end)}</p>
         </div>
 
         <form
           className="mt-8 space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
+            if (isCheckingEligibility) {
+              return;
+            }
+            if (precheckErrorCode) {
+              openEligibilityModal(precheckErrorCode);
+              return;
+            }
             bookingMutation.mutate({
               class_id: workout.id,
               member_id: session!.member.id
+            }, {
+              onError: (error) => {
+                openEligibilityModal(getApiErrorCode(error));
+              }
             });
           }}
         >
           <button
             className="w-full rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#ff6942] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={
+              isCheckingEligibility ||
               bookingMutation.isPending ||
               workout.member_booking_status === "confirmed" ||
               workout.member_booking_status === "waitlisted"
             }
             type="submit"
           >
-            {workout.member_booking_status === "confirmed"
-              ? "Already booked"
-              : workout.member_booking_status === "waitlisted"
-                ? "Already on the waitlist"
-              : (workout.available_spots ?? 0) > 0
-                ? "Reserve class"
-                : "Join waitlist"}
+            {reserveLabel}
           </button>
+          {precheckErrorCode ? (
+            <p className="text-sm text-[var(--accent)]">
+              Booking will stay blocked until your membership access is restored.
+            </p>
+          ) : null}
         </form>
 
         {bookingMutation.data ? (
@@ -154,9 +210,9 @@ export function WorkoutDetailPage() {
           </div>
         ) : null}
 
-        {bookingMutation.error ? (
+        {bookingErrorMessage ? (
           <div className="mt-4 rounded-2xl bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--accent)]">
-            {bookingMutation.error.message}
+            {bookingErrorMessage}
           </div>
         ) : null}
 
@@ -312,6 +368,13 @@ export function WorkoutDetailPage() {
           </div>
         </section>
       ) : null}
+
+      <BookingEligibilityModal
+        description={eligibilityModal?.description ?? ""}
+        onClose={() => setEligibilityModal(null)}
+        open={eligibilityModal !== null}
+        title={eligibilityModal?.title ?? ""}
+      />
     </div>
   );
 }

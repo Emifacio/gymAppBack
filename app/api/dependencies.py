@@ -26,6 +26,7 @@ from app.repositories.waitlist_repository import WaitlistRepository
 from app.services.activity_service import ActivityService
 from app.services.attendance_service import AttendanceService
 from app.services.auth_service import AuthService
+from app.services.booking_eligibility_service import BookingEligibilityService
 from app.services.booking_service import BookingService
 from app.services.class_service import ClassService
 from app.services.integration_service import IntegrationService
@@ -133,17 +134,25 @@ def get_booking_service(
     session: AsyncSession = Depends(get_db_session),
     cache: RedisCache = Depends(get_cache),
 ) -> BookingService:
+    member_subscription_repository = MemberSubscriptionRepository(session)
     return BookingService(
         session=session,
         class_repository=ClassRepository(session),
         member_repository=MemberRepository(session),
         booking_repository=BookingRepository(session),
         waitlist_repository=WaitlistRepository(session),
+        eligibility_service=BookingEligibilityService(
+            member_repository=MemberRepository(session),
+            class_repository=ClassRepository(session),
+            booking_repository=BookingRepository(session),
+            waitlist_repository=WaitlistRepository(session),
+            member_subscription_repository=member_subscription_repository,
+        ),
         subscription_service=SubscriptionService(
             session=session,
             member_repository=MemberRepository(session),
             plan_repository=PlanRepository(session),
-            member_subscription_repository=MemberSubscriptionRepository(session),
+            member_subscription_repository=member_subscription_repository,
             cache=cache,
         ),
         cache=cache,

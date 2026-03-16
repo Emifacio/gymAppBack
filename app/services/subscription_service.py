@@ -5,14 +5,14 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError
-from app.domain.enums import BookingType, PlanPeriodType, SubscriptionStatus
+from app.domain.enums import BookingEligibilityOutcome, BookingType, PlanPeriodType, SubscriptionStatus
 from app.domain.models.booking import Booking
 from app.domain.models.member_subscription import MemberSubscription
 from app.infrastructure.cache.redis_client import RedisCache
 from app.repositories.member_repository import MemberRepository
 from app.repositories.member_subscription_repository import MemberSubscriptionRepository
 from app.repositories.plan_repository import PlanRepository
-from app.schemas.subscription_schema import MemberSubscriptionRead
+from app.schemas.subscription_schema import MemberSubscriptionRead, MemberSubscriptionStatusRead
 
 
 def calculate_period_end(start: datetime, period_type: PlanPeriodType) -> datetime:
@@ -74,6 +74,54 @@ class SubscriptionService:
                 subscription = refreshed
 
         return MemberSubscriptionRead.model_validate(subscription)
+
+    async def get_member_subscription_status(self, member_id: UUID) -> MemberSubscriptionStatusRead:
+        member = await self.member_repository.get_by_id(member_id)
+        if member is None:
+            raise NotFoundError("Member not found")
+
+        now = datetime.now(timezone.utc)
+        subscription = await self.member_subscription_repository.get_active_for_member(member_id)
+        if subscription is not None and subscription.period_end <= now:
+            await self._sync_subscription_for_read(subscription.id)
+            subscription = await self.member_subscription_repository.get_active_for_member(member_id)
+
+        if subscription is not None and subscription.status == SubscriptionStatus.ACTIVE:
+            return MemberSubscriptionStatusRead(
+                active_plan=True,
+                active_credits=subscription.active_credits,
+                period_end=subscription.period_end,
+                plan_name=subscription.plan.name if subscription.plan is not None else None,
+                allows_free_pass=subscription.is_free_pass,
+                status=subscription.status,
+            )
+
+        latest_subscription = subscription or await self.member_subscription_repository.get_latest_for_member(member_id)
+        if latest_subscription is None:
+            return MemberSubscriptionStatusRead(
+                active_plan=False,
+                active_credits=0,
+                period_end=None,
+                plan_name=None,
+                allows_free_pass=False,
+                status=None,
+                error_code=BookingEligibilityOutcome.NO_ACTIVE_PLAN.value,
+            )
+
+        error_code = (
+            BookingEligibilityOutcome.PLAN_EXPIRED.value
+            if latest_subscription.status == SubscriptionStatus.EXPIRED or latest_subscription.period_end <= now
+            else BookingEligibilityOutcome.NO_ACTIVE_PLAN.value
+        )
+        return MemberSubscriptionStatusRead(
+            active_plan=False,
+            active_credits=0,
+            period_end=latest_subscription.period_end,
+            plan_name=latest_subscription.plan.name if latest_subscription.plan is not None else None,
+            allows_free_pass=latest_subscription.is_free_pass,
+            status=latest_subscription.status,
+            error_code=error_code,
+        )
 
     async def assign_subscription(self, member_id: UUID, plan_id: UUID) -> MemberSubscriptionRead:
         now = datetime.now(timezone.utc)

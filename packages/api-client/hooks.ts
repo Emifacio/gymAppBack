@@ -23,6 +23,7 @@ import {
   type MemberCreatePayload,
   type MemberFilters,
   type MemberSubscription,
+  type MemberSubscriptionStatus,
   type MemberUpdatePayload,
   type Plan,
   type PlanCreatePayload,
@@ -45,6 +46,7 @@ export const gymKeys = {
   memberDetail: (memberId: string) => [...gymKeys.members(), "detail", memberId] as const,
   memberBookings: (memberId: string) => [...gymKeys.all, "member-bookings", memberId] as const,
   memberSubscription: (memberId: string) => [...gymKeys.all, "member-subscription", memberId] as const,
+  memberSelfSubscription: () => [...gymKeys.all, "member-self-subscription"] as const,
   memberAttendance: (memberId: string) => [...gymKeys.all, "member-attendance", memberId] as const,
   classAttendance: (classId: string) => [...gymKeys.all, "class-attendance", classId] as const,
   classMembers: (classId: string) => [...gymKeys.all, "class-members", classId] as const,
@@ -116,6 +118,17 @@ export function getMemberSubscriptionQueryOptions(client: GymApiClient, memberId
         untypedClient.GET("/members/{member_id}/subscription", {
           params: { path: { member_id: memberId } }
         })
+      )
+  });
+}
+
+export function getMemberSelfSubscriptionQueryOptions(client: GymApiClient) {
+  const untypedClient = client as any;
+  return queryOptions({
+    queryKey: gymKeys.memberSelfSubscription(),
+    queryFn: () =>
+      unwrapResult<MemberSubscriptionStatus>(
+        untypedClient.GET("/members/me/subscription")
       )
   });
 }
@@ -214,6 +227,10 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     return useQuery(getMemberSubscriptionQueryOptions(client, memberId));
   }
 
+  function useMySubscriptionStatus() {
+    return useQuery(getMemberSelfSubscriptionQueryOptions(client));
+  }
+
   function useMemberAttendance(memberId: string) {
     return useQuery(getMemberAttendanceQueryOptions(client, memberId));
   }
@@ -264,6 +281,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
       onSuccess: async (session, variables, onMutateResult, context) => {
         await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(session.member.id) });
         await queryClient.invalidateQueries({ queryKey: gymKeys.workouts() });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });
         await options.onSuccess?.(session, variables, onMutateResult, context);
       }
     });
@@ -289,6 +307,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
       onSuccess: async (session, variables, onMutateResult, context) => {
         await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(session.member.id) });
         await queryClient.invalidateQueries({ queryKey: gymKeys.workouts() });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });
         await options.onSuccess?.(session, variables, onMutateResult, context);
       }
     });
@@ -318,6 +337,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
             queryKey: gymKeys.dashboard(variables.member_id)
           });
         }
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });
 
         await options.onSuccess?.(result, variables, onMutateResult, context);
       }
@@ -342,6 +362,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
         await queryClient.invalidateQueries({ queryKey: gymKeys.memberBookings(variables.memberId) });
         await queryClient.invalidateQueries({ queryKey: gymKeys.memberSubscription(variables.memberId) });
         await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });
         await options.onSuccess?.(result, variables, onMutateResult, context);
       }
     });
@@ -587,6 +608,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
         });
         await queryClient.invalidateQueries({ queryKey: gymKeys.memberDetail(variables.memberId) });
         await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });
         await options.onSuccess?.(result, variables, onMutateResult, context);
       }
     });
@@ -613,6 +635,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
         });
         await queryClient.invalidateQueries({ queryKey: gymKeys.memberDetail(variables.memberId) });
         await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });
         await options.onSuccess?.(result, variables, onMutateResult, context);
       }
     });
@@ -646,6 +669,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
         await queryClient.invalidateQueries({ queryKey: gymKeys.classMembers(variables.classId) });
         await queryClient.invalidateQueries({ queryKey: gymKeys.memberBookings(variables.memberId) });
         await queryClient.invalidateQueries({ queryKey: gymKeys.memberSubscription(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });
         await options.onSuccess?.(result, variables, onMutateResult, context);
       }
     });
@@ -658,6 +682,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     useMember,
     useMemberBookings,
     useMemberSubscription,
+    useMySubscriptionStatus,
     useMemberAttendance,
     useClassAttendance,
     useClassMembers,

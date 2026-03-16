@@ -49,6 +49,30 @@ export interface MemberSubscription {
   plan: Plan;
 }
 
+export type BookingEligibilityErrorCode =
+  | "NO_ACTIVE_PLAN"
+  | "PLAN_EXPIRED"
+  | "INSUFFICIENT_CREDITS"
+  | "CLASS_FULL"
+  | "BOOKING_NOT_ALLOWED";
+
+export interface MemberSubscriptionStatus {
+  active_plan: boolean;
+  active_credits: number;
+  period_end?: string | null;
+  plan_name?: string | null;
+  allows_free_pass: boolean;
+  status?: "active" | "expired" | "cancelled" | null;
+  error_code?: BookingEligibilityErrorCode | string | null;
+}
+
+export interface ApiErrorPayload {
+  detail?: unknown;
+  message?: string;
+  code?: string;
+  error_code?: string;
+}
+
 export interface SubscriptionAssignPayload {
   plan_id: string;
 }
@@ -122,13 +146,37 @@ export interface CreateApiClientOptions {
   onUnauthorized?: () => Promise<void> | void;
 }
 
+function isApiErrorPayload(value: unknown): value is ApiErrorPayload {
+  return typeof value === "object" && value !== null;
+}
+
+function extractApiErrorMessage(
+  status: number,
+  payload?: ApiErrorPayload | string | unknown
+): string {
+  if (typeof payload === "string" && payload.trim()) {
+    return payload;
+  }
+
+  if (isApiErrorPayload(payload)) {
+    if (typeof payload.message === "string" && payload.message.trim()) {
+      return payload.message;
+    }
+    if (typeof payload.detail === "string" && payload.detail.trim()) {
+      return payload.detail;
+    }
+  }
+
+  return `API request failed with status ${status}`;
+}
+
 export class ApiResponseError<TError = unknown> extends Error {
   readonly status: number;
   readonly payload: TError | string | undefined;
   readonly response: Response;
 
   constructor(status: number, response: Response, payload?: TError | string) {
-    super(`API request failed with status ${status}`);
+    super(extractApiErrorMessage(status, payload));
     this.name = "ApiResponseError";
     this.status = status;
     this.response = response;
@@ -248,4 +296,30 @@ export async function unwrapResult<TData, TError = unknown>(
 
 export function isApiResponseError(error: unknown): error is ApiResponseError {
   return error instanceof ApiResponseError;
+}
+
+export function getApiErrorPayload(error: unknown): ApiErrorPayload | null {
+  if (!isApiResponseError(error) || !isApiErrorPayload(error.payload)) {
+    return null;
+  }
+
+  return error.payload;
+}
+
+export function getApiErrorCode(error: unknown): string | undefined {
+  const payload = getApiErrorPayload(error);
+
+  if (!payload) {
+    return undefined;
+  }
+
+  return payload.error_code ?? payload.code;
+}
+
+export function getApiErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return "Something went wrong while contacting the API.";
 }

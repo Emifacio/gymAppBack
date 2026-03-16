@@ -42,6 +42,16 @@ class BookingType(StrEnum):
     WAITLIST = "waitlist"
 
 
+class BookingEligibilityOutcome(StrEnum):
+    BOOKING_ALLOWED = "BOOKING_ALLOWED"
+    WAITLIST_ALLOWED = "WAITLIST_ALLOWED"
+    NO_ACTIVE_PLAN = "NO_ACTIVE_PLAN"
+    INSUFFICIENT_CREDITS = "INSUFFICIENT_CREDITS"
+    PLAN_EXPIRED = "PLAN_EXPIRED"
+    CLASS_FULL = "CLASS_FULL"
+    BOOKING_NOT_ALLOWED = "BOOKING_NOT_ALLOWED"
+
+
 class WaitlistStatus(StrEnum):
     WAITING = "waiting"
     PROMOTED = "promoted"

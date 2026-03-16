@@ -14,14 +14,24 @@ logger = logging.getLogger(__name__)
 async def app_exception_handler(_: Request, exc: AppException) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
-        content={"detail": exc.detail, "code": exc.code},
+        content={
+            "detail": exc.detail,
+            "message": exc.detail,
+            "code": exc.code,
+            "error_code": exc.code,
+        },
     )
 
 
 async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content={"detail": exc.errors(), "code": "validation_error"},
+        content={
+            "detail": exc.errors(),
+            "message": "Validation failed",
+            "code": "validation_error",
+            "error_code": "validation_error",
+        },
     )
 
 
@@ -29,7 +39,12 @@ async def integrity_exception_handler(_: Request, exc: IntegrityError) -> JSONRe
     logger.exception("database_integrity_error", exc_info=exc)
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
-        content={"detail": "Database integrity violation", "code": "integrity_error"},
+        content={
+            "detail": "Database integrity violation",
+            "message": "Database integrity violation",
+            "code": "integrity_error",
+            "error_code": "integrity_error",
+        },
     )
 
 
@@ -37,6 +52,10 @@ async def unhandled_exception_handler(_: Request, exc: Exception) -> JSONRespons
     logger.exception("unhandled_exception", exc_info=exc)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"detail": "Internal server error", "code": "internal_error"},
+        content={
+            "detail": "Internal server error",
+            "message": "Internal server error",
+            "code": "internal_error",
+            "error_code": "internal_error",
+        },
     )
-

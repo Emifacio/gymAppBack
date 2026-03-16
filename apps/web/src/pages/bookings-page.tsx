@@ -3,7 +3,7 @@ import {
   useCancelBooking,
   useMemberAttendance,
   useMemberBookings,
-  useMemberSubscription
+  useMySubscriptionStatus
 } from "@/hooks/use-workouts";
 import { formatCredits, formatDateTime, formatWorkoutSchedule } from "@/lib/format";
 
@@ -11,7 +11,7 @@ export function BookingsPage() {
   const { session } = useAuth();
   const bookingsQuery = useMemberBookings(session!.member.id);
   const attendanceQuery = useMemberAttendance(session!.member.id);
-  const subscriptionQuery = useMemberSubscription(session!.member.id);
+  const subscriptionQuery = useMySubscriptionStatus();
   const cancelBooking = useCancelBooking();
 
   const bookings = bookingsQuery.data?.bookings ?? [];
@@ -31,12 +31,22 @@ export function BookingsPage() {
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           <div className="rounded-[1.5rem] bg-white/80 p-5">
             <p className="text-sm font-semibold text-[var(--ink)]">Plan</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">{subscription?.plan.name ?? "No subscription"}</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              {subscription?.active_plan
+                ? subscription.plan_name
+                : subscription?.error_code === "PLAN_EXPIRED"
+                  ? "Plan expired"
+                  : "No active plan"}
+            </p>
           </div>
           <div className="rounded-[1.5rem] bg-white/80 p-5">
             <p className="text-sm font-semibold text-[var(--ink)]">Credits</p>
             <p className="mt-2 text-sm text-[var(--muted)]">
-              {subscription?.plan.allows_free_pass ? "Unlimited while spots remain" : formatCredits(subscription?.active_credits)}
+              {subscription?.active_plan
+                ? subscription.allows_free_pass
+                  ? "Unlimited while spots remain"
+                  : formatCredits(subscription.active_credits)
+                : "Booking unavailable"}
             </p>
           </div>
           <div className="rounded-[1.5rem] bg-white/80 p-5">

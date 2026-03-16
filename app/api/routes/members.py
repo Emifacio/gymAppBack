@@ -17,7 +17,11 @@ from app.domain.models.member import Member
 from app.schemas.activity_schema import ActivityRead
 from app.schemas.booking_schema import MemberBookingsResponse
 from app.schemas.member_schema import MemberCreate, MemberRead, MemberUpdate
-from app.schemas.subscription_schema import MemberSubscriptionRead, SubscriptionAssign
+from app.schemas.subscription_schema import (
+    MemberSubscriptionRead,
+    MemberSubscriptionStatusRead,
+    SubscriptionAssign,
+)
 from app.services.activity_service import ActivityService
 from app.services.booking_service import BookingService
 from app.services.member_service import MemberService
@@ -54,6 +58,14 @@ async def list_members(
         offset=offset,
         limit=limit,
     )
+
+
+@router.get("/me/subscription", response_model=MemberSubscriptionStatusRead)
+async def get_my_subscription(
+    current_user: Member = Depends(get_current_user),
+    service: SubscriptionService = Depends(get_subscription_service),
+) -> MemberSubscriptionStatusRead:
+    return await service.get_member_subscription_status(current_user.id)
 
 
 @router.get("/{member_id}", response_model=MemberRead)

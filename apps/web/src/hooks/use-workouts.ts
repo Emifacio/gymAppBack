@@ -6,6 +6,7 @@ export const useMembers = apiHooks.useMembers;
 export const useMember = apiHooks.useMember;
 export const useMemberBookings = apiHooks.useMemberBookings;
 export const useMemberSubscription = apiHooks.useMemberSubscription;
+export const useMySubscriptionStatus = apiHooks.useMySubscriptionStatus;
 export const useMemberAttendance = apiHooks.useMemberAttendance;
 export const useClassAttendance = apiHooks.useClassAttendance;
 export const useClassMembers = apiHooks.useClassMembers;

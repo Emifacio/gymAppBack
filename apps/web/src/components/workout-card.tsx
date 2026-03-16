@@ -14,6 +14,10 @@ export function WorkoutCard({ workout, actionLabel = "View session" }: WorkoutCa
     typeof workout.available_spots === "number"
       ? `${workout.available_spots} spot${workout.available_spots === 1 ? "" : "s"} left`
       : `${workout.capacity} total spots`;
+  const waitlistLabel =
+    (workout.available_spots ?? 0) > 0
+      ? `${workout.waitlist_size ?? 0} waiting`
+      : `Waitlist open · ${workout.waitlist_size ?? 0} waiting`;
 
   return (
     <article className="glass-panel rounded-[2rem] p-6 transition-transform duration-200 hover:-translate-y-1">
@@ -47,7 +51,11 @@ export function WorkoutCard({ workout, actionLabel = "View session" }: WorkoutCa
         </div>
         <div>
           <p className="font-semibold text-[var(--ink)]">Waitlist</p>
-          <p className="mt-1">{workout.waitlist_size ?? 0} waiting</p>
+          <p className="mt-1">{waitlistLabel}</p>
+        </div>
+        <div>
+          <p className="font-semibold text-[var(--ink)]">Credit cost</p>
+          <p className="mt-1">1 credit</p>
         </div>
       </div>
 

@@ -4,7 +4,8 @@ import { Link } from "react-router-dom";
 import { EmptyState } from "@/components/empty-state";
 import { WorkoutCard } from "@/components/workout-card";
 import { useAuth } from "@/hooks/use-auth";
-import { useCreateWorkout, useWorkouts } from "@/hooks/use-workouts";
+import { useCreateWorkout, useMySubscriptionStatus, useWorkouts } from "@/hooks/use-workouts";
+import { formatCredits, formatDateTime } from "@/lib/format";
 import { canManageOperations } from "@/lib/roles";
 
 function getFormValue(formData: FormData, key: string) {
@@ -14,6 +15,7 @@ function getFormValue(formData: FormData, key: string) {
 
 export function WorkoutsPage() {
   const { session } = useAuth();
+  const subscriptionQuery = useMySubscriptionStatus();
   const [filters, setFilters] = useState({
     status: "" as "" | "scheduled" | "cancelled" | "completed",
     offset: 0,
@@ -26,6 +28,7 @@ export function WorkoutsPage() {
   });
   const createWorkout = useCreateWorkout();
   const workouts = workoutsQuery.data ?? [];
+  const subscription = subscriptionQuery.data;
   const canManage = canManageOperations(session?.member);
   const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
 
@@ -38,6 +41,33 @@ export function WorkoutsPage() {
           Browse live class availability, current waitlist pressure, and your personal booking status from
           the backend `/classes` endpoint.
         </p>
+
+        <div className="mt-6 grid gap-4 rounded-[1.5rem] bg-white/70 p-4 md:grid-cols-3">
+          <div className="rounded-[1.25rem] bg-white px-4 py-4">
+            <p className="text-sm font-semibold text-[var(--ink)]">Active plan</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              {subscription?.active_plan
+                ? subscription.plan_name ?? "Assigned"
+                : subscription?.error_code === "PLAN_EXPIRED"
+                  ? "Plan expired"
+                  : "No active plan"}
+            </p>
+          </div>
+          <div className="rounded-[1.25rem] bg-white px-4 py-4">
+            <p className="text-sm font-semibold text-[var(--ink)]">Remaining credits</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              {subscription?.active_plan
+                ? subscription.allows_free_pass
+                  ? "Unlimited while capacity exists"
+                  : formatCredits(subscription.active_credits)
+                : "Booking unavailable"}
+            </p>
+          </div>
+          <div className="rounded-[1.25rem] bg-white px-4 py-4">
+            <p className="text-sm font-semibold text-[var(--ink)]">Period end</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">{formatDateTime(subscription?.period_end)}</p>
+          </div>
+        </div>
 
         <div className="mt-6 grid gap-4 rounded-[1.5rem] bg-white/70 p-4 md:grid-cols-3">
           <label className="block">

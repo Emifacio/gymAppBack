@@ -4,14 +4,14 @@ import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
 import { WorkoutCard } from "@/components/workout-card";
 import { useAuth } from "@/hooks/use-auth";
-import { useMemberBookings, useMemberSubscription, useWorkouts } from "@/hooks/use-workouts";
+import { useMemberBookings, useMySubscriptionStatus, useWorkouts } from "@/hooks/use-workouts";
 import { formatCredits, formatDateTime, formatRelativeSlot } from "@/lib/format";
 
 export function DashboardPage() {
   const { session } = useAuth();
   const workoutsQuery = useWorkouts({ limit: 6 });
   const bookingsQuery = useMemberBookings(session!.member.id);
-  const subscriptionQuery = useMemberSubscription(session!.member.id);
+  const subscriptionQuery = useMySubscriptionStatus();
 
   const workouts = workoutsQuery.data ?? [];
   const bookings = bookingsQuery.data?.bookings ?? [];
@@ -79,13 +79,23 @@ export function DashboardPage() {
         <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
           <StatCard
             detail={
-              subscription
+              subscription?.active_plan
                 ? `Renews on ${formatDateTime(subscription.period_end)}.`
-                : "Assign a subscription to unlock bookings."
+                : subscription?.error_code === "PLAN_EXPIRED"
+                  ? "Your last assigned plan has expired."
+                  : "Assign a subscription to unlock bookings."
             }
-            label={subscription?.plan.name ?? "Active plan"}
+            label={subscription?.plan_name ?? "Active plan"}
             tone="accent"
-            value={subscription?.plan.allows_free_pass ? "Free pass" : formatCredits(subscription?.active_credits)}
+            value={
+              subscription?.active_plan
+                ? subscription.allows_free_pass
+                  ? "Free pass"
+                  : formatCredits(subscription.active_credits)
+                : subscription?.error_code === "PLAN_EXPIRED"
+                  ? "Expired"
+                  : "No active plan"
+            }
           />
           <StatCard
             detail="Confirmed reservations in the current booking feed."
@@ -107,16 +117,18 @@ export function DashboardPage() {
             Subscription
           </p>
           <h2 className="section-title mt-3 text-3xl font-semibold">Membership snapshot</h2>
-          {subscription ? (
+          {subscription?.active_plan ? (
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div className="rounded-[1.5rem] bg-white/80 p-5">
                 <p className="text-sm font-semibold text-[var(--ink)]">Plan</p>
-                <p className="mt-2 text-sm text-[var(--muted)]">{subscription.plan.name}</p>
+                <p className="mt-2 text-sm text-[var(--muted)]">{subscription.plan_name}</p>
               </div>
               <div className="rounded-[1.5rem] bg-white/80 p-5">
                 <p className="text-sm font-semibold text-[var(--ink)]">Remaining credits</p>
                 <p className="mt-2 text-sm text-[var(--muted)]">
-                  {subscription.plan.allows_free_pass ? "Unlimited while spots remain" : formatCredits(subscription.active_credits)}
+                  {subscription.allows_free_pass
+                    ? "Unlimited while spots remain"
+                    : formatCredits(subscription.active_credits)}
                 </p>
               </div>
               <div className="rounded-[1.5rem] bg-white/80 p-5">
@@ -130,7 +142,9 @@ export function DashboardPage() {
             </div>
           ) : (
             <div className="mt-6 rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
-              No active subscription is assigned to this member yet.
+              {subscription?.error_code === "PLAN_EXPIRED"
+                ? `Your last plan expired on ${formatDateTime(subscription.period_end)}.`
+                : "No active subscription is assigned to this member yet."}
             </div>
           )}
         </div>
