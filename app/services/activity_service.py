@@ -29,14 +29,13 @@ class ActivityService:
         self.strava_client = strava_client
 
     async def list_member_activities(self, member_id: UUID) -> list[ActivityRead]:
-        if await self.member_repository.get_by_id(member_id) is None:
+        if not await self.member_repository.exists_by_id(member_id):
             raise NotFoundError("Member not found")
         items = await self.activity_repository.list_for_member(member_id)
         return [ActivityRead.model_validate(item) for item in items]
 
     async def sync_member_activities(self, member_id: UUID) -> dict[str, int | str]:
-        member = await self.member_repository.get_by_id(member_id)
-        if member is None:
+        if not await self.member_repository.exists_by_id(member_id):
             raise NotFoundError("Member not found")
 
         account = await self.integration_repository.get_by_member_provider(member_id, IntegrationProvider.STRAVA)
@@ -49,6 +48,10 @@ class ActivityService:
         )
         synced = 0
         now = datetime.now(timezone.utc)
+        existing_activities = await self.activity_repository.get_by_provider_external_ids(
+            IntegrationProvider.STRAVA,
+            [str(item["id"]) for item in activities],
+        )
 
         if self.session.in_transaction():
             await self.session.rollback()
@@ -58,10 +61,7 @@ class ActivityService:
                 raise NotFoundError("Connected Strava account not found")
             for item in activities:
                 external_id = str(item["id"])
-                activity = await self.activity_repository.get_by_provider_external_id(
-                    IntegrationProvider.STRAVA,
-                    external_id,
-                )
+                activity = existing_activities.get(external_id)
                 started_at = None
                 if item.get("start_date"):
                     started_at = datetime.fromisoformat(item["start_date"].replace("Z", "+00:00"))
@@ -83,6 +83,7 @@ class ActivityService:
                         },
                     )
                     await self.activity_repository.add(activity)
+                    existing_activities[external_id] = activity
                 else:
                     activity.name = item.get("name", activity.name)
                     activity.activity_type = item.get("type", activity.activity_type)

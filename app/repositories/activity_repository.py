@@ -21,3 +21,18 @@ class ActivityRepository(BaseRepository[Activity]):
     ) -> Activity | None:
         stmt = select(Activity).where(Activity.provider == provider, Activity.external_id == external_id)
         return await self.session.scalar(stmt)
+
+    async def get_by_provider_external_ids(
+        self,
+        provider: IntegrationProvider,
+        external_ids: list[str],
+    ) -> dict[str, Activity]:
+        if not external_ids:
+            return {}
+        result = await self.session.scalars(
+            select(Activity).where(
+                Activity.provider == provider,
+                Activity.external_id.in_(external_ids),
+            )
+        )
+        return {activity.external_id: activity for activity in result.all()}

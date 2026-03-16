@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import BookingStatus, BookingType, enum_values
@@ -43,3 +43,7 @@ class Booking(UUIDPrimaryKeyMixin, Base):
     member: Mapped["Member"] = relationship(back_populates="bookings")
     gym_class: Mapped["GymClass"] = relationship(back_populates="bookings")
     subscription: Mapped["MemberSubscription | None"] = relationship(back_populates="bookings")
+
+
+Index("idx_bookings_class_status_booked_at", Booking.class_id, Booking.status, Booking.booked_at)
+Index("idx_bookings_member_booked_at", Booking.member_id, Booking.booked_at)

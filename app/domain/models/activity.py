@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import DateTime, Enum, ForeignKey, JSON, String, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, JSON, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import IntegrationProvider, enum_values
@@ -37,3 +37,7 @@ class Activity(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     member: Mapped["Member"] = relationship(back_populates="activities")
     integration_account: Mapped["IntegrationAccount | None"] = relationship(back_populates="activities")
+
+
+Index("idx_activities_member_started_at", Activity.member_id, Activity.started_at)
+Index("idx_activities_integration_account_id", Activity.integration_account_id)

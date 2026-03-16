@@ -87,11 +87,18 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 30
     database_url: str | None = None
+    database_url_source: str | None = None
     database_connect_timeout_seconds: float = 5.0
+    database_command_timeout_seconds: float = 30.0
     database_startup_max_attempts: int = 10
     database_startup_initial_backoff_seconds: float = 1.0
     database_startup_max_backoff_seconds: float = 8.0
     database_startup_backoff_multiplier: float = 1.5
+    database_pool_size: int = 5
+    database_max_overflow: int = 10
+    database_pool_timeout_seconds: float = 30.0
+    database_pool_recycle_seconds: int = 1800
+    database_pool_use_lifo: bool = True
     redis_url: str | None = None
     redis_url_source: str | None = None
     celery_broker_url: str | None = None
@@ -143,14 +150,22 @@ class Settings(BaseSettings):
             self.secret_key = secrets.token_urlsafe(32)
 
         if not self.database_url:
-            self.database_url = _first_present_env(
+            database_url, database_url_source = _first_present_env_with_name(
                 "DATABASE_URL",
-                "DATABASE_PUBLIC_URL",
-                "POSTGRES_URL",
                 "POSTGRES_URL_NON_POOLING",
+                "POSTGRES_URL",
                 "POSTGRES_PRISMA_URL",
                 "POSTGRESQL_URL",
-            ) or _build_database_url_from_pg_env()
+                "DATABASE_PUBLIC_URL",
+            )
+            if database_url:
+                self.database_url = database_url
+                self.database_url_source = database_url_source
+            else:
+                derived_database_url = _build_database_url_from_pg_env()
+                if derived_database_url:
+                    self.database_url = derived_database_url
+                    self.database_url_source = "PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE"
         if not self.database_url:
             raise ValueError(
                 "A database URL is required. Set DATABASE_URL (or another supported "
@@ -158,6 +173,8 @@ class Settings(BaseSettings):
                 "PGPASSWORD, and PGDATABASE."
             )
         self.database_url = _normalize_database_url(self.database_url)
+        if not self.database_url_source:
+            self.database_url_source = "settings"
 
         if not self.redis_url:
             redis_url, redis_url_source = _first_present_env_with_name("REDIS_URL")

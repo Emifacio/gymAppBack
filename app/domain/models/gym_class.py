@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import ClassStatus, enum_values
@@ -41,3 +41,7 @@ class GymClass(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         back_populates="gym_class",
         cascade="all, delete-orphan",
     )
+
+
+Index("idx_classes_status_scheduled_at", GymClass.status, GymClass.scheduled_at)
+Index("idx_classes_instructor_id", GymClass.instructor_id)

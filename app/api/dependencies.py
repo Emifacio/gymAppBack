@@ -75,7 +75,7 @@ async def _resolve_current_user(
         member_id = UUID(subject)
     except ValueError as exc:
         raise UnauthorizedError("Invalid token subject") from exc
-    member = await MemberRepository(session).get_by_id(member_id)
+    member = await MemberRepository(session).get_identity_by_id(member_id)
     if member is None or not member.is_active:
         if required:
             raise UnauthorizedError("Authenticated member not found or inactive")

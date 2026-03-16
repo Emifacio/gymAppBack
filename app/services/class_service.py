@@ -44,8 +44,16 @@ class ClassService:
         return gym_class
 
     async def get_class(self, class_id: UUID, *, viewer: Member | None = None) -> ClassRead:
+        cache_key = self._cache_key(class_id)
+        if viewer is None:
+            cached = await self.cache.get_json(cache_key)
+            if cached is not None:
+                return ClassRead.model_validate(cached)
+
         gym_class = await self.get_class_model(class_id)
         serialized = await self._serialize_classes([gym_class], viewer=viewer)
+        if viewer is None:
+            await self.cache.set_json(cache_key, serialized[0].model_dump(mode="json"))
         return serialized[0]
 
     async def create_class(self, payload: ClassCreate) -> ClassRead:
@@ -95,23 +103,19 @@ class ClassService:
 
     async def list_class_members(self, class_id: UUID) -> list[ClassMemberRead]:
         await self.get_class_model(class_id)
-        bookings = await self.booking_repository.list_confirmed_for_class(class_id)
-        members: list[ClassMemberRead] = []
-        for booking in bookings:
-            if booking.member is None:
-                continue
-            members.append(
-                ClassMemberRead(
-                    booking_id=booking.id,
-                    member_id=booking.member_id,
-                    full_name=booking.member.full_name,
-                    email=booking.member.email,
-                    booked_at=booking.booked_at,
-                    booking_type=booking.booking_type,
-                    credits_consumed=booking.credits_consumed,
-                )
+        bookings = await self.booking_repository.list_confirmed_member_rows_for_class(class_id)
+        return [
+            ClassMemberRead(
+                booking_id=booking_id,
+                member_id=member_id,
+                full_name=full_name,
+                email=email,
+                booked_at=booked_at,
+                booking_type=booking_type,
+                credits_consumed=credits_consumed,
             )
-        return members
+            for booking_id, member_id, full_name, email, booked_at, booking_type, credits_consumed in bookings
+        ]
 
     async def _serialize_classes(
         self,
@@ -128,11 +132,17 @@ class ClassService:
         member_status_by_class: dict[UUID, str] = {}
 
         if viewer is not None:
-            confirmed = await self.booking_repository.list_confirmed_for_member_and_class_ids(viewer.id, class_ids)
-            waiting = await self.waitlist_repository.list_waiting_for_member_and_class_ids(viewer.id, class_ids)
-            member_status_by_class.update({booking.class_id: "confirmed" for booking in confirmed})
-            for entry in waiting:
-                member_status_by_class.setdefault(entry.class_id, "waitlisted")
+            confirmed_class_ids = await self.booking_repository.list_confirmed_class_ids_for_member(
+                viewer.id,
+                class_ids,
+            )
+            waiting_class_ids = await self.waitlist_repository.list_waiting_class_ids_for_member(
+                viewer.id,
+                class_ids,
+            )
+            member_status_by_class.update({class_id: "confirmed" for class_id in confirmed_class_ids})
+            for class_id in waiting_class_ids:
+                member_status_by_class.setdefault(class_id, "waitlisted")
 
         serialized_classes: list[ClassRead] = []
         for gym_class in classes:

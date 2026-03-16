@@ -84,15 +84,15 @@ class WaitlistRepository(BaseRepository[Waitlist]):
         rows = await self.session.execute(stmt)
         return {class_id: count for class_id, count in rows.all()}
 
-    async def list_waiting_for_member_and_class_ids(
+    async def list_waiting_class_ids_for_member(
         self,
         member_id: UUID,
         class_ids: list[UUID],
-    ) -> list[Waitlist]:
+    ) -> list[UUID]:
         if not class_ids:
             return []
         stmt = (
-            self._detail_query()
+            select(Waitlist.class_id)
             .where(
                 Waitlist.member_id == member_id,
                 Waitlist.class_id.in_(class_ids),
@@ -100,4 +100,4 @@ class WaitlistRepository(BaseRepository[Waitlist]):
             )
         )
         result = await self.session.scalars(stmt)
-        return list(result.unique().all())
+        return list(result.all())

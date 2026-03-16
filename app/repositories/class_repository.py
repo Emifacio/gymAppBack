@@ -21,6 +21,10 @@ class ClassRepository(BaseRepository[GymClass]):
             stmt = stmt.with_for_update()
         return await self.session.scalar(stmt)
 
+    async def exists_by_id(self, class_id: UUID) -> bool:
+        stmt = select(GymClass.id).where(GymClass.id == class_id).limit(1)
+        return (await self.session.scalar(stmt)) is not None
+
     async def list(
         self,
         *,
@@ -36,4 +40,3 @@ class ClassRepository(BaseRepository[GymClass]):
 
     async def delete(self, gym_class: GymClass) -> None:
         await self.session.delete(gym_class)
-

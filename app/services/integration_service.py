@@ -76,7 +76,7 @@ class IntegrationService:
             )
         if actor.role != MemberRole.ADMIN and actor.id != member_id:
             raise ForbiddenError("You can only sync activities for your own account")
-        if await self.member_repository.get_by_id(member_id) is None:
+        if not await self.member_repository.exists_by_id(member_id):
             raise NotFoundError("Member not found")
         account = await self.integration_repository.get_by_member_provider(member_id, IntegrationProvider.STRAVA)
         if account is None or account.status != IntegrationStatus.CONNECTED:

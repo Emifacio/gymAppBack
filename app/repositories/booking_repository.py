@@ -69,6 +69,27 @@ class BookingRepository(BaseRepository[Booking]):
         result = await self.session.scalars(stmt)
         return list(result.unique().all())
 
+    async def list_confirmed_member_rows_for_class(self, class_id: UUID):
+        stmt = (
+            select(
+                Booking.id,
+                Booking.member_id,
+                Member.full_name,
+                Member.email,
+                Booking.booked_at,
+                Booking.booking_type,
+                Booking.credits_consumed,
+            )
+            .join(Member, Member.id == Booking.member_id)
+            .where(
+                Booking.class_id == class_id,
+                Booking.status == BookingStatus.CONFIRMED,
+            )
+            .order_by(Booking.booked_at.asc())
+        )
+        result = await self.session.execute(stmt)
+        return result.all()
+
     async def count_confirmed_for_class_ids(self, class_ids: list[UUID]) -> dict[UUID, int]:
         if not class_ids:
             return {}
@@ -83,15 +104,15 @@ class BookingRepository(BaseRepository[Booking]):
         rows = await self.session.execute(stmt)
         return {class_id: count for class_id, count in rows.all()}
 
-    async def list_confirmed_for_member_and_class_ids(
+    async def list_confirmed_class_ids_for_member(
         self,
         member_id: UUID,
         class_ids: list[UUID],
-    ) -> list[Booking]:
+    ) -> list[UUID]:
         if not class_ids:
             return []
         stmt = (
-            self._detail_query()
+            select(Booking.class_id)
             .where(
                 Booking.member_id == member_id,
                 Booking.class_id.in_(class_ids),
@@ -99,4 +120,4 @@ class BookingRepository(BaseRepository[Booking]):
             )
         )
         result = await self.session.scalars(stmt)
-        return list(result.unique().all())
+        return list(result.all())

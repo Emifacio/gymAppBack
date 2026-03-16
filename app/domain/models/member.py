@@ -1,7 +1,7 @@
 from datetime import date
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Boolean, Date, Enum, ForeignKey, JSON, String, Text
+from sqlalchemy import Boolean, Date, Enum, ForeignKey, Index, JSON, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import MemberRole, MembershipStatus, SubscriptionStatus, enum_values
@@ -73,3 +73,9 @@ class Member(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             return None
         active_subscriptions.sort(key=lambda subscription: subscription.created_at, reverse=True)
         return active_subscriptions[0]
+
+
+Index("idx_members_email_lower", func.lower(Member.email))
+Index("idx_members_role_created_at", Member.role, Member.created_at)
+Index("idx_members_membership_status_created_at", Member.membership_status, Member.created_at)
+Index("idx_members_membership_plan_id", Member.membership_plan_id)

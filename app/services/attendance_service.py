@@ -85,13 +85,13 @@ class AttendanceService:
         return AttendanceRead.model_validate(refreshed)
 
     async def list_by_class(self, class_id: UUID) -> list[AttendanceRead]:
-        if await self.class_repository.get_by_id(class_id) is None:
+        if not await self.class_repository.exists_by_id(class_id):
             raise NotFoundError("Class not found")
         items = await self.attendance_repository.list_by_class(class_id)
         return [AttendanceRead.model_validate(item) for item in items]
 
     async def list_by_member(self, member_id: UUID) -> list[AttendanceRead]:
-        if await self.member_repository.get_by_id(member_id) is None:
+        if not await self.member_repository.exists_by_id(member_id):
             raise NotFoundError("Member not found")
         items = await self.attendance_repository.list_by_member(member_id)
         return [AttendanceRead.model_validate(item) for item in items]

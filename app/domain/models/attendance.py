@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import AttendanceStatus, enum_values
@@ -34,3 +34,8 @@ class Attendance(UUIDPrimaryKeyMixin, Base):
     member: Mapped["Member"] = relationship(back_populates="attendance_records")
     gym_class: Mapped["GymClass"] = relationship(back_populates="attendance_records")
     marked_by_instructor: Mapped["Instructor | None"] = relationship(back_populates="attendance_marked")
+
+
+Index("idx_attendance_class_marked_at", Attendance.class_id, Attendance.marked_at)
+Index("idx_attendance_member_marked_at", Attendance.member_id, Attendance.marked_at)
+Index("idx_attendance_marked_by_instructor_id", Attendance.marked_by_instructor_id)

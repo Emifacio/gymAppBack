@@ -17,6 +17,17 @@ class MemberSubscription(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "member_subscriptions"
     __table_args__ = (
         Index("ix_member_subscriptions_member_id_status", "member_id", "status"),
+        Index(
+            "idx_member_subscriptions_member_status_created_at",
+            "member_id",
+            "status",
+            "created_at",
+        ),
+        Index(
+            "idx_member_subscriptions_status_period_end",
+            "status",
+            "period_end",
+        ),
     )
 
     member_id = mapped_column(ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True)

@@ -11,6 +11,17 @@ from app.repositories.base_repository import BaseRepository
 
 
 class MemberRepository(BaseRepository[Member]):
+    def _summary_query(self) -> Select[tuple[Member]]:
+        return select(Member).options(
+            selectinload(Member.membership_plan),
+            selectinload(Member.instructor_profile),
+        )
+
+    def _identity_query(self) -> Select[tuple[Member]]:
+        return select(Member).options(
+            selectinload(Member.instructor_profile),
+        )
+
     def _detail_query(self) -> Select[tuple[Member]]:
         return select(Member).options(
             selectinload(Member.membership_plan),
@@ -21,14 +32,22 @@ class MemberRepository(BaseRepository[Member]):
     async def count(self) -> int:
         return await self.session.scalar(select(func.count()).select_from(Member)) or 0
 
+    async def exists_by_id(self, member_id: UUID) -> bool:
+        stmt = select(Member.id).where(Member.id == member_id).limit(1)
+        return (await self.session.scalar(stmt)) is not None
+
     async def get_by_id(self, member_id: UUID, *, for_update: bool = False) -> Member | None:
         stmt = self._detail_query().where(Member.id == member_id)
         if for_update:
             stmt = stmt.with_for_update()
         return await self.session.scalar(stmt)
 
+    async def get_identity_by_id(self, member_id: UUID) -> Member | None:
+        stmt = self._identity_query().where(Member.id == member_id)
+        return await self.session.scalar(stmt)
+
     async def get_by_email(self, email: str) -> Member | None:
-        stmt = self._detail_query().where(func.lower(Member.email) == email.lower())
+        stmt = self._summary_query().where(func.lower(Member.email) == email.lower())
         return await self.session.scalar(stmt)
 
     async def list(

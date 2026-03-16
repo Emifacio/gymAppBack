@@ -29,7 +29,15 @@ engine = create_async_engine(
     echo=False,
     future=True,
     pool_pre_ping=True,
-    connect_args={"timeout": settings.database_connect_timeout_seconds},
+    pool_size=settings.database_pool_size,
+    max_overflow=settings.database_max_overflow,
+    pool_timeout=settings.database_pool_timeout_seconds,
+    pool_recycle=settings.database_pool_recycle_seconds,
+    pool_use_lifo=settings.database_pool_use_lifo,
+    connect_args={
+        "timeout": settings.database_connect_timeout_seconds,
+        "command_timeout": settings.database_command_timeout_seconds,
+    },
 )
 AsyncSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False, class_=AsyncSession)
 

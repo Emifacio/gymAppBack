@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, UniqueConstraint
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import WaitlistStatus, enum_values
@@ -31,3 +31,13 @@ class Waitlist(UUIDPrimaryKeyMixin, Base):
 
     member: Mapped["Member"] = relationship(back_populates="waitlist_entries")
     gym_class: Mapped["GymClass"] = relationship(back_populates="waitlist_entries")
+
+
+Index(
+    "idx_waitlists_class_status_position_joined_at",
+    Waitlist.class_id,
+    Waitlist.status,
+    Waitlist.position,
+    Waitlist.joined_at,
+)
+Index("idx_waitlists_member_joined_at", Waitlist.member_id, Waitlist.joined_at)

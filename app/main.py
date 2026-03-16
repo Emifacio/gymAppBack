@@ -36,15 +36,39 @@ def _describe_service_url(url: str | None) -> str:
     return target
 
 
+def _uses_railway_private_network(url: str | None) -> bool:
+    if not url:
+        return False
+    parsed = urlparse(url)
+    host = parsed.hostname or ""
+    return host.endswith(".railway.internal")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(settings.log_level)
     logger.info(
-        "database_configuration_selected target=%s connect_timeout_seconds=%s max_attempts=%s",
+        "database_configuration_selected source=%s target=%s connect_timeout_seconds=%s "
+        "pool_size=%s max_overflow=%s max_attempts=%s",
+        settings.database_url_source or "unknown",
         _describe_service_url(settings.database_url),
         settings.database_connect_timeout_seconds,
+        settings.database_pool_size,
+        settings.database_max_overflow,
         settings.database_startup_max_attempts,
     )
+    if settings.database_url_source == "DATABASE_PUBLIC_URL":
+        logger.warning(
+            "database_configuration_uses_public_railway_url source=%s target=%s",
+            settings.database_url_source,
+            _describe_service_url(settings.database_url),
+        )
+    elif settings.environment != "local" and not _uses_railway_private_network(settings.database_url):
+        logger.info(
+            "database_configuration_non_private_target source=%s target=%s",
+            settings.database_url_source or "unknown",
+            _describe_service_url(settings.database_url),
+        )
     await wait_for_database_ready()
     if settings.redis_configured:
         logger.info(

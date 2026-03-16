@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Enum, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, Enum, Index, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import PlanPeriodType, enum_values
@@ -31,3 +31,6 @@ class Plan(UUIDPrimaryKeyMixin, Base):
     )
 
     subscriptions: Mapped[list["MemberSubscription"]] = relationship(back_populates="plan")
+
+
+Index("idx_plans_active_created_at", Plan.active, Plan.created_at)
