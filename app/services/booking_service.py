@@ -92,10 +92,21 @@ class BookingService:
 
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f"booking_start member_id={member_id} class_id={payload.class_id}")
+        logger.info(f"booking_start member_id={member_id} class_id={payload.class_id} session_id={id(self.session)}")
 
+        # Helper to check if object is in session
+        def check_session_state(obj, name):
+            if obj is None: return
+            is_new = obj in self.session.new
+            is_dirty = obj in self.session.dirty
+            is_deleted = obj in self.session.deleted
+            logger.debug(f"object_state name={name} id={getattr(obj, 'id', 'N/A')} new={is_new} dirty={is_dirty} deleted={is_deleted}")
+
+        # If already in a transaction, we should probably flush at the end but let the caller handle commit
+        # however, this service uses session.begin() which creates a subtransaction or a new one.
+        # The problem might be the rollback() at the start which clears the session.
         if self.session.in_transaction():
-            await self.session.rollback()
+            logger.warning(f"session_already_in_transaction session_id={id(self.session)}")
 
         async with self.session.begin():
             locked_class = await self.class_repository.get_by_id(payload.class_id, for_update=True)
@@ -126,6 +137,7 @@ class BookingService:
                     existing_booking=existing_booking,
                 )
                 booked_id = booking.id
+                check_session_state(booking, "booking")
                 logger.info(f"booking_created booking_id={booked_id} member_id={member_id} credits_consumed={booking.credits_consumed}")
             else:
                 waitlist_entry = await self._upsert_waitlist_entry(
@@ -135,11 +147,13 @@ class BookingService:
                     existing_waitlist=existing_waitlist,
                 )
                 waitlist_id = waitlist_entry.id
+                check_session_state(waitlist_entry, "waitlist_entry")
                 logger.info(f"waitlist_added waitlist_id={waitlist_id} member_id={member_id}")
 
-            # Flush is handled by session.begin() context manager (it commits/flushes)
+            await self.session.flush()
+            logger.debug(f"session_flushed session_id={id(self.session)}")
         
-        logger.info(f"transaction_commit member_id={member_id} class_id={payload.class_id}")
+        logger.info(f"transaction_closed member_id={member_id} class_id={payload.class_id} session_id={id(self.session)}")
 
         await self._invalidate_related_cache(payload.class_id, [member_id])
 

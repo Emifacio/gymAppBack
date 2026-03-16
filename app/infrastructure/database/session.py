@@ -44,7 +44,11 @@ AsyncSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False, clas
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
-        yield session
+        logger.debug(f"session_created id={id(session)}")
+        try:
+            yield session
+        finally:
+            logger.debug(f"session_closing id={id(session)}")
 
 
 async def probe_database() -> None:
