@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from app.domain.enums import BookingStatus, BookingType, WaitlistStatus
+from app.domain.enums import BookingActionState, BookingStatus, BookingType, WaitlistStatus
 from app.schemas.class_schema import ClassRead
 
 
@@ -43,7 +43,7 @@ class WaitlistRead(BaseModel):
 
 
 class BookingActionResponse(BaseModel):
-    state: str
+    state: BookingActionState
     message: str
     booking: BookingRead | None = None
     waitlist_entry: WaitlistRead | None = None

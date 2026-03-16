@@ -73,8 +73,21 @@ export function WorkoutDetailPage() {
     bookingMutation.error && !getBookingEligibilityModalContent(bookingErrorCode)
       ? getApiErrorMessage(bookingMutation.error)
       : null;
+  const bookingFeedbackMessage = bookingMutation.data
+    ? bookingMutation.data.state === "ADDED_TO_WAITLIST"
+      ? "Added to waitlist. We'll promote you automatically if a spot opens."
+      : "Booking confirmed. Your reservation and credits are now in sync."
+    : null;
 
   function openEligibilityModal(errorCode: string | undefined) {
+    if (errorCode === "DUPLICATE_BOOKING") {
+      setEligibilityModal({
+        title: "Already reserved",
+        description: "You already have a confirmed booking or an active waitlist entry for this class."
+      });
+      return;
+    }
+
     const content = getBookingEligibilityModalContent(errorCode);
 
     if (content) {
@@ -209,9 +222,9 @@ export function WorkoutDetailPage() {
           ) : null}
         </form>
 
-        {bookingMutation.data ? (
+        {bookingFeedbackMessage ? (
           <div className="mt-4 rounded-2xl bg-[rgba(23,184,156,0.12)] px-4 py-3 text-sm text-[var(--highlight)]">
-            {bookingMutation.data.message}
+            {bookingFeedbackMessage}
           </div>
         ) : null}
 

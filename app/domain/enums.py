@@ -45,6 +45,11 @@ class BookingType(StrEnum):
     WAITLIST = "waitlist"
 
 
+class BookingActionState(StrEnum):
+    BOOKING_CONFIRMED = "BOOKING_CONFIRMED"
+    ADDED_TO_WAITLIST = "ADDED_TO_WAITLIST"
+
+
 class BookingEligibilityOutcome(StrEnum):
     BOOKING_ALLOWED = "BOOKING_ALLOWED"
     WAITLIST_ALLOWED = "WAITLIST_ALLOWED"
@@ -52,6 +57,7 @@ class BookingEligibilityOutcome(StrEnum):
     INSUFFICIENT_CREDITS = "INSUFFICIENT_CREDITS"
     PLAN_EXPIRED = "PLAN_EXPIRED"
     CLASS_FULL = "CLASS_FULL"
+    DUPLICATE_BOOKING = "DUPLICATE_BOOKING"
     BOOKING_NOT_ALLOWED = "BOOKING_NOT_ALLOWED"
 
 

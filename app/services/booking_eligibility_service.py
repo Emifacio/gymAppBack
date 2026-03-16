@@ -5,6 +5,7 @@ from uuid import UUID
 from app.core.exceptions import (
     BookingNotAllowedError,
     ClassFullError,
+    DuplicateBookingError,
     InsufficientCreditsError,
     NoActivePlanError,
     NotFoundError,
@@ -65,14 +66,18 @@ class BookingEligibilityService:
         reference_time: datetime | None = None,
         for_update: bool = False,
         allow_existing_waitlist: bool = False,
+        locked_class: GymClass | None = None,
+        lock_member: bool | None = None,
     ) -> BookingEligibilityDecision:
         now = reference_time or datetime.now(timezone.utc)
+        if lock_member is None:
+            lock_member = for_update and locked_class is None
 
-        member = await self.member_repository.get_by_id(member_id, for_update=for_update)
+        member = await self.member_repository.get_by_id(member_id, for_update=lock_member)
         if member is None:
             raise NotFoundError("Member not found")
 
-        gym_class = await self.class_repository.get_by_id(class_id, for_update=for_update)
+        gym_class = locked_class or await self.class_repository.get_by_id(class_id, for_update=for_update)
         if gym_class is None:
             raise NotFoundError("Class not found")
 
@@ -97,13 +102,16 @@ class BookingEligibilityService:
             class_id,
             for_update=for_update,
         )
-        if existing_booking is not None and existing_booking.status == BookingStatus.CONFIRMED:
+        if existing_booking is not None and existing_booking.status in {
+            BookingStatus.CONFIRMED,
+            BookingStatus.WAITLIST,
+        }:
             return BookingEligibilityDecision(
-                outcome=BookingEligibilityOutcome.BOOKING_NOT_ALLOWED,
+                outcome=BookingEligibilityOutcome.DUPLICATE_BOOKING,
                 member=member,
                 gym_class=gym_class,
                 existing_booking=existing_booking,
-                message="Member already has a confirmed booking for this class",
+                message="Member already has a booking for this class",
             )
 
         existing_waitlist = await self.waitlist_repository.get_by_member_and_class(
@@ -117,7 +125,7 @@ class BookingEligibilityService:
             and existing_waitlist.status == WaitlistStatus.WAITING
         ):
             return BookingEligibilityDecision(
-                outcome=BookingEligibilityOutcome.BOOKING_NOT_ALLOWED,
+                outcome=BookingEligibilityOutcome.DUPLICATE_BOOKING,
                 member=member,
                 gym_class=gym_class,
                 existing_waitlist=existing_waitlist,
@@ -219,6 +227,8 @@ class BookingEligibilityService:
             raise InsufficientCreditsError(decision.message or "Not enough credits")
         if decision.outcome == BookingEligibilityOutcome.CLASS_FULL:
             raise ClassFullError(decision.message or "Class is full")
+        if decision.outcome == BookingEligibilityOutcome.DUPLICATE_BOOKING:
+            raise DuplicateBookingError(decision.message or "Member is already booked for this class")
         raise BookingNotAllowedError(decision.message or "Booking is not allowed")
 
     @staticmethod

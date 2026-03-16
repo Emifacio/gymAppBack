@@ -1,10 +1,18 @@
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
-from uuid import UUID
+import inspect
+from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import BookingNotCancellableError, ForbiddenError, NotFoundError
-from app.domain.enums import BookingEligibilityOutcome, BookingStatus, MemberRole, WaitlistStatus
+from app.core.exceptions import BookingNotCancellableError, ConflictError, ForbiddenError, NotFoundError
+from app.domain.enums import (
+    BookingActionState,
+    BookingEligibilityOutcome,
+    BookingStatus,
+    MemberRole,
+    WaitlistStatus,
+)
 from app.domain.models.booking import Booking
 from app.domain.models.member import Member
 from app.domain.models.waitlist import Waitlist
@@ -23,6 +31,24 @@ from app.schemas.booking_schema import (
 )
 from app.services.booking_eligibility_service import BookingEligibilityService
 from app.services.subscription_service import SubscriptionService
+
+_VALID_BOOKING_STATUS_TRANSITIONS: dict[BookingStatus, set[BookingStatus]] = {
+    BookingStatus.WAITLIST: {BookingStatus.CONFIRMED, BookingStatus.CANCELLED},
+    BookingStatus.CONFIRMED: {
+        BookingStatus.CANCELLED,
+        BookingStatus.ATTENDED,
+        BookingStatus.NO_SHOW,
+    },
+    BookingStatus.CANCELLED: set(),
+    BookingStatus.ATTENDED: set(),
+    BookingStatus.NO_SHOW: set(),
+}
+
+_VALID_WAITLIST_STATUS_TRANSITIONS: dict[WaitlistStatus, set[WaitlistStatus]] = {
+    WaitlistStatus.WAITING: {WaitlistStatus.PROMOTED, WaitlistStatus.CANCELLED},
+    WaitlistStatus.PROMOTED: set(),
+    WaitlistStatus.CANCELLED: set(),
+}
 
 
 class BookingService:
@@ -46,6 +72,14 @@ class BookingService:
         self.subscription_service = subscription_service
         self.cache = cache
 
+    @asynccontextmanager
+    async def _transaction(self):
+        if self.session.in_transaction():
+            yield
+            return
+        async with self.session.begin():
+            yield
+
     async def create_booking(
         self,
         payload: BookingCreate,
@@ -60,16 +94,21 @@ class BookingService:
             raise ForbiddenError("You can only create bookings for your own account")
 
         booked_id: UUID | None = None
+        waitlist_id: UUID | None = None
         now = datetime.now(timezone.utc)
 
-        if self.session.in_transaction():
-            await self.session.rollback()
-        async with self.session.begin():
+        async with self._transaction():
+            locked_class = await self.class_repository.get_by_id(payload.class_id, for_update=True)
+            if locked_class is None:
+                raise NotFoundError("Class not found")
+
             decision = await self.eligibility_service.validate_member_booking(
                 member_id,
                 payload.class_id,
                 reference_time=now,
                 for_update=True,
+                locked_class=locked_class,
+                lock_member=False,
             )
             self.eligibility_service.ensure_booking_is_allowed(decision)
 
@@ -79,39 +118,22 @@ class BookingService:
 
             if decision.outcome == BookingEligibilityOutcome.BOOKING_ALLOWED:
                 assert subscription is not None
-                booking_type, credits_consumed = self.subscription_service.consume_credit_for_booking(
-                    subscription
-                )
-                booking = existing_booking or Booking(
+                booking = await self._upsert_confirmed_booking(
                     member_id=member_id,
                     class_id=payload.class_id,
-                    booked_at=now,
+                    reference_time=now,
+                    subscription=subscription,
+                    existing_booking=existing_booking,
                 )
-                booking.status = BookingStatus.CONFIRMED
-                booking.booking_type = booking_type
-                booking.credits_consumed = credits_consumed
-                booking.subscription_id = subscription.id
-                booking.booked_at = now
-                booking.cancelled_at = None
-                if existing_booking is None:
-                    await self.booking_repository.add(booking)
                 booked_id = booking.id
             else:
-                position = await self.waitlist_repository.next_position(payload.class_id)
-                waitlist_entry = existing_waitlist or Waitlist(
+                waitlist_entry = await self._upsert_waitlist_entry(
                     member_id=member_id,
                     class_id=payload.class_id,
-                    position=position,
-                    status=WaitlistStatus.WAITING,
-                    joined_at=now,
+                    reference_time=now,
+                    existing_waitlist=existing_waitlist,
                 )
-                waitlist_entry.position = position
-                waitlist_entry.status = WaitlistStatus.WAITING
-                waitlist_entry.joined_at = now
-                waitlist_entry.promoted_at = None
-                waitlist_entry.cancelled_at = None
-                if existing_waitlist is None:
-                    await self.waitlist_repository.add(waitlist_entry)
+                waitlist_id = waitlist_entry.id
 
         await self._invalidate_related_cache(payload.class_id, [member_id])
 
@@ -119,16 +141,19 @@ class BookingService:
             booking = await self.booking_repository.get_by_id(booked_id)
             assert booking is not None
             return BookingActionResponse(
-                state="booked",
+                state=BookingActionState.BOOKING_CONFIRMED,
                 message="Booking confirmed",
                 booking=BookingRead.model_validate(booking),
             )
 
-        waitlist_entry = await self.waitlist_repository.get_by_member_and_class(member_id, payload.class_id)
+        if waitlist_id is not None:
+            waitlist_entry = await self.waitlist_repository.get_by_id(waitlist_id)
+        else:
+            waitlist_entry = await self.waitlist_repository.get_by_member_and_class(member_id, payload.class_id)
         assert waitlist_entry is not None
         return BookingActionResponse(
-            state="waitlisted",
-            message="Class is full, member added to the waitlist",
+            state=BookingActionState.ADDED_TO_WAITLIST,
+            message="Added to waitlist",
             waitlist_entry=WaitlistRead.model_validate(waitlist_entry),
         )
 
@@ -140,20 +165,22 @@ class BookingService:
         actor_id = actor.id
         actor_role = actor.role
 
-        if self.session.in_transaction():
-            await self.session.rollback()
-        async with self.session.begin():
+        async with self._transaction():
             now = datetime.now(timezone.utc)
-            booking = await self.booking_repository.get_by_id(booking_id, for_update=True)
+            booking = await self.booking_repository.get_by_id(booking_id)
             if booking is not None:
-                related_member_ids.add(booking.member_id)
-                related_class_id = booking.class_id
-                self._ensure_cancellation_access(actor_role, actor_id, booking.member_id)
-                self._ensure_booking_cancellable(booking.status)
+                booking_member_id = booking.member_id
+                booking_class_id = booking.class_id
+                booking_status = booking.status
+                self._ensure_cancellation_access(actor_role, actor_id, booking_member_id)
+                self._ensure_booking_cancellable(booking_status)
 
-                gym_class = await self.class_repository.get_by_id(booking.class_id, for_update=True)
+                gym_class = await self.class_repository.get_by_id(booking_class_id, for_update=True)
                 if gym_class is None:
                     raise NotFoundError("Class not found")
+
+                related_member_ids.add(booking.member_id)
+                related_class_id = booking.class_id
 
                 was_confirmed = booking.status == BookingStatus.CONFIRMED
                 if was_confirmed and self.cancellation_is_early(gym_class.scheduled_at, reference_time=now):
@@ -161,7 +188,7 @@ class BookingService:
                         booking
                     )
 
-                booking.status = BookingStatus.CANCELLED
+                self._transition_booking_status(booking, BookingStatus.CANCELLED)
                 booking.cancelled_at = now
                 await self.session.flush()
 
@@ -172,20 +199,24 @@ class BookingService:
                         related_member_ids=related_member_ids,
                     )
             else:
-                waitlist_entry = await self.waitlist_repository.get_by_id(booking_id, for_update=True)
+                waitlist_entry = await self.waitlist_repository.get_by_id(booking_id)
                 if waitlist_entry is None:
                     raise NotFoundError("Booking not found")
 
-                related_member_ids.add(waitlist_entry.member_id)
-                related_class_id = waitlist_entry.class_id
-                self._ensure_cancellation_access(actor_role, actor_id, waitlist_entry.member_id)
-                self._ensure_waitlist_cancellable(waitlist_entry.status)
+                waitlist_member_id = waitlist_entry.member_id
+                waitlist_class_id = waitlist_entry.class_id
+                waitlist_status = waitlist_entry.status
+                self._ensure_cancellation_access(actor_role, actor_id, waitlist_member_id)
+                self._ensure_waitlist_cancellable(waitlist_status)
 
-                gym_class = await self.class_repository.get_by_id(waitlist_entry.class_id, for_update=True)
+                gym_class = await self.class_repository.get_by_id(waitlist_class_id, for_update=True)
                 if gym_class is None:
                     raise NotFoundError("Class not found")
 
-                waitlist_entry.status = WaitlistStatus.CANCELLED
+                related_member_ids.add(waitlist_entry.member_id)
+                related_class_id = waitlist_entry.class_id
+
+                self._transition_waitlist_status(waitlist_entry, WaitlistStatus.CANCELLED)
                 waitlist_entry.cancelled_at = now
 
         if related_class_id is not None:
@@ -237,8 +268,7 @@ class BookingService:
 
         while True:
             confirmed_count = await self.booking_repository.count_confirmed_bookings(class_id)
-            available_spots = max(gym_class.capacity - confirmed_count, 0)
-            if available_spots <= 0:
+            if confirmed_count >= gym_class.capacity:
                 break
 
             waitlist_entry = await self.waitlist_repository.get_next_waitlist_booking(
@@ -256,38 +286,39 @@ class BookingService:
                 reference_time=reference_time,
                 for_update=True,
                 allow_existing_waitlist=True,
+                locked_class=gym_class,
+                lock_member=False,
             )
+
+            if decision.existing_booking is not None and decision.existing_booking.status == BookingStatus.CONFIRMED:
+                self._transition_waitlist_status(waitlist_entry, WaitlistStatus.CANCELLED)
+                waitlist_entry.cancelled_at = reference_time
+                continue
+
             if decision.outcome != BookingEligibilityOutcome.BOOKING_ALLOWED or decision.subscription is None:
                 skipped_waitlist_ids.add(waitlist_entry.id)
                 continue
 
-            booking_type, credits_consumed = self.subscription_service.consume_credit_for_booking(
-                decision.subscription
+            existing_booking = decision.existing_booking
+            if existing_booking is None:
+                existing_booking = await self.booking_repository.get_by_member_and_class(
+                    waitlist_entry.member_id,
+                    class_id,
+                    for_update=True,
+                )
+
+            promoted_booking = await self._upsert_confirmed_booking(
+                member_id=waitlist_entry.member_id,
+                class_id=class_id,
+                reference_time=reference_time,
+                subscription=decision.subscription,
+                existing_booking=existing_booking,
             )
 
-            waitlist_entry.status = WaitlistStatus.PROMOTED
+            self._transition_waitlist_status(waitlist_entry, WaitlistStatus.PROMOTED)
             waitlist_entry.promoted_at = reference_time
             waitlist_entry.cancelled_at = None
 
-            promoted_booking = await self.booking_repository.get_by_member_and_class(
-                waitlist_entry.member_id,
-                class_id,
-                for_update=True,
-            )
-            if promoted_booking is None:
-                promoted_booking = Booking(
-                    member_id=waitlist_entry.member_id,
-                    class_id=class_id,
-                    booked_at=reference_time,
-                )
-                await self.booking_repository.add(promoted_booking)
-
-            promoted_booking.status = BookingStatus.CONFIRMED
-            promoted_booking.booking_type = booking_type
-            promoted_booking.credits_consumed = credits_consumed
-            promoted_booking.subscription_id = decision.subscription.id
-            promoted_booking.booked_at = reference_time
-            promoted_booking.cancelled_at = None
             promoted_booking_ids.append(promoted_booking.id)
 
         return promoted_booking_ids
@@ -315,6 +346,100 @@ class BookingService:
         if status == WaitlistStatus.WAITING:
             return
         raise BookingNotCancellableError("Only confirmed bookings or active waitlist entries can be cancelled")
+
+    @staticmethod
+    async def _await_if_needed(result):
+        if inspect.isawaitable(result):
+            return await result
+        return result
+
+    async def _upsert_confirmed_booking(
+        self,
+        *,
+        member_id: UUID,
+        class_id: UUID,
+        reference_time: datetime,
+        subscription,
+        existing_booking: Booking | None,
+    ) -> Booking:
+        booking_type, credits_consumed = self.subscription_service.consume_credit_for_booking(subscription)
+        booking = existing_booking
+        if booking is None:
+            booking = Booking(
+                member_id=member_id,
+                class_id=class_id,
+                booked_at=reference_time,
+                status=BookingStatus.CONFIRMED,
+            )
+            if getattr(booking, "id", None) is None:
+                booking.id = uuid4()
+            await self._await_if_needed(self.booking_repository.add(booking))
+        elif booking.status == BookingStatus.WAITLIST:
+            self._transition_booking_status(booking, BookingStatus.CONFIRMED)
+        else:
+            # The schema keeps one booking row per member/class, so re-booking reuses the historical row.
+            booking.status = BookingStatus.CONFIRMED
+
+        booking.booking_type = booking_type
+        booking.credits_consumed = credits_consumed
+        booking.subscription_id = subscription.id
+        booking.booked_at = reference_time
+        booking.cancelled_at = None
+        return booking
+
+    async def _upsert_waitlist_entry(
+        self,
+        *,
+        member_id: UUID,
+        class_id: UUID,
+        reference_time: datetime,
+        existing_waitlist: Waitlist | None,
+    ) -> Waitlist:
+        position = await self.waitlist_repository.next_position(class_id)
+        waitlist_entry = existing_waitlist
+        if waitlist_entry is None:
+            waitlist_entry = Waitlist(
+                member_id=member_id,
+                class_id=class_id,
+                position=position,
+                status=WaitlistStatus.WAITING,
+                joined_at=reference_time,
+            )
+            if getattr(waitlist_entry, "id", None) is None:
+                waitlist_entry.id = uuid4()
+            await self._await_if_needed(self.waitlist_repository.add(waitlist_entry))
+        else:
+            # Reuse the waitlist row to preserve the per-member/per-class uniqueness constraint.
+            waitlist_entry.position = position
+            waitlist_entry.status = WaitlistStatus.WAITING
+            waitlist_entry.joined_at = reference_time
+
+        waitlist_entry.promoted_at = None
+        waitlist_entry.cancelled_at = None
+        return waitlist_entry
+
+    @staticmethod
+    def _transition_booking_status(booking: Booking, next_status: BookingStatus) -> None:
+        if booking.status == next_status:
+            return
+        allowed_statuses = _VALID_BOOKING_STATUS_TRANSITIONS.get(booking.status, set())
+        if next_status not in allowed_statuses:
+            raise ConflictError(
+                f"Invalid booking status transition from {booking.status.value} to {next_status.value}"
+            )
+        booking.status = next_status
+
+    @staticmethod
+    def _transition_waitlist_status(waitlist_entry: Waitlist, next_status: WaitlistStatus) -> None:
+        if waitlist_entry.status == next_status:
+            return
+        allowed_statuses = _VALID_WAITLIST_STATUS_TRANSITIONS.get(waitlist_entry.status, set())
+        if next_status not in allowed_statuses:
+            raise ConflictError(
+                "Invalid waitlist status transition "
+                f"from {waitlist_entry.status.value} to {next_status.value}"
+            )
+        waitlist_entry.status = next_status
 
     async def _enqueue_waitlist_notification(self, booking_id: UUID) -> None:
         from app.workers.tasks.notifications import send_waitlist_notifications

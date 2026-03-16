@@ -7,8 +7,21 @@ from sqlalchemy.exc import IntegrityError
 from starlette import status
 
 from app.core.exceptions import AppException
+from app.domain.enums import BookingEligibilityOutcome
 
 logger = logging.getLogger(__name__)
+
+_DUPLICATE_BOOKING_CONSTRAINTS = {
+    "uq_bookings_member_class",
+    "uq_waitlists_member_class",
+}
+
+
+def _is_duplicate_booking_violation(exc: IntegrityError) -> bool:
+    error_text = str(exc)
+    if exc.orig is not None:
+        error_text = f"{error_text}\n{exc.orig}"
+    return any(constraint in error_text for constraint in _DUPLICATE_BOOKING_CONSTRAINTS)
 
 
 async def app_exception_handler(_: Request, exc: AppException) -> JSONResponse:
@@ -37,6 +50,17 @@ async def validation_exception_handler(_: Request, exc: RequestValidationError) 
 
 async def integrity_exception_handler(_: Request, exc: IntegrityError) -> JSONResponse:
     logger.exception("database_integrity_error", exc_info=exc)
+    if _is_duplicate_booking_violation(exc):
+        duplicate_code = BookingEligibilityOutcome.DUPLICATE_BOOKING.value
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={
+                "detail": "Member is already booked for this class",
+                "message": "Member is already booked for this class",
+                "code": duplicate_code,
+                "error_code": duplicate_code,
+            },
+        )
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
         content={

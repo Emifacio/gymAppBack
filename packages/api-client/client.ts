@@ -54,7 +54,10 @@ export type BookingEligibilityErrorCode =
   | "PLAN_EXPIRED"
   | "INSUFFICIENT_CREDITS"
   | "CLASS_FULL"
+  | "DUPLICATE_BOOKING"
   | "BOOKING_NOT_ALLOWED";
+
+export type BookingActionState = "BOOKING_CONFIRMED" | "ADDED_TO_WAITLIST";
 
 export interface MemberSubscriptionStatus {
   active_plan: boolean;
@@ -111,7 +114,11 @@ export type BookingRecord = components["schemas"]["BookingRead"] & {
 export type WaitlistEntry = components["schemas"]["WaitlistRead"] & {
   gym_class?: Workout | null;
 };
-export type BookingAction = components["schemas"]["BookingActionResponse"] & {
+export type BookingAction = Omit<
+  components["schemas"]["BookingActionResponse"],
+  "state" | "booking" | "waitlist_entry"
+> & {
+  state: BookingActionState;
   booking?: BookingRecord | null;
   waitlist_entry?: WaitlistEntry | null;
 };

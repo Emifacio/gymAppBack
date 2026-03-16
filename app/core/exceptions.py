@@ -81,6 +81,15 @@ class ClassFullError(AppException):
         )
 
 
+class DuplicateBookingError(AppException):
+    def __init__(self, detail: str = "Member is already booked for this class") -> None:
+        super().__init__(
+            detail=detail,
+            status_code=status.HTTP_409_CONFLICT,
+            code=BookingEligibilityOutcome.DUPLICATE_BOOKING.value,
+        )
+
+
 class BookingNotAllowedError(AppException):
     def __init__(self, detail: str = "Booking is not allowed") -> None:
         super().__init__(
