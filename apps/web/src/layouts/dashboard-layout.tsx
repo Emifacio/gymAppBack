@@ -2,11 +2,7 @@ import { LogOut, Sparkles } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { useAuth } from "@/hooks/use-auth";
-
-const navigation = [
-  { label: "Dashboard", to: "/" },
-  { label: "Workouts", to: "/workouts" }
-];
+import { canManageOperations } from "@/lib/roles";
 
 function linkClassName(isActive: boolean) {
   return isActive
@@ -16,6 +12,19 @@ function linkClassName(isActive: boolean) {
 
 export function DashboardLayout() {
   const { logout, session } = useAuth();
+  const navigation = [
+    { label: "Dashboard", to: "/" },
+    { label: "Workouts", to: "/workouts" },
+    { label: "Bookings", to: "/bookings" },
+    { label: "Integrations", to: "/integrations" },
+    { label: "Status", to: "/status" },
+    ...(canManageOperations(session?.member)
+      ? [
+          { label: "Members", to: "/members" },
+          { label: "Attendance", to: "/attendance" }
+        ]
+      : [])
+  ];
 
   return (
     <div className="page-shell min-h-screen px-4 py-4 md:px-8 md:py-8">

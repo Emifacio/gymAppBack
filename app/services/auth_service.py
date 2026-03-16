@@ -1,14 +1,20 @@
-from datetime import timedelta
+from uuid import UUID
 
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.core.exceptions import ConflictError, UnauthorizedError
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_refresh_token,
+    hash_password,
+    verify_password,
+)
 from app.domain.enums import MemberRole, MembershipStatus
 from app.domain.models.member import Member
 from app.repositories.member_repository import MemberRepository
-from app.schemas.auth_schema import LoginRequest, RegisterRequest, TokenResponse
+from app.schemas.auth_schema import LoginRequest, RefreshTokenRequest, RegisterRequest, TokenResponse
 from app.schemas.member_schema import MemberRead
 
 
@@ -18,44 +24,69 @@ class AuthService:
         self.member_repository = member_repository
 
     async def register(self, payload: RegisterRequest) -> TokenResponse:
+        existing_member = await self._get_member_by_email(payload.email)
+        if existing_member is not None:
+            raise ConflictError("A member with this email already exists")
+
+        role = await self._resolve_registration_role()
+        member = Member(
+            email=payload.email,
+            full_name=payload.full_name,
+            password_hash=hash_password(payload.password),
+            phone=payload.phone,
+            role=role,
+            membership_status=MembershipStatus.ACTIVE,
+            is_active=True,
+            profile_metadata={},
+        )
+
         if self.session.in_transaction():
             await self.session.rollback()
+
         async with self.session.begin():
-            if await self.member_repository.get_by_email(payload.email):
-                raise ConflictError("A member with that email already exists")
+            self.session.add(member)
 
-            role = MemberRole.ADMIN if await self.member_repository.count() == 0 else MemberRole.MEMBER
-            member = Member(
-                email=payload.email,
-                full_name=payload.full_name,
-                password_hash=hash_password(payload.password),
-                phone=payload.phone,
-                role=role,
-                membership_status=MembershipStatus.ACTIVE,
-                is_active=True,
-            )
-            await self.member_repository.add(member)
-
-        created_member = await self.member_repository.get_by_id(member.id)
-        assert created_member is not None
-
-        settings = get_settings()
-        access_token = create_access_token(
-            str(created_member.id),
-            expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
-        )
-        return TokenResponse(access_token=access_token, member=MemberRead.model_validate(created_member))
+        await self.session.refresh(member)
+        return self._build_token_response(member)
 
     async def login(self, payload: LoginRequest) -> TokenResponse:
-        member = await self.member_repository.get_by_email(payload.email)
+        member = await self._get_member_by_email(payload.email)
         if member is None or not verify_password(payload.password, member.password_hash):
             raise UnauthorizedError("Invalid email or password")
         if not member.is_active:
-            raise UnauthorizedError("Member account is inactive")
+            raise UnauthorizedError("Authenticated member not found or inactive")
+        return self._build_token_response(member)
 
-        settings = get_settings()
-        access_token = create_access_token(
-            str(member.id),
-            expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
+    async def refresh_token(self, payload: RefreshTokenRequest) -> TokenResponse:
+        token_payload = decode_refresh_token(payload.refresh_token)
+        subject = token_payload.get("sub")
+        if subject is None:
+            raise UnauthorizedError("Missing token subject")
+        try:
+            member_id = UUID(subject)
+        except ValueError as exc:
+            raise UnauthorizedError("Invalid token subject") from exc
+
+        member = await self.member_repository.get_by_id(member_id)
+        if member is None or not member.is_active:
+            raise UnauthorizedError("Authenticated member not found or inactive")
+        return self._build_token_response(member)
+
+    async def _get_member_by_email(self, email: str) -> Member | None:
+        statement = select(Member).where(func.lower(Member.email) == email.strip().lower())
+        result = await self.session.execute(statement)
+        return result.scalar_one_or_none()
+
+    async def _resolve_registration_role(self) -> MemberRole:
+        statement = select(func.count()).select_from(Member)
+        result = await self.session.execute(statement)
+        member_count = result.scalar_one()
+        return MemberRole.ADMIN if member_count == 0 else MemberRole.MEMBER
+
+    def _build_token_response(self, member: Member) -> TokenResponse:
+        member_id = str(member.id)
+        return TokenResponse(
+            access_token=create_access_token(member_id),
+            refresh_token=create_refresh_token(member_id),
+            member=MemberRead.model_validate(member),
         )
-        return TokenResponse(access_token=access_token, member=MemberRead.model_validate(member))

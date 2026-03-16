@@ -10,11 +10,26 @@ const RETRY_HEADER = "x-gym-platform-retried";
 export type GymApiClient = Client<paths>;
 export type Workout = components["schemas"]["ClassRead"];
 export type WorkoutFilters = NonNullable<paths["/classes"]["get"]["parameters"]["query"]>;
+export type WorkoutCreatePayload = components["schemas"]["ClassCreate"];
+export type WorkoutUpdatePayload = components["schemas"]["ClassUpdate"];
 export type LoginPayload = components["schemas"]["LoginRequest"];
 export type RegisterPayload = components["schemas"]["RegisterRequest"];
 export type BookingPayload = components["schemas"]["BookingCreate"];
 export type BookingAction = components["schemas"]["BookingActionResponse"];
+export type BookingCancellation = components["schemas"]["BookingCancellationResponse"];
 export type MemberBookings = components["schemas"]["MemberBookingsResponse"];
+export type Member = components["schemas"]["MemberRead"];
+export type MemberFilters = NonNullable<paths["/members"]["get"]["parameters"]["query"]>;
+export type MemberCreatePayload = components["schemas"]["MemberCreate"];
+export type MemberUpdatePayload = components["schemas"]["MemberUpdate"];
+export type AttendancePayload = components["schemas"]["AttendanceCreate"];
+export type AttendanceRecord = components["schemas"]["AttendanceRead"];
+export type IntegrationConnectPayload = components["schemas"]["StravaConnectRequest"];
+export type IntegrationAccount = components["schemas"]["IntegrationAccountRead"];
+export type ActivityRecord = components["schemas"]["ActivityRead"];
+export type ActivitySyncPayload = components["schemas"]["ActivitySyncRequest"];
+export type ActivitySyncResult = components["schemas"]["TaskEnqueueResponse"];
+export type HealthStatus = paths["/health"]["get"]["responses"][200]["content"]["application/json"];
 
 export interface CreateApiClientOptions {
   baseUrl?: string;

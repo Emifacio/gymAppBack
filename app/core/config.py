@@ -85,6 +85,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     secret_key: str | None = None
     access_token_expire_minutes: int = 60
+    refresh_token_expire_days: int = 30
     database_url: str | None = None
     redis_url: str | None = None
     redis_url_source: str | None = None

@@ -2,9 +2,15 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import { AuthGuard } from "@/components/auth-guard";
 import { DashboardLayout } from "@/layouts/dashboard-layout";
+import { AttendancePage } from "@/pages/attendance-page";
+import { BookingsPage } from "@/pages/bookings-page";
 import { DashboardPage } from "@/pages/dashboard-page";
+import { IntegrationsPage } from "@/pages/integrations-page";
 import { LoginPage } from "@/pages/login-page";
+import { MemberDetailPage } from "@/pages/member-detail-page";
+import { MembersPage } from "@/pages/members-page";
 import { RegisterPage } from "@/pages/register-page";
+import { SystemStatusPage } from "@/pages/system-status-page";
 import { WorkoutDetailPage } from "@/pages/workout-detail-page";
 import { WorkoutsPage } from "@/pages/workouts-page";
 
@@ -34,6 +40,30 @@ export const router = createBrowserRouter([
           {
             path: "/workouts/:workoutId",
             element: <WorkoutDetailPage />
+          },
+          {
+            path: "/bookings",
+            element: <BookingsPage />
+          },
+          {
+            path: "/members",
+            element: <MembersPage />
+          },
+          {
+            path: "/members/:memberId",
+            element: <MemberDetailPage />
+          },
+          {
+            path: "/attendance",
+            element: <AttendancePage />
+          },
+          {
+            path: "/integrations",
+            element: <IntegrationsPage />
+          },
+          {
+            path: "/status",
+            element: <SystemStatusPage />
           }
         ]
       }
