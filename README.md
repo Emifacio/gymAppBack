@@ -215,8 +215,10 @@ CELERY_RESULT_BACKEND=${{Redis.REDIS_URL}}
 ```
 
 If `SECRET_KEY` is omitted, the app now generates an ephemeral key at boot so the service can start, but existing auth tokens will become invalid after every restart.
+If Postgres is temporarily unavailable during startup, the FastAPI service now retries database readiness checks with bounded backoff before failing the boot.
 If Redis variables are omitted, the web process can still boot, but it now skips Redis connection attempts and returns a clear `503` for background-job requests until a Redis service is configured.
 If Redis is configured but slow to answer during startup, the web process now gives up after a short timeout and keeps booting without cache instead of hanging the whole deploy.
+The backend now allows the production web app origin `https://gym-app-back-web.vercel.app` by default. For Vercel preview deployments, you can additionally set `CORS_ORIGIN_REGEX`.
 
 Important Railway UI check:
 
@@ -238,7 +240,14 @@ Key variables:
 
 - `SECRET_KEY`: JWT signing secret
 - `DATABASE_URL`: async SQLAlchemy database URL
+- `DATABASE_CONNECT_TIMEOUT_SECONDS`: timeout for each database readiness probe
+- `DATABASE_STARTUP_MAX_ATTEMPTS`: number of startup probe attempts before boot fails
+- `DATABASE_STARTUP_INITIAL_BACKOFF_SECONDS`: initial delay between startup probes
+- `DATABASE_STARTUP_MAX_BACKOFF_SECONDS`: cap for startup retry delay
+- `DATABASE_STARTUP_BACKOFF_MULTIPLIER`: backoff multiplier applied between attempts
 - `REDIS_URL`: Redis cache URL
+- `CORS_ORIGINS`: explicit allowed frontend origins
+- `CORS_ORIGIN_REGEX`: optional regex for preview deployments such as Vercel branch URLs
 - `CELERY_BROKER_URL`: Redis broker URL for Celery
 - `CELERY_RESULT_BACKEND`: result backend URL for Celery
 - `VITE_API_URL`: base URL used by `apps/web`

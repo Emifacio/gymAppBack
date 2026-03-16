@@ -87,13 +87,24 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     refresh_token_expire_days: int = 30
     database_url: str | None = None
+    database_connect_timeout_seconds: float = 5.0
+    database_startup_max_attempts: int = 10
+    database_startup_initial_backoff_seconds: float = 1.0
+    database_startup_max_backoff_seconds: float = 8.0
+    database_startup_backoff_multiplier: float = 1.5
     redis_url: str | None = None
     redis_url_source: str | None = None
     celery_broker_url: str | None = None
     celery_result_backend: str | None = None
     cache_ttl_seconds: int = 300
     redis_connect_timeout_seconds: float = 5.0
-    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+    cors_origins: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://gym-app-back-web.vercel.app",
+    ]
+    cors_origin_regex: str | None = None
     timezone: str = "UTC"
     strava_client_id: str | None = None
     strava_client_secret: str | None = None

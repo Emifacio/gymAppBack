@@ -18,6 +18,7 @@ from app.core.config import get_settings
 from app.core.exceptions import AppException
 from app.core.logging import setup_logging
 from app.infrastructure.cache.redis_client import RedisCache
+from app.infrastructure.database.session import dispose_database_engine, wait_for_database_ready
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -38,6 +39,13 @@ def _describe_service_url(url: str | None) -> str:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(settings.log_level)
+    logger.info(
+        "database_configuration_selected target=%s connect_timeout_seconds=%s max_attempts=%s",
+        _describe_service_url(settings.database_url),
+        settings.database_connect_timeout_seconds,
+        settings.database_startup_max_attempts,
+    )
+    await wait_for_database_ready()
     if settings.redis_configured:
         logger.info(
             "redis_configuration_selected source=%s target=%s",
@@ -58,6 +66,7 @@ async def lifespan(app: FastAPI):
     app.state.redis_cache = redis_cache
     yield
     await redis_cache.close()
+    await dispose_database_engine()
 
 
 app = FastAPI(
@@ -71,6 +80,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
+    allow_origin_regex=settings.cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
