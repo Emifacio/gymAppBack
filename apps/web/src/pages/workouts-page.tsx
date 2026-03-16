@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
@@ -23,6 +23,7 @@ export function WorkoutsPage() {
     offset: 0,
     limit: 24
   });
+  const [searchParams] = useSearchParams();
   const workoutsQuery = useWorkouts({
     status: filters.status || null,
     offset: filters.offset,
@@ -108,17 +109,80 @@ export function WorkoutsPage() {
 
           <form
             className="grid gap-[var(--stack-gap)] sm:grid-cols-2 lg:grid-cols-3"
-            onSubmit={(event) => {
-              // ... mutation logic
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              const payload = {
+                name: getFormValue(formData, "name"),
+                location: getFormValue(formData, "location"),
+                instructor_id: getFormValue(formData, "instructor_id") || null,
+                duration_minutes: parseInt(getFormValue(formData, "duration_minutes")),
+                capacity: parseInt(getFormValue(formData, "capacity")),
+                scheduled_at: getFormValue(formData, "scheduled_at"),
+                description: getFormValue(formData, "description"),
+                status: "scheduled" as const,
+              };
+
+              try {
+                await createWorkout.mutateAsync(payload);
+                event.currentTarget.reset();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              } catch (error) {
+                console.error("Error al crear el entrenamiento:", error);
+              }
             }}
           >
-            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="name" placeholder="Nombre del entrenamiento" required />
-            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="location" placeholder="Ubicación" required />
-            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="instructor_id" placeholder="ID del instructor (opcional)" />
-            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" min={15} name="duration_minutes" placeholder="Duración (m)" required type="number" />
-            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" min={1} name="capacity" placeholder="Capacidad" required type="number" />
-            <input className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" name="scheduled_at" required type="datetime-local" />
-            <textarea className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium sm:col-span-2 lg:col-span-3" name="description" placeholder="Descripción" />
+            <input 
+              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
+              name="name" 
+              placeholder="Nombre del entrenamiento" 
+              required 
+              defaultValue={searchParams.get("name") || ""}
+            />
+            <input 
+              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
+              name="location" 
+              placeholder="Ubicación" 
+              required 
+              defaultValue={searchParams.get("location") || ""}
+            />
+            <input 
+              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
+              name="instructor_id" 
+              placeholder="ID del instructor (opcional)" 
+              defaultValue={searchParams.get("instructor_id") || ""}
+            />
+            <input 
+              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
+              min={15} 
+              name="duration_minutes" 
+              placeholder="Duración (m)" 
+              required 
+              type="number" 
+              defaultValue={searchParams.get("duration_minutes") || ""}
+            />
+            <input 
+              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
+              min={1} 
+              name="capacity" 
+              placeholder="Capacidad" 
+              required 
+              type="number" 
+              defaultValue={searchParams.get("capacity") || ""}
+            />
+            <input 
+              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
+              name="scheduled_at" 
+              required 
+              type="datetime-local" 
+              defaultValue={searchParams.get("scheduled_at") || ""}
+            />
+            <textarea 
+              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium sm:col-span-2 lg:col-span-3" 
+              name="description" 
+              placeholder="Descripción" 
+              defaultValue={searchParams.get("description") || ""}
+            />
             
             <div className="sm:col-span-2 lg:col-span-3">
               <Button className="w-full h-12" loading={createWorkout.isPending} type="submit" variant="primary">

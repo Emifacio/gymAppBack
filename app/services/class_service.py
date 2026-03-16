@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +12,8 @@ from app.repositories.class_repository import ClassRepository
 from app.repositories.instructor_repository import InstructorRepository
 from app.repositories.waitlist_repository import WaitlistRepository
 from app.schemas.class_schema import ClassCreate, ClassMemberRead, ClassRead, ClassUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class ClassService:
@@ -57,8 +60,11 @@ class ClassService:
         return serialized[0]
 
     async def create_class(self, payload: ClassCreate) -> ClassRead:
+        logger.info(f"create_class_start payload={payload.model_dump(mode='json')}")
         if self.session.in_transaction():
+            logger.warning(f"create_class_rollback session_id={id(self.session)}")
             await self.session.rollback()
+        
         async with self.session.begin():
             if payload.instructor_id is not None:
                 instructor = await self.instructor_repository.get_by_id(payload.instructor_id)
@@ -67,8 +73,11 @@ class ClassService:
 
             gym_class = GymClass(**payload.model_dump())
             await self.class_repository.add(gym_class)
+            logger.debug(f"create_class_added class_id={gym_class.id} session_id={id(self.session)}")
 
-        return await self.get_class(gym_class.id)
+        result = await self.get_class(gym_class.id)
+        logger.info(f"create_class_success class_id={gym_class.id}")
+        return result
 
     async def update_class(self, class_id: UUID, payload: ClassUpdate) -> ClassRead:
         if self.session.in_transaction():
