@@ -387,7 +387,7 @@ async def seed() -> SeedStats:
     )
 
     admin = await get_or_create_member(
-        email="admin.seed@gymapp.local",
+        email="admin.seed@example.com",
         full_name="Ariana Admin",
         role=MemberRole.ADMIN,
         membership_status=MembershipStatus.ACTIVE,
@@ -400,7 +400,7 @@ async def seed() -> SeedStats:
         stats=stats,
     )
     instructor_one_member = await get_or_create_member(
-        email="lucia.coach@gymapp.local",
+        email="lucia.coach@example.com",
         full_name="Lucia Romero",
         role=MemberRole.INSTRUCTOR,
         membership_status=MembershipStatus.ACTIVE,
@@ -413,7 +413,7 @@ async def seed() -> SeedStats:
         stats=stats,
     )
     instructor_two_member = await get_or_create_member(
-        email="marco.strength@gymapp.local",
+        email="marco.strength@example.com",
         full_name="Marco Diaz",
         role=MemberRole.INSTRUCTOR,
         membership_status=MembershipStatus.ACTIVE,
@@ -426,7 +426,7 @@ async def seed() -> SeedStats:
         stats=stats,
     )
     member_one = await get_or_create_member(
-        email="sofia.member@gymapp.local",
+        email="sofia.member@example.com",
         full_name="Sofia Herrera",
         role=MemberRole.MEMBER,
         membership_status=MembershipStatus.ACTIVE,
@@ -439,7 +439,7 @@ async def seed() -> SeedStats:
         stats=stats,
     )
     member_two = await get_or_create_member(
-        email="diego.member@gymapp.local",
+        email="diego.member@example.com",
         full_name="Diego Castillo",
         role=MemberRole.MEMBER,
         membership_status=MembershipStatus.SUSPENDED,
@@ -623,11 +623,11 @@ def print_summary(stats: SeedStats) -> None:
         print(f"- {table}: created={created}, reused={reused}")
 
     print("\nSeeded login examples:")
-    print("- admin.seed@gymapp.local / Password123!")
-    print("- lucia.coach@gymapp.local / Password123!")
-    print("- marco.strength@gymapp.local / Password123!")
-    print("- sofia.member@gymapp.local / Password123!")
-    print("- diego.member@gymapp.local / Password123!")
+    print("- admin.seed@example.com / Password123!")
+    print("- lucia.coach@example.com / Password123!")
+    print("- marco.strength@example.com / Password123!")
+    print("- sofia.member@example.com / Password123!")
+    print("- diego.member@example.com / Password123!")
 
 
 async def main() -> None:

@@ -1,9 +1,9 @@
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, inspect as sa_inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ConflictError, UnauthorizedError
+from app.core.exceptions import ConflictError, NotFoundError, UnauthorizedError
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -15,7 +15,7 @@ from app.domain.enums import MemberRole, MembershipStatus
 from app.domain.models.member import Member
 from app.repositories.member_repository import MemberRepository
 from app.schemas.auth_schema import LoginRequest, RefreshTokenRequest, RegisterRequest, TokenResponse
-from app.schemas.member_schema import MemberRead
+from app.schemas.member_schema import InstructorProfileRead, MemberRead, MembershipPlanRead
 
 
 class AuthService:
@@ -47,7 +47,10 @@ class AuthService:
             self.session.add(member)
 
         await self.session.refresh(member)
-        return self._build_token_response(member)
+        created_member = await self.member_repository.get_by_id(member.id)
+        if created_member is None:
+            raise NotFoundError("Registered member could not be reloaded")
+        return self._build_token_response(created_member)
 
     async def login(self, payload: LoginRequest) -> TokenResponse:
         member = await self._get_member_by_email(payload.email)
@@ -73,9 +76,7 @@ class AuthService:
         return self._build_token_response(member)
 
     async def _get_member_by_email(self, email: str) -> Member | None:
-        statement = select(Member).where(func.lower(Member.email) == email.strip().lower())
-        result = await self.session.execute(statement)
-        return result.scalar_one_or_none()
+        return await self.member_repository.get_by_email(email.strip())
 
     async def _resolve_registration_role(self) -> MemberRole:
         statement = select(func.count()).select_from(Member)
@@ -85,8 +86,33 @@ class AuthService:
 
     def _build_token_response(self, member: Member) -> TokenResponse:
         member_id = str(member.id)
+        state = sa_inspect(member)
+
+        membership_plan = None
+        if "membership_plan" not in state.unloaded and member.membership_plan is not None:
+            membership_plan = MembershipPlanRead.model_validate(member.membership_plan)
+
+        instructor_profile = None
+        if "instructor_profile" not in state.unloaded and member.instructor_profile is not None:
+            instructor_profile = InstructorProfileRead.model_validate(member.instructor_profile)
+
         return TokenResponse(
             access_token=create_access_token(member_id),
             refresh_token=create_refresh_token(member_id),
-            member=MemberRead.model_validate(member),
+            member=MemberRead(
+                id=member.id,
+                email=member.email,
+                full_name=member.full_name,
+                phone=member.phone,
+                birth_date=member.birth_date,
+                emergency_contact=member.emergency_contact,
+                notes=member.notes,
+                role=member.role,
+                membership_status=member.membership_status,
+                is_active=member.is_active,
+                membership_plan=membership_plan,
+                instructor_profile=instructor_profile,
+                created_at=member.created_at,
+                updated_at=member.updated_at,
+            ),
         )
