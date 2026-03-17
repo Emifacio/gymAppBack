@@ -65,6 +65,7 @@ export function WorkoutDetailScreen({ route }: WorkoutDetailScreenProps) {
           });
         }}
         style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+      >
         <Text style={styles.primaryButtonText}>
           {bookingMutation.isPending ? "Reservando..." : isPast ? "Clase concluida" : "Reservar clase"}
         </Text>

@@ -49,10 +49,27 @@ async def run_async_migrations() -> None:
         poolclass=pool.NullPool,
     )
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+    max_retries = 10
+    retry_delay = 2
+    last_exception = None
 
-    await connectable.dispose()
+    for attempt in range(max_retries):
+        try:
+            async with connectable.connect() as connection:
+                await connection.run_sync(do_run_migrations)
+            await connectable.dispose()
+            return
+        except Exception as e:
+            last_exception = e
+            if "starting up" in str(e).lower() or "connection refused" in str(e).lower():
+                print(f"Database system is starting up or unavailable. Retrying in {retry_delay}s... (Attempt {attempt + 1}/{max_retries})")
+                await asyncio.sleep(retry_delay)
+            else:
+                raise e
+
+    if last_exception:
+        print(f"Failed to connect to database after {max_retries} attempts.")
+        raise last_exception
 
 
 def run_migrations_online() -> None:
