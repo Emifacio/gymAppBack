@@ -2,7 +2,7 @@ import clsx from "clsx";
 import type { ButtonSize, ButtonVariant } from "./button-types";
 
 interface ButtonClassNameOptions {
-  className?: string;
+  className?: string | undefined;
   size?: ButtonSize;
   variant?: ButtonVariant;
 }

@@ -19,6 +19,6 @@ export type Booking = BookingRecord;
 export type Workout = ApiClientWorkout;
 export type Subscription = MemberSubscriptionStatus;
 
-export type PartialProfileUpdate = Pick<MemberUpdatePayload, "full_name" | "phone" | "email"> & {
+export type PartialProfileUpdate = Pick<MemberUpdatePayload, "full_name" | "phone"> & {
   profile_metadata?: OnboardingMetadata;
 };

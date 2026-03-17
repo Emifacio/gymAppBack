@@ -18,7 +18,7 @@ export function IntegrationsPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
-  const isConnecting: boolean = Boolean(stravaCallback.isLoading);
+  const isConnecting: boolean = Boolean(stravaCallback.isPending);
 
   // Handle OAuth Callback
   useEffect(() => {

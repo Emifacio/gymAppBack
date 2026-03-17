@@ -128,17 +128,18 @@ export function WorkoutsPage() {
 
               const dates = selectedDates.map(date => `${date}T${classTime}:00`);
               
-              const payload = {
+              const scheduledAt = dates[0]!;
+
+              const payload: WorkoutCreatePayload = {
                 name: getFormValue(formData, "name"),
                 location: getFormValue(formData, "location"),
                 instructor_id: getFormValue(formData, "instructor_id") || null,
                 duration_minutes: parseInt(getFormValue(formData, "duration_minutes"), 10),
                 capacity: parseInt(getFormValue(formData, "capacity"), 10),
-                scheduled_at: dates[0],
-                dates: dates.length > 1 ? dates : undefined,
+                scheduled_at: scheduledAt,
                 description: getFormValue(formData, "description"),
                 status: "scheduled"
-              } satisfies WorkoutCreatePayload;
+              };
 
               try {
                 await createWorkout.mutateAsync(payload);

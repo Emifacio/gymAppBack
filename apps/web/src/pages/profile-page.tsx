@@ -97,7 +97,7 @@ export function ProfilePage() {
               <label className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Teléfono</label>
               <input
                 className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium outline-none focus:border-[var(--primary)]"
-                value={formData.phone}
+                value={formData.phone ?? ""}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>

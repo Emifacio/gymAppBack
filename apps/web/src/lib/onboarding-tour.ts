@@ -20,7 +20,7 @@ const waitForElement = async (selector: string, timeoutMs = 8000): Promise<HTMLE
 
 export const createOnboardingTour = ({ onComplete, navigate }: OnboardingTourOptions): Driver => {
   let completed = false;
-  const steps: ReadonlyArray<DriveStep> = [
+  const steps: DriveStep[] = [
     {
       element: "#tour-credits",
       popover: {
