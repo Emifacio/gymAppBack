@@ -119,6 +119,11 @@ export function WorkoutsPage() {
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
               
+              if (selectedDates.length === 0) {
+                alert("Por favor, selecciona al menos una fecha para la clase.");
+                return;
+              }
+
               const dates = selectedDates.map(date => `${date}T${classTime}:00`);
               
               const payload = {
@@ -127,14 +132,11 @@ export function WorkoutsPage() {
                 instructor_id: getFormValue(formData, "instructor_id") || null,
                 duration_minutes: parseInt(getFormValue(formData, "duration_minutes")),
                 capacity: parseInt(getFormValue(formData, "capacity")),
-                scheduled_at: dates[0] || getFormValue(formData, "scheduled_at"), // Fallback if single date used
+                scheduled_at: dates[0],
                 dates: dates.length > 1 ? dates : undefined,
                 description: getFormValue(formData, "description"),
                 status: "scheduled" as const,
               };
-
-              // If dates[0] doesn't exist and scheduled_at wasn't filled, validation should handle it
-              // But with our UI, we'll ensure one is picked
 
               try {
                 await createWorkout.mutateAsync(payload as any);

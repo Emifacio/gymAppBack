@@ -14,16 +14,15 @@ export function LoginScreen() {
   return (
     <ScreenShell>
       <View style={styles.heroCard}>
-        <Text style={styles.eyebrow}>Plataforma de Gimnasio</Text>
-        <Text style={styles.heroTitle}>Un contrato, dos clientes impecables.</Text>
+        <Text style={styles.eyebrow}>Tu Gimnasio</Text>
+        <Text style={styles.heroTitle}>Gestioná tu entrenamiento de forma inteligente</Text>
         <Text style={styles.heroCopy}>
-          Inicia sesión con tu cuenta de FastAPI. La aplicación móvil almacena el JWT de forma segura mientras comparte el mismo cliente de API y hooks de consulta que la web.
+          Reservá clases, administrá tus créditos y seguí tu progreso en un solo lugar.
         </Text>
       </View>
 
       <View style={styles.formCard}>
-        <Text style={styles.formTitle}>Entrar</Text>
-        <Text style={styles.formCopy}>El token se persiste en el dispositivo y el adaptador de sesión compartido maneja la hidratación.</Text>
+        <Text style={styles.formTitle}>Bienvenido</Text>
 
         <TextInput
           autoCapitalize="none"
@@ -47,7 +46,7 @@ export function LoginScreen() {
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>
               {isApiResponseError(login.error)
-                ? "Error al iniciar sesión. Verifica tus credenciales o la disponibilidad del backend."
+                ? "Error al iniciar sesión. Por favor, verifica tus credenciales."
                 : login.error.message}
             </Text>
           </View>
@@ -60,6 +59,15 @@ export function LoginScreen() {
           style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
         >
           <Text style={styles.primaryButtonText}>{login.isPending ? "Iniciando sesión..." : "Iniciar sesión"}</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={() => {
+            // Navigation to Register would go here if defined
+          }}
+          style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
+        >
+          <Text style={styles.secondaryButtonText}>¿No tienes cuenta? Creá una</Text>
         </Pressable>
       </View>
 
@@ -136,6 +144,16 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     marginTop: 8,
     paddingVertical: 16
+  },
+  secondaryButton: {
+    alignItems: "center",
+    marginTop: 12,
+    paddingVertical: 8
+  },
+  secondaryButtonText: {
+    color: "#5F6F86",
+    fontSize: 14,
+    fontWeight: "600"
   },
   buttonPressed: {
     opacity: 0.92

@@ -71,12 +71,19 @@ class ClassService:
                 if instructor is None:
                     raise NotFoundError("Instructor not found")
 
-            dates = payload.dates if payload.dates else [payload.scheduled_at]
+            dates = payload.dates if payload.dates else ([payload.scheduled_at] if payload.scheduled_at else [])
+            if not dates:
+                raise ValueError("At least one date is required")
+                
             first_id = None
             
             for dt in dates:
                 data = payload.model_dump(exclude={"dates"})
-                data["scheduled_at"] = dt
+                if "scheduled_at" in data:
+                    data["scheduled_at"] = dt
+                # If scheduled_at was missing from payload, we insert it for the model
+                else:
+                    data["scheduled_at"] = dt
                 gym_class = GymClass(**data)
                 await self.class_repository.add(gym_class)
                 if first_id is None:

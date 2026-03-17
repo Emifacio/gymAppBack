@@ -1,7 +1,8 @@
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.domain.enums import BookingType
 from app.domain.enums import ClassStatus
@@ -17,15 +18,21 @@ class InstructorSummary(BaseModel):
 
 
 class ClassCreate(BaseModel):
-    name: str = Field(min_length=2, max_length=120)
+    name: str = Field(min_length=2, max_length=120, validation_alias="title")
     description: str | None = None
     instructor_id: UUID | None = None
-    scheduled_at: datetime
+    scheduled_at: Optional[datetime] = None
     dates: list[datetime] | None = None
     duration_minutes: int = Field(default=60, gt=0)
     capacity: int = Field(gt=0)
     location: str = Field(min_length=2, max_length=120)
     status: ClassStatus = ClassStatus.SCHEDULED
+
+    @model_validator(mode="after")
+    def validate_times(self) -> "ClassCreate":
+        if not self.scheduled_at and not self.dates:
+            raise ValueError("At least one of scheduled_at or dates must be provided")
+        return self
 
 
 class ClassUpdate(BaseModel):

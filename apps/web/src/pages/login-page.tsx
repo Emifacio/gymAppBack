@@ -21,38 +21,23 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12">
       <div className="grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="glass-panel hidden rounded-[2.5rem] p-10 lg:block">
+        <section className="glass-panel hidden rounded-[2.5rem] p-10 lg:flex flex-col justify-center bg-gradient-to-br from-[var(--ink-900)] to-[var(--ink-700)] text-white">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-            Plataforma de Gimnasio
+            Tu Gimnasio
           </p>
-          <h1 className="section-title mt-6 text-5xl font-semibold leading-tight">
-            Arquitectura frontend contract-first, finalmente traducida en producto.
+          <h1 className="mt-6 text-5xl font-semibold leading-tight">
+            Gestioná tu entrenamiento de forma inteligente
           </h1>
-          <p className="mt-6 max-w-xl text-base leading-8 text-[var(--muted)]">
-            React web, Expo mobile, un cliente generado, una única fuente de verdad. Inicia sesión para inspeccionar los datos del
-            backend en vivo a través de la interfaz compartida y tipada.
+          <p className="mt-6 max-w-xl text-lg leading-8 text-white/80">
+            Reservá clases, administrá tus créditos y seguí tu progreso en un solo lugar.
           </p>
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            <div className="rounded-[1.75rem] bg-white/80 p-5">
-              <p className="text-sm font-semibold text-[var(--ink)]">Hooks de Consulta Compartidos</p>
-              <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                El mismo hook `useWorkouts` alimenta tanto la web como el móvil.
-              </p>
-            </div>
-            <div className="rounded-[1.75rem] bg-white/80 p-5">
-              <p className="text-sm font-semibold text-[var(--ink)]">Autenticación lista para actualizar</p>
-              <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                El almacenamiento de la sesión difiere por plataforma, pero el contrato de autenticación sigue siendo compartido.
-              </p>
-            </div>
-          </div>
         </section>
 
-        <section className="glass-panel rounded-[2.5rem] p-8 md:p-10">
+        <section className="glass-panel rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-center">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Iniciar sesión</p>
           <h2 className="section-title mt-4 text-4xl font-semibold">Bienvenido de nuevo</h2>
           <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-            Usa una cuenta de backend de la autenticación de FastAPI. El token se almacenará en localStorage en la web.
+            Iniciá sesión para acceder a tu perfil y clases.
           </p>
 
           <form
@@ -100,7 +85,7 @@ export function LoginPage() {
             {login.error ? (
               <div className="rounded-2xl border border-[rgba(255,122,89,0.2)] bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--accent)]">
                 {isApiResponseError(login.error)
-                  ? "Error al iniciar sesión. Verifica tus credenciales contra el backend de FastAPI."
+                  ? "Error al iniciar sesión. Por favor, verifica tus credenciales."
                   : login.error.message}
               </div>
             ) : null}

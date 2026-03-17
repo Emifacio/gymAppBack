@@ -32,14 +32,10 @@ export function DashboardLayout() {
     { label: "Mi Perfil", to: "/profile", icon: User },
     { label: "Clases", to: "/workouts", icon: Calendar },
     { label: "Reservas", to: "/bookings", icon: BookCheck },
-    { label: "Integraciones", to: "/integrations", icon: Puzzle },
+    ...(canManageOperations(session?.member) ? [{ label: "Miembros", to: "/members", icon: Users }] : []),
     ...(canManagePlans(session?.member) ? [{ label: "Planes", to: "/plans", icon: CreditCard }] : []),
-    ...(canManageOperations(session?.member)
-      ? [
-          { label: "Miembros", to: "/members", icon: Users },
-          { label: "Asistencia", to: "/attendance", icon: History }
-        ]
-      : [])
+    { label: "Integraciones", to: "/integrations", icon: Puzzle },
+    ...(canManageOperations(session?.member) ? [{ label: "Asistencia", to: "/attendance", icon: History }] : [])
   ];
 
   return (
