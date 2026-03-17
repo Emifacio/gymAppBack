@@ -39,7 +39,7 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   };
 
-  public override render() {
+  public override render(): ReactNode {
     if (this.state.hasError) {
       if (this.props.fallback) {
         return this.props.fallback;

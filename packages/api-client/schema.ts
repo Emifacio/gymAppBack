@@ -543,6 +543,8 @@ export interface components {
             bio?: string | null;
             /** Specialties */
             specialties?: string | null;
+            /** Full Name */
+            full_name?: string | null;
         };
         /** InstructorSummary */
         InstructorSummary: {
@@ -560,6 +562,8 @@ export interface components {
             bio?: string | null;
             /** Specialties */
             specialties?: string | null;
+            /** Full Name */
+            full_name?: string | null;
         };
         /** IntegrationAccountRead */
         IntegrationAccountRead: {
