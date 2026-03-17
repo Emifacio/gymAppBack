@@ -52,6 +52,15 @@ export function HomeScreen() {
             <Ionicons name="shield-checkmark" size={48} color="rgba(255,255,255,0.2)" />
             <Text style={styles.adminWelcomeTitle}>Panel de Control</Text>
             <Text style={styles.adminWelcomeText}>Gestiona miembros, clases y asistencia desde las pestañas inferiores.</Text>
+            
+            <Pressable
+              onPress={() => {
+                navigation.navigate("Members" as any);
+              }}
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed, { marginTop: 8 }]}
+            >
+              <Text style={styles.primaryButtonText}>Gestionar Miembros</Text>
+            </Pressable>
           </View>
         ) : (
           <>
@@ -156,5 +165,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     lineHeight: 20
+  },
+  primaryButton: {
+    backgroundColor: "#FF7A59",
+    borderRadius: 999,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    alignItems: "center"
+  },
+  primaryButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700"
   }
 });
