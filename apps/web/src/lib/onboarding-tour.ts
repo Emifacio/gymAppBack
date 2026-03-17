@@ -61,7 +61,9 @@ export const createOnboardingTour = ({ onComplete, navigate }: OnboardingTourOpt
           navigate("/workouts");
           const nextEl = await waitForElement("#tour-workouts");
           if (!nextEl) {
-            console.warn("Onboarding tour: #tour-workouts not found after navigation, ending tour.");
+            console.info("Onboarding tour: #tour-workouts not found after navigation; ending tour early.");
+            completed = true;
+            onComplete();
             driverInstance.destroy();
             return;
           }
@@ -73,7 +75,9 @@ export const createOnboardingTour = ({ onComplete, navigate }: OnboardingTourOpt
           navigate("/bookings");
           const nextEl = await waitForElement("#tour-cancel-booking");
           if (!nextEl) {
-            console.warn("Onboarding tour: #tour-cancel-booking not found after navigation, ending tour.");
+            console.info("Onboarding tour: #tour-cancel-booking not found after navigation; completing tour.");
+            completed = true;
+            onComplete();
             driverInstance.destroy();
             return;
           }
