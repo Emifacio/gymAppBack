@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.domain.enums import MemberRole, MembershipStatus
+from app.domain.enums import MemberRole, MembershipStatus, SubscriptionStatus
 from app.schemas.subscription_schema import MemberSubscriptionRead
 
 
@@ -84,7 +84,14 @@ class MemberListRead(BaseModel):
             data.plan_name = obj.active_subscription.plan.name
         elif hasattr(obj, 'subscriptions') and obj.subscriptions:
             # Fallback to the most recent active subscription's plan name if possible
-            active = next((s for s in obj.subscriptions if s.is_active), None)
+            active = next(
+                (
+                    s
+                    for s in obj.subscriptions
+                    if getattr(s, "status", None) == SubscriptionStatus.ACTIVE or getattr(s, "is_active", False)
+                ),
+                None,
+            )
             if active:
                 data.plan_name = active.plan.name
         return data
