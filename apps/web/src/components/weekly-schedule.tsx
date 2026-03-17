@@ -27,6 +27,9 @@ export function WeeklySchedule({ classes }: WeeklyScheduleProps) {
     classes.forEach((c) => {
       const date = new Date(c.scheduled_at);
       const day = date.getDay();
+      if (!groups[day]) {
+        groups[day] = [];
+      }
       groups[day].push(c);
     });
 
@@ -89,7 +92,7 @@ export function WeeklySchedule({ classes }: WeeklyScheduleProps) {
                       {c.name}
                     </div>
                     <div className="text-[10px] text-[var(--ink-500)] mt-1 truncate">
-                      {c.instructor ? `Prof: ${c.instructor.id.slice(0, 8)}` : "Sin prof"}
+                      {c.instructor ? `Prof: ${typeof c.instructor.id === 'string' ? c.instructor.id.slice(0, 8) : c.instructor.id}` : "Sin prof"}
                     </div>
                   </Link>
                 ))
@@ -101,5 +104,6 @@ export function WeeklySchedule({ classes }: WeeklyScheduleProps) {
     </div>
   );
 }
+
 
 
