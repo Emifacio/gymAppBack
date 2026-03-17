@@ -11,8 +11,13 @@ import { formatCredits, formatDateTime, formatRelativeSlot } from "@/lib/format"
 
 export function DashboardPage() {
   const { session } = useAuth();
+
+  if (!session) {
+    return null;
+  }
+
   const workoutsQuery = useWorkouts({ limit: 6 });
-  const bookingsQuery = useMemberBookings(session!.member.id);
+  const bookingsQuery = useMemberBookings(session.member.id);
   const subscriptionQuery = useMySubscriptionStatus();
 
   const workouts = workoutsQuery.data ?? [];

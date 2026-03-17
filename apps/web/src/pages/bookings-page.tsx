@@ -8,6 +8,7 @@ import {
 } from "@/hooks/use-workouts";
 import { formatCredits, formatDateTime, formatWorkoutSchedule } from "@/lib/format";
 import { CancellationModal } from "@/components/cancellation-modal";
+import { ErrorBoundary } from "@/components/error-handling/ErrorBoundary";
 
 export function BookingsPage() {
   const { session } = useAuth();
@@ -105,77 +106,98 @@ export function BookingsPage() {
         ) : null}
       </section>
 
+import { ErrorBoundary } from "@/components/error-handling/ErrorBoundary";
+// ... (existing imports)
+
+// ... inside BookingsPage return
       <section className="grid gap-6 xl:grid-cols-2">
-        <div className="glass-panel rounded-[2rem] p-8">
-          <h2 className="section-title text-3xl font-semibold">Reservas</h2>
-          <div className="mt-6 space-y-4">
-            {bookings.map((booking) => (
-              <div key={booking.id} className="rounded-[1.5rem] bg-white/80 p-5">
-                <p className="text-lg font-semibold text-[var(--ink)]">
-                  {booking.gym_class?.name ?? booking.class_id}
-                </p>
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  {booking.gym_class?.scheduled_at
-                    ? formatWorkoutSchedule(booking.gym_class.scheduled_at)
-                    : formatWorkoutSchedule(booking.booked_at)}
-                </p>
-                <p className="mt-1 text-sm text-[var(--muted)]">Estado: {booking.status === "confirmed" ? "confirmado" : booking.status}</p>
-                <p className="mt-1 text-sm text-[var(--muted)]">
-                  Tipo de reserva: {booking.booking_type}
-                  {booking.credits_consumed ? ` · Créditos usados: ${booking.credits_consumed}` : ""}
-                </p>
-                <button
-                  className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
-                  disabled={cancelBooking.isPending || booking.status !== "confirmed"}
-                  onClick={() => {
-                    handleCancelClick(booking.id, booking.gym_class?.scheduled_at);
-                  }}
-                  type="button"
-                >
-                  {booking.status === "confirmed" ? "Cancelar reserva" : "No cancelable"}
-                </button>
-              </div>
-            ))}
+        <ErrorBoundary 
+          fallback={
+            <div className="glass-panel rounded-[2rem] p-8 text-center">
+              <p className="text-sm font-semibold text-red-500">Error cargando tus reservas</p>
+              <p className="mt-2 text-xs text-gray-500">Estamos trabajando para solucionarlo.</p>
+            </div>
+          }
+        >
+          <div className="glass-panel rounded-[2rem] p-8">
+            <h2 className="section-title text-3xl font-semibold">Reservas</h2>
+            <div className="mt-6 space-y-4">
+              {bookings.map((booking) => (
+                <div key={booking.id} className="rounded-[1.5rem] bg-white/80 p-5">
+                  <p className="text-lg font-semibold text-[var(--ink)]">
+                    {booking.gym_class?.name ?? booking.class_id}
+                  </p>
+                  <p className="mt-2 text-sm text-[var(--muted)]">
+                    {booking.gym_class?.scheduled_at
+                      ? formatWorkoutSchedule(booking.gym_class.scheduled_at)
+                      : formatWorkoutSchedule(booking.booked_at)}
+                  </p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">Estado: {booking.status === "confirmed" ? "confirmado" : booking.status}</p>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    Tipo de reserva: {booking.booking_type}
+                    {booking.credits_consumed ? ` · Créditos usados: ${booking.credits_consumed}` : ""}
+                  </p>
+                  <button
+                    className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
+                    disabled={cancelBooking.isPending || booking.status !== "confirmed"}
+                    onClick={() => {
+                      handleCancelClick(booking.id, booking.gym_class?.scheduled_at);
+                    }}
+                    type="button"
+                  >
+                    {booking.status === "confirmed" ? "Cancelar reserva" : "No cancelable"}
+                  </button>
+                </div>
+              ))}
 
-            {!bookings.length ? (
-              <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
-                Aún no tienes reservas.
-              </div>
-            ) : null}
+              {!bookings.length ? (
+                <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
+                  Aún no tienes reservas.
+                </div>
+              ) : null}
+            </div>
           </div>
-        </div>
+        </ErrorBoundary>
 
-        <div className="glass-panel rounded-[2rem] p-8">
-          <h2 className="section-title text-3xl font-semibold">Lista de espera</h2>
-          <div className="mt-6 space-y-4">
-            {waitlist.map((entry) => (
-              <div key={entry.id} className="rounded-[1.5rem] bg-white/80 p-5">
-                <p className="text-lg font-semibold text-[var(--ink)]">
-                  {entry.gym_class?.name ?? entry.class_id}
-                </p>
-                <p className="mt-2 text-sm text-[var(--muted)]">
-                  Posición {entry.position} · Estado {entry.status === "waiting" ? "en espera" : entry.status}
-                </p>
-                <button
-                  className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
-                  disabled={cancelBooking.isPending || entry.status !== "waiting"}
-                  onClick={() => {
-                    handleCancelClick(entry.id, entry.gym_class?.scheduled_at);
-                  }}
-                  type="button"
-                >
-                  {entry.status === "waiting" ? "Salir de la lista de espera" : "No cancelable"}
-                </button>
-              </div>
-            ))}
+        <ErrorBoundary
+          fallback={
+            <div className="glass-panel rounded-[2rem] p-8 text-center">
+              <p className="text-sm font-semibold text-red-500">Error cargando la lista de espera</p>
+            </div>
+          }
+        >
+          <div className="glass-panel rounded-[2rem] p-8">
+            <h2 className="section-title text-3xl font-semibold">Lista de espera</h2>
+            <div className="mt-6 space-y-4">
+              {waitlist.map((entry) => (
+                <div key={entry.id} className="rounded-[1.5rem] bg-white/80 p-5">
+                  <p className="text-lg font-semibold text-[var(--ink)]">
+                    {entry.gym_class?.name ?? entry.class_id}
+                  </p>
+                  <p className="mt-2 text-sm text-[var(--muted)]">
+                    Posición {entry.position} · Estado {entry.status === "waiting" ? "en espera" : entry.status}
+                  </p>
+                  <button
+                    className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
+                    disabled={cancelBooking.isPending || entry.status !== "waiting"}
+                    onClick={() => {
+                      handleCancelClick(entry.id, entry.gym_class?.scheduled_at);
+                    }}
+                    type="button"
+                  >
+                    {entry.status === "waiting" ? "Salir de la lista de espera" : "No cancelable"}
+                  </button>
+                </div>
+              ))}
 
-            {!waitlist.length ? (
-              <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
-                No estás en ninguna lista de espera.
-              </div>
-            ) : null}
+              {!waitlist.length ? (
+                <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
+                  No estás en ninguna lista de espera.
+                </div>
+              ) : null}
+            </div>
           </div>
-        </div>
+        </ErrorBoundary>
       </section>
 
       <section className="glass-panel rounded-[2rem] p-8">

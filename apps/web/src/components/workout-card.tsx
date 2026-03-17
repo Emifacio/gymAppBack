@@ -36,11 +36,11 @@ export function WorkoutCard({ workout, actionLabel = "View session" }: WorkoutCa
             <Clock className="h-3 w-3" />
             {workout.duration_minutes} min
           </span>
-          {workout.instructor_id && (
+          {workout.instructor_id ? (
             <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--primary)] bg-[var(--accent-soft)] px-2 py-1 rounded-lg">
               Prof: {workout.instructor_id.slice(0, 6)}
             </span>
-          )}
+          ) : null}
         </div>
         
         <h3 className="section-title mt-2 text-[var(--font-size-lg)] text-[var(--ink-900)]">{workout.name}</h3>
@@ -72,11 +72,11 @@ export function WorkoutCard({ workout, actionLabel = "View session" }: WorkoutCa
 
 
       <div className="flex items-center gap-4 mt-2 md:mt-0">
-        {workout.member_booking_status && (
+        {workout.member_booking_status ? (
           <span className="text-[10px] font-bold text-[var(--primary)] bg-[var(--accent-soft)] px-3 py-2 rounded-xl uppercase tracking-wider">
             {workout.member_booking_status}
           </span>
-        )}
+        ) : null}
         <Link
           className={buttonClassName({ size: "md", variant: "secondary" }) + " w-full md:w-auto h-12 flex items-center justify-center"}
           to={`/workouts/${workout.id}`}

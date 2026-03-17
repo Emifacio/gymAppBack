@@ -106,7 +106,7 @@ export function WorkoutsPage() {
         </div>
       </section>
 
-      {canManage && (
+      {canManage ? (
         <section className="apple-card bg-[var(--bg-main)]/50">
           <div className="mb-8">
             <h2 className="section-title text-[var(--font-size-2xl)]">Crear Entrenamiento</h2>
@@ -212,7 +212,7 @@ export function WorkoutsPage() {
                 />
               </div>
               <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-xl border border-dashed border-[var(--surface-outline)]">
-                {selectedDates.length === 0 && <span className="text-xs text-[var(--ink-400)]">No hay fechas seleccionadas</span>}
+                {selectedDates.length === 0 ? <span className="text-xs text-[var(--ink-400)]">No hay fechas seleccionadas</span> : null}
                 {selectedDates.map(date => (
                   <span key={date} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--primary)] text-white text-xs font-bold">
                     {date}
@@ -254,7 +254,7 @@ export function WorkoutsPage() {
             </div>
           </form>
         </section>
-      )}
+      ) : null}
 
       {showEmptyState ? (
         <EmptyState

@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import { ErrorFallback } from "@/components/error-handling/ErrorFallback";
 
 import { AuthGuard } from "@/components/auth-guard";
 import { DashboardLayout } from "@/layouts/dashboard-layout";
@@ -18,17 +19,21 @@ import { WorkoutsPage } from "@/pages/workouts-page";
 export const router = createBrowserRouter([
   {
     path: "/login",
-    element: <LoginPage />
+    element: <LoginPage />,
+    errorElement: <ErrorFallback />
   },
   {
     path: "/register",
-    element: <RegisterPage />
+    element: <RegisterPage />,
+    errorElement: <ErrorFallback />
   },
   {
     element: <AuthGuard />,
+    errorElement: <ErrorFallback />,
     children: [
       {
         element: <DashboardLayout />,
+        errorElement: <ErrorFallback />,
         children: [
           {
             index: true,

@@ -23,7 +23,7 @@ export function CancellationModal({ open, onClose, onConfirm, isLate, loading }:
           </p>
         </header>
 
-        {isLate && (
+        {isLate ? (
           <div className="p-4 rounded-2xl bg-red-50 border border-red-100 space-y-2">
             <p className="text-xs font-bold uppercase tracking-wider text-red-600">
               ⚠️ Aviso de cancelación tardía
@@ -32,7 +32,7 @@ export function CancellationModal({ open, onClose, onConfirm, isLate, loading }:
               Faltan menos de 24 horas para la clase. Si cancelas ahora, **perderás el crédito** utilizado para esta reserva.
             </p>
           </div>
-        )}
+        ) : null}
 
         <div className="flex flex-col gap-3">
           <Button
