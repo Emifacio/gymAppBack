@@ -194,6 +194,10 @@ class BookingService:
             now = datetime.now(timezone.utc)
             booking = await self.booking_repository.get_by_id(booking_id)
             if booking is not None:
+                # Make cancellation idempotent: already-cancelled bookings are treated as success.
+                if booking.status == BookingStatus.CANCELLED:
+                    return BookingCancellationResponse(status="cancelled", credit_restored=False, promoted_booking=None)
+
                 booking_member_id = booking.member_id
                 booking_class_id = booking.class_id
                 booking_status = booking.status
@@ -227,6 +231,10 @@ class BookingService:
                 waitlist_entry = await self.waitlist_repository.get_by_id(booking_id)
                 if waitlist_entry is None:
                     raise NotFoundError("Booking not found")
+
+                # Idempotent cancellation for waitlist entries.
+                if waitlist_entry.status == WaitlistStatus.CANCELLED:
+                    return BookingCancellationResponse(status="cancelled", credit_restored=False, promoted_booking=None)
 
                 waitlist_member_id = waitlist_entry.member_id
                 waitlist_class_id = waitlist_entry.class_id

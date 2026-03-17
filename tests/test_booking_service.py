@@ -222,6 +222,51 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
         with self.assertRaises(BookingNotCancellableError):
             await self.service.cancel_booking(booking.id, actor)
 
+    async def test_cancel_booking_idempotent_already_cancelled(self) -> None:
+        actor = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)
+        booking_id = uuid4()
+        booking = Booking(
+            id=booking_id,
+            member_id=actor.id,
+            class_id=uuid4(),
+            status=BookingStatus.CANCELLED,
+            booking_type=BookingType.CREDIT,
+            credits_consumed=1,
+            booked_at=datetime.now(timezone.utc),
+            cancelled_at=datetime.now(timezone.utc),
+        )
+
+        self.booking_repository.get_by_id = AsyncMock(return_value=booking)
+
+        response = await self.service.cancel_booking(booking_id, actor)
+
+        self.assertEqual(response.status, "cancelled")
+        self.assertFalse(response.credit_restored)
+        self.assertIsNone(response.promoted_booking)
+
+    async def test_cancel_waitlist_idempotent_already_cancelled(self) -> None:
+        actor = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)
+        waitlist_id = uuid4()
+        waitlist_entry = Waitlist(
+            id=waitlist_id,
+            member_id=actor.id,
+            class_id=uuid4(),
+            position=1,
+            status=WaitlistStatus.CANCELLED,
+            joined_at=datetime.now(timezone.utc),
+            promoted_at=None,
+            cancelled_at=datetime.now(timezone.utc),
+        )
+
+        self.booking_repository.get_by_id = AsyncMock(return_value=None)
+        self.waitlist_repository.get_by_id = AsyncMock(return_value=waitlist_entry)
+
+        response = await self.service.cancel_booking(waitlist_id, actor)
+
+        self.assertEqual(response.status, "cancelled")
+        self.assertFalse(response.credit_restored)
+        self.assertIsNone(response.promoted_booking)
+
     async def test_promote_waitlist_if_needed_skips_ineligible_members_and_promotes_next(self) -> None:
         class_id = uuid4()
         now = datetime.now(timezone.utc)
