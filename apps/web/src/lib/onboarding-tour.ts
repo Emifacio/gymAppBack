@@ -1,61 +1,90 @@
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 
-export const createOnboardingTour = (onComplete: () => void) => {
+type OnboardingTourOptions = {
+  onComplete: () => void;
+  navigate: (to: string) => void;
+};
+
+const waitForElement = async (selector: string, timeoutMs = 8000) => {
+  const start = Date.now();
+
+  while (Date.now() - start < timeoutMs) {
+    const el = document.querySelector(selector);
+    if (el) return el;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  return null;
+};
+
+export const createOnboardingTour = ({ onComplete, navigate }: OnboardingTourOptions) => {
+  let completed = false;
+  const steps = [
+    {
+      element: "#tour-credits",
+      popover: {
+        title: "Tus Créditos",
+        description: "Aquí puedes ver cuántos créditos tienes disponibles para reservar clases.",
+        side: "bottom",
+        align: "start",
+      },
+    },
+    {
+      element: "#tour-workouts",
+      popover: {
+        title: "Reservar clase",
+        description: "Elige una clase y resérvala para asegurar tu lugar.",
+        side: "bottom",
+        align: "start",
+      },
+    },
+    {
+      element: "#tour-cancel-booking",
+      popover: {
+        title: "Cancelar clase",
+        description: "Si no puedes asistir, cancela con tiempo para liberar el cupo.",
+        side: "top",
+        align: "start",
+      },
+    },
+  ] as const;
+
   const driverObj = driver({
     showProgress: true,
-    steps: [
-      {
-        element: "#tour-credits",
-        popover: {
-          title: "Tus Créditos",
-          description: "Aquí puedes ver cuántos créditos tienes disponibles en tu plan actual para reservar clases.",
-          side: "bottom",
-          align: "start",
-        },
-      },
-      {
-        element: 'a[href="/workouts"]',
-        popover: {
-          title: "Explorar Clases",
-          description: "Haz clic aquí para ver el horario completo y elegir tu próximo entrenamiento.",
-          side: "right",
-          align: "start",
-        },
-      },
-      {
-        element: "#tour-workouts",
-        popover: {
-          title: "Reservar Clase",
-          description: "Elige la clase que prefieras y resérvala con un solo clic para asegurar tu lugar.",
-          side: "bottom",
-          align: "start",
-        },
-      },
-      {
-        element: 'a[href="/bookings"]',
-        popover: {
-          title: "Tus Reservas",
-          description: "En esta sección podrás ver todas tus clases próximas y gestionarlas.",
-          side: "right",
-          align: "start",
-        },
-      },
-      {
-        element: "#tour-cancel-booking",
-        popover: {
-          title: "Cancelar Reserva",
-          description: "Si no puedes asistir, recuerda cancelar con tiempo aquí para liberar el lugar.",
-          side: "top",
-          align: "start",
-        },
-      },
-    ],
+    steps: steps as any,
+    onNextClick: async () => {
+      const activeIndex = (driverObj as any).getActiveIndex?.() ?? 0;
+
+      if (activeIndex === 0) {
+        navigate("/workouts");
+        await waitForElement("#tour-workouts");
+        (driverObj as any).moveNext?.();
+        return;
+      }
+
+      if (activeIndex === 1) {
+        navigate("/bookings");
+        await waitForElement("#tour-cancel-booking");
+        (driverObj as any).moveNext?.();
+        return;
+      }
+
+      if (activeIndex === steps.length - 1) {
+        completed = true;
+        onComplete();
+        (driverObj as any).destroy?.();
+        return;
+      }
+
+      (driverObj as any).moveNext?.();
+    },
+    onCloseClick: () => {
+      (driverObj as any).destroy?.();
+    },
     onDestroyed: () => {
-      // Driver.js doesn't have a direct "onFinish" that is separate from "onCancel" easily in the config object
-      // but we can check the current step or just mark as completed when the user finishes.
-      // For simplicity, we celebrate completion.
-      onComplete();
+      // Only persist completion when the user reached the last step.
+      if (!completed) return;
     },
   });
 

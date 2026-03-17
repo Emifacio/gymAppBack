@@ -1,5 +1,6 @@
 import { useEffect, type PropsWithChildren } from "react";
 import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { useUpdateMember } from "@/hooks/use-workouts";
 import { createOnboardingTour } from "@/lib/onboarding-tour";
@@ -7,16 +8,27 @@ import { createOnboardingTour } from "@/lib/onboarding-tour";
 export function OnboardingProvider({ children }: PropsWithChildren) {
   const { session } = useAuth();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const updateMember = useUpdateMember();
 
   useEffect(() => {
     if (!session || !session.member) return;
 
     const metadata = (session.member as any).profile_metadata || {};
-    const isCompleted = metadata.onboarding_completed;
+    const isCompleted =
+      Boolean(metadata.onboarding_completed) ||
+      (typeof window !== "undefined" && window.localStorage.getItem("onboarding_completed") === "true");
 
     if (!isCompleted && pathname === "/dashboard") {
-      const tour = createOnboardingTour(async () => {
+      const tour = createOnboardingTour({
+        navigate,
+        onComplete: async () => {
+          try {
+            window.localStorage.setItem("onboarding_completed", "true");
+          } catch {
+            // ignore (private mode / blocked storage)
+          }
+
         try {
           await updateMember.mutateAsync({
             memberId: session.member.id,
@@ -27,6 +39,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
         } catch (error) {
           console.error("Failed to persist onboarding status:", error);
         }
+        },
       });
 
       // Start the tour with a small delay to ensure rendering is complete
@@ -36,7 +49,7 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
 
       return () => clearTimeout(timeout);
     }
-  }, [session, pathname, updateMember]);
+  }, [session, pathname, updateMember, navigate]);
 
   return <>{children}</>;
 }
