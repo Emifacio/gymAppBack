@@ -10,7 +10,7 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <OnboardingProvider>{children}</OnboardingProvider>
+        {children}
       </AuthProvider>
       <ReactQueryDevtools buttonPosition="bottom-left" initialIsOpen={false} />
     </QueryClientProvider>

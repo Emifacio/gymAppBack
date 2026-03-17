@@ -15,6 +15,7 @@ import { ProfilePage } from "@/pages/profile-page";
 import { RegisterPage } from "@/pages/register-page";
 import { WorkoutDetailPage } from "@/pages/workout-detail-page";
 import { WorkoutsPage } from "@/pages/workouts-page";
+import { OnboardingProvider } from "@/providers/onboarding-provider";
 
 export const router = createBrowserRouter([
   {
@@ -28,7 +29,11 @@ export const router = createBrowserRouter([
     errorElement: <ErrorFallback />
   },
   {
-    element: <AuthGuard />,
+    element: (
+      <OnboardingProvider>
+        <AuthGuard />
+      </OnboardingProvider>
+    ),
     errorElement: <ErrorFallback />,
     children: [
       {
