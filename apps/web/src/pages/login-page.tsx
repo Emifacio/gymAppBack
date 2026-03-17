@@ -21,14 +21,14 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12">
       <div className="grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="glass-panel hidden rounded-[2.5rem] p-10 lg:flex flex-col justify-center bg-gradient-to-br from-[var(--ink-900)] to-[var(--ink-700)] text-white">
+        <section className="hidden rounded-[2.5rem] p-10 lg:flex flex-col justify-center bg-[#132238] shadow-2xl transition-all duration-700 animate-in fade-in slide-in-from-left-8">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
             Tu Gimnasio
           </p>
-          <h1 className="mt-6 text-5xl font-semibold leading-tight">
+          <h1 className="mt-6 text-5xl font-semibold leading-tight text-white">
             Gestioná tu entrenamiento de forma inteligente
           </h1>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-white/80">
+          <p className="mt-6 max-w-xl text-lg leading-8 text-white/70">
             Reservá clases, administrá tus créditos y seguí tu progreso en un solo lugar.
           </p>
         </section>
