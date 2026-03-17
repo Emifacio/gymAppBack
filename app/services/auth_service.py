@@ -1,4 +1,7 @@
 from uuid import UUID
+import asyncio
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 from sqlalchemy import func, inspect as sa_inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,6 +27,7 @@ class AuthService:
         self.member_repository = member_repository
 
     async def register(self, payload: RegisterRequest) -> TokenResponse:
+        # Email is normalized in _get_member_by_email
         existing_member = await self._get_member_by_email(payload.email)
         if existing_member is not None:
             raise ConflictError("A member with this email already exists")
@@ -76,7 +80,8 @@ class AuthService:
         return self._build_token_response(member)
 
     async def _get_member_by_email(self, email: str) -> Member | None:
-        return await self.member_repository.get_by_email(email.strip())
+        normalized_email = email.lower().strip()
+        return await self.member_repository.get_by_email(normalized_email)
 
     async def _resolve_registration_role(self) -> MemberRole:
         statement = select(func.count()).select_from(Member)
@@ -116,3 +121,37 @@ class AuthService:
                 updated_at=member.updated_at,
             ),
         )
+
+    async def google_login(self, id_token_str: str, client_id: str) -> TokenResponse:
+        try:
+            # Specify the CLIENT_ID of the app that accesses the backend:
+            idinfo = id_token.verify_oauth2_token(id_token_str, requests.Request(), client_id)
+
+            # ID token is valid. Get the user's Google Account ID from the decoded token.
+            email = idinfo['email']
+            full_name = idinfo.get('name', email.split('@')[0])
+            
+            member = await self._get_member_by_email(email)
+            if member is None:
+                # Provision new user
+                role = await self._resolve_registration_role()
+                member = Member(
+                    email=email.lower().strip(),
+                    full_name=full_name,
+                    password_hash="", # No password for OAuth users
+                    role=role,
+                    membership_status=MembershipStatus.ACTIVE,
+                    is_active=True,
+                    profile_metadata={},
+                )
+                if self.session.in_transaction():
+                    await self.session.rollback()
+
+                async with self.session.begin():
+                    self.session.add(member)
+                await self.session.refresh(member)
+                
+            return self._build_token_response(member)
+        except ValueError:
+            # Invalid token
+            raise UnauthorizedError("Invalid Google ID token")

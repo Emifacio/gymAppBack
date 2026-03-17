@@ -1,15 +1,25 @@
-import { useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useState, useEffect } from "react";
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { isApiResponseError } from "@gym/api-client";
 
 import { ScreenShell } from "../components/screen-shell";
 import { useLoginMutation } from "../hooks/use-workouts";
 
-export function LoginScreen() {
+export function LoginScreen({ navigation }: any) {
   const login = useLoginMutation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (email === "") {
+        setEmailError(false);
+        return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setEmailError(!emailRegex.test(email));
+  }, [email]);
 
   return (
     <ScreenShell>
@@ -30,9 +40,10 @@ export function LoginScreen() {
           onChangeText={setEmail}
           placeholder="coach@gymplatform.dev"
           placeholderTextColor="#8D99AE"
-          style={styles.input}
+          style={[styles.input, emailError ? styles.inputError : null]}
           value={email}
         />
+        {emailError ? <Text style={styles.errorHint}>Formato de email incorrecto</Text> : null}
         <TextInput
           onChangeText={setPassword}
           placeholder="Contraseña"
@@ -56,14 +67,28 @@ export function LoginScreen() {
           onPress={() => {
             login.mutate({ email, password });
           }}
-          style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+          style={({ pressed }) => [styles.primaryButton, (pressed || login.isPending || emailError) && styles.buttonDisabled]}
+          disabled={login.isPending || emailError}
         >
           <Text style={styles.primaryButtonText}>{login.isPending ? "Iniciando sesión..." : "Iniciar sesión"}</Text>
         </Pressable>
 
+        <View style={styles.separatorContainer}>
+          <View style={styles.separator} />
+          <Text style={styles.separatorText}>O</Text>
+          <View style={styles.separator} />
+        </View>
+
+        <Pressable
+          onPress={() => Alert.alert("Próximamente", "Integración con Google en camino.")}
+          style={({ pressed }) => [styles.googleButton, pressed && styles.buttonPressed]}
+        >
+          <Text style={styles.googleButtonText}>Continuar con Google</Text>
+        </Pressable>
+
         <Pressable
           onPress={() => {
-            // Navigation to Register would go here if defined
+            (navigation as any)?.navigate("Register");
           }}
           style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
         >
@@ -162,5 +187,47 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 15,
     fontWeight: "700"
+  },
+  inputError: {
+    borderColor: "#FF7A59"
+  },
+  errorHint: {
+    color: "#FF7A59",
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: -8,
+    marginLeft: 4
+  },
+  buttonDisabled: {
+    opacity: 0.6
+  },
+  separatorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 10
+  },
+  separator: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "rgba(19,34,56,0.1)"
+  },
+  separatorText: {
+    marginHorizontal: 12,
+    color: "#8D99AE",
+    fontSize: 12,
+    fontWeight: "700"
+  },
+  googleButton: {
+    alignItems: "center",
+    backgroundColor: "white",
+    borderColor: "rgba(19,34,56,0.1)",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingVertical: 14
+  },
+  googleButtonText: {
+    color: "#132238",
+    fontSize: 15,
+    fontWeight: "600"
   }
 });

@@ -25,7 +25,7 @@ export function BookingEligibilityModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(19,34,56,0.45)] px-4"
       role="dialog"
     >
-      <div className="glass-panel w-full max-w-lg rounded-[2rem] p-8 shadow-[0_30px_80px_rgba(19,34,56,0.25)]">
+      <div className="glass-panel w-full max-w-md rounded-[2.5rem] p-8 shadow-[0_40px_100px_rgba(19,34,56,0.3)] border border-white/20">
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
           Reserva no disponible
         </p>

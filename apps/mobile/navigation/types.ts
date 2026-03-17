@@ -3,6 +3,7 @@ export type RootStackParamList = {
   MainTabs: undefined;
   WorkoutDetail: { workoutId: string };
   Members: undefined;
+  Register: undefined;
 };
 
 export type MainTabParamList = {

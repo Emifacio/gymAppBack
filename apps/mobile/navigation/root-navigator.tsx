@@ -10,6 +10,7 @@ import { WorkoutDetailScreen } from "../screens/workout-detail-screen";
 import { WorkoutsScreen } from "../screens/workouts-screen";
 import { MembersScreen } from "../screens/members-screen";
 import { SettingsScreen } from "../screens/settings-screen";
+import { RegisterScreen } from "../screens/register-screen";
 import type { MainTabParamList, RootStackParamList } from "./types";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
@@ -104,7 +105,10 @@ export function RootNavigator() {
           />
         </>
       ) : (
-        <RootStack.Screen component={LoginScreen} name="Login" options={{ headerShown: false }} />
+        <>
+          <RootStack.Screen component={LoginScreen} name="Login" options={{ headerShown: false }} />
+          <RootStack.Screen component={RegisterScreen} name="Register" options={{ headerShown: false }} />
+        </>
       )}
     </RootStack.Navigator>
   );

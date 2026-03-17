@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ScreenShell } from "../components/screen-shell";
 import { useAuth } from "../hooks/use-auth";
@@ -33,6 +33,12 @@ export function WorkoutDetailScreen({ route }: WorkoutDetailScreenProps) {
       <View style={styles.heroCard}>
         <Text style={styles.status}>{workout.status === 'scheduled' ? 'PROGRAMADA' : workout.status.toUpperCase()}</Text>
         <Text style={styles.title}>{workout.name}</Text>
+        {isPast ? (
+          <View style={styles.pastBadge}>
+            <View style={styles.pastDot} />
+            <Text style={styles.pastBadgeText}>Clase concluida</Text>
+          </View>
+        ) : null}
         <Text style={styles.copy}>
           {workout.description ??
             "Esta vista utiliza los hooks compartidos `useWorkout` y `useCreateBooking` del paquete de API."}
@@ -56,7 +62,17 @@ export function WorkoutDetailScreen({ route }: WorkoutDetailScreenProps) {
       <Pressable
         onPress={() => {
           if (isPast) {
-            alert("Clase finalizada: El tiempo de inscripción ha terminado.");
+            Alert.alert(
+              "Clase finalizada",
+              "El tiempo de inscripción ha terminado. Por favor, selecciona otra sesión disponible.",
+              [
+                { text: "Cerrar", style: "cancel" },
+                { 
+                  text: "Ver clases", 
+                  onPress: () => (route as any).navigation?.navigate("Workouts") || alert("Redirigiendo a clases...") 
+                }
+              ]
+            );
             return;
           }
           bookingMutation.mutate({
@@ -168,5 +184,31 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     textAlign: "center"
+  },
+  pastBadge: {
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(255, 100, 100, 0.1)",
+    borderRadius: 99,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 100, 100, 0.2)"
+  },
+  pastDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#FF5252",
+    marginRight: 6
+  },
+  pastBadgeText: {
+    color: "#FF5252",
+    fontSize: 10,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1
   }
 });

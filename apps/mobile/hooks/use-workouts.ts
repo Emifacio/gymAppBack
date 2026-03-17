@@ -11,3 +11,4 @@ export const useUpdateMember = apiHooks.useUpdateMember;
 export const useAssignSubscription = apiHooks.useAssignSubscription;
 export const useAssignPlan = apiHooks.useAssignPlan;
 export const usePlans = apiHooks.usePlans;
+export const useRegisterMutation = apiHooks.useRegister;

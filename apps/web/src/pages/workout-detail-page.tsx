@@ -120,6 +120,13 @@ export function WorkoutDetailPage() {
       <section className="glass-panel rounded-[2.25rem] p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Detalle de la clase</p>
         <h1 className="section-title mt-4 text-4xl font-semibold">{workout.name}</h1>
+        
+        {isPast ? (
+          <div className="mt-4 inline-flex items-center rounded-full bg-red-50 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-red-500 border border-red-100">
+            <span className="mr-2 h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+            Clase concluida
+          </div>
+        ) : null}
         <p className="mt-4 text-base leading-8 text-[var(--muted)]">
           {workout.description ??
             "Esta clase se renderiza desde el horario del backend con información de disponibilidad en vivo, lista de espera y estado de reserva."}

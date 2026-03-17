@@ -5,6 +5,7 @@ import { isApiResponseError } from "@gym/api-client";
 import { useAuth } from "@/hooks/use-auth";
 import { useLoginMutation } from "@/hooks/use-workouts";
 import { getFormValue } from "@/lib/forms";
+import { GoogleButton } from "@/components/ui/GoogleButton";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -97,6 +98,17 @@ export function LoginPage() {
             >
               {login.isPending ? "Iniciando sesión..." : "Iniciar sesión"}
             </button>
+
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-[rgba(19,34,56,0.08)]"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-[#f8fafd] px-4 text-[var(--muted)] font-medium tracking-widest">O</span>
+              </div>
+            </div>
+
+            <GoogleButton onClick={() => alert("Próximamente: Integración con Google")} />
           </form>
 
           <p className="mt-5 text-sm text-[var(--muted)]">
