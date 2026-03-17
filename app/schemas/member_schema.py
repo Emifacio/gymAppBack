@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -59,6 +60,7 @@ class MemberUpdate(BaseModel):
     password: str | None = Field(default=None, min_length=8, max_length=128)
     instructor_bio: str | None = None
     instructor_specialties: str | None = None
+    profile_metadata: dict[str, Any] | None = None
 
 
 class MemberListRead(BaseModel):
@@ -104,5 +106,6 @@ class MemberRead(BaseModel):
     membership_plan: MembershipPlanRead | None = None
     active_subscription: MemberSubscriptionRead | None = None
     instructor_profile: InstructorProfileRead | None = None
+    profile_metadata: dict[str, Any] = Field(default_factory=dict)
     created_at: datetime
     updated_at: datetime

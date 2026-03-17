@@ -9,9 +9,10 @@ import { formatWorkoutSchedule } from "@/lib/format";
 interface WorkoutCardProps {
   workout: Workout;
   actionLabel?: string;
+  id?: string | undefined;
 }
 
-export function WorkoutCard({ workout, actionLabel = "View session" }: WorkoutCardProps) {
+export function WorkoutCard({ workout, actionLabel = "View session", id }: WorkoutCardProps) {
   const availabilityLabel =
     typeof workout.available_spots === "number"
       ? `${workout.available_spots} de ${workout.capacity} libres`
@@ -24,7 +25,7 @@ export function WorkoutCard({ workout, actionLabel = "View session" }: WorkoutCa
   const barColor = occupancyRate >= 0.9 ? "bg-[#FF3B30]" : occupancyRate >= 0.7 ? "bg-[#FFCC00]" : "bg-[#34C759]";
 
   return (
-    <article className="apple-card p-5 lg:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all active:scale-[0.98] lg:hover:translate-y-[-2px] lg:hover:shadow-md">
+    <article className="apple-card p-5 lg:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all active:scale-[0.98] lg:hover:translate-y-[-2px] lg:hover:shadow-md" id={id}>
       <div className="flex-1">
         <div className="flex items-center gap-3">
           <span className={`inline-flex rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${

@@ -56,6 +56,7 @@ export function DashboardPage() {
 
       <section className="grid gap-[var(--stack-gap)] sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
+          id="tour-credits"
           detail={
             subscription?.active_plan
               ? `Se renueva el ${formatDateTime(subscription.period_end)}.`

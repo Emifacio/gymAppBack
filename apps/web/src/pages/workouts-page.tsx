@@ -267,8 +267,8 @@ export function WorkoutsPage() {
           <WeeklySchedule classes={workouts} />
           
           <div className="grid gap-6">
-            {workouts.map((workout) => (
-              <WorkoutCard key={workout.id} workout={workout} />
+            {workouts.map((workout, index) => (
+              <WorkoutCard key={workout.id} workout={workout} id={index === 0 ? "tour-workouts" : undefined} />
             ))}
           </div>
         </div>

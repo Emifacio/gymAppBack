@@ -118,7 +118,7 @@ export function BookingsPage() {
           <div className="glass-panel rounded-[2rem] p-8">
             <h2 className="section-title text-3xl font-semibold">Reservas</h2>
             <div className="mt-6 space-y-4">
-              {bookings.map((booking) => (
+              {bookings.map((booking, index) => (
                 <div key={booking.id} className="rounded-[1.5rem] bg-white/80 p-5">
                   <p className="text-lg font-semibold text-[var(--ink)]">
                     {booking.gym_class?.name ?? booking.class_id}
@@ -134,6 +134,7 @@ export function BookingsPage() {
                     {booking.credits_consumed ? ` · Créditos usados: ${booking.credits_consumed}` : ""}
                   </p>
                   <button
+                    id={index === 0 ? "tour-cancel-booking" : undefined}
                     className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
                     disabled={cancelBooking.isPending || booking.status !== "confirmed"}
                     onClick={() => {

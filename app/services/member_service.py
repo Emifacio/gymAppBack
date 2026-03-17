@@ -97,12 +97,13 @@ class MemberService:
             await self.session.rollback()
         update_data = payload.model_dump(exclude_unset=True)
         if not allow_admin_fields:
-            allowed_fields = {"full_name", "phone", "birth_date", "emergency_contact", "notes", "password"}
+            allowed_fields = {"full_name", "phone", "birth_date", "emergency_contact", "notes", "password", "profile_metadata"}
             update_data = {key: value for key, value in update_data.items() if key in allowed_fields}
 
         password = update_data.pop("password", None)
         instructor_bio = update_data.pop("instructor_bio", None)
         instructor_specialties = update_data.pop("instructor_specialties", None)
+        profile_metadata = update_data.pop("profile_metadata", None)
 
         async with self.session.begin():
             member = await self.member_repository.get_by_id(member_id, for_update=True)
@@ -119,6 +120,11 @@ class MemberService:
 
             if password is not None:
                 member.password_hash = hash_password(password)
+
+            if profile_metadata is not None:
+                # Merge profile metadata
+                current = member.profile_metadata or {}
+                member.profile_metadata = {**current, **profile_metadata}
 
             await self._ensure_instructor_profile(
                 member=member,
