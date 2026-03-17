@@ -131,9 +131,7 @@ export interface MemberBookings {
   bookings: BookingRecord[];
   waitlist: WaitlistEntry[];
 }
-export type Member = components["schemas"]["MemberRead"] & {
-  active_subscription?: MemberSubscription | null;
-};
+export type Member = components["schemas"]["MemberRead"];
 export type MemberFilters = NonNullable<paths["/members"]["get"]["parameters"]["query"]>;
 export type MemberCreatePayload = components["schemas"]["MemberCreate"];
 export type MemberUpdatePayload = components["schemas"]["MemberUpdate"];

@@ -688,6 +688,7 @@ export interface components {
             membership_status: components["schemas"]["MembershipStatus"];
             /** Is Active */
             is_active: boolean;
+            active_subscription?: components["schemas"]["MemberSubscriptionRead"] | null;
             membership_plan?: components["schemas"]["MembershipPlanRead"] | null;
             instructor_profile?: components["schemas"]["InstructorProfileRead"] | null;
             /**
@@ -706,6 +707,43 @@ export interface components {
          * @enum {string}
          */
         MemberRole: "member" | "instructor" | "admin";
+        /** MemberSubscriptionRead */
+        MemberSubscriptionRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Member Id
+             * Format: uuid
+             */
+            member_id: string;
+            /**
+             * Plan Id
+             * Format: uuid
+             */
+            plan_id: string;
+            /** Active Credits */
+            active_credits: number;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            status: "active" | "expired" | "cancelled";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            plan: components["schemas"]["MembershipPlanRead"];
+        };
         /** MemberUpdate */
         MemberUpdate: {
             /** Full Name */
