@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { StyleSheet, Text, View } from "react-native";
@@ -10,7 +11,22 @@ import type { RootStackParamList } from "../navigation/types";
 export function WorkoutsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const workoutsQuery = useWorkouts({ limit: 20 });
-  const workouts = workoutsQuery.data ?? [];
+
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const refresh = setInterval(() => {
+      void workoutsQuery.refetch?.();
+    }, 60_000);
+    return () => clearInterval(refresh);
+  }, [workoutsQuery]);
+
+  const workouts = useMemo(() => workoutsQuery.data ?? [], [workoutsQuery.data]);
 
   return (
     <ScreenShell>

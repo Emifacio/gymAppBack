@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 
@@ -17,19 +18,39 @@ export function DashboardPage() {
   const bookingsQuery = useMemberBookings(session?.member.id ?? "", { enabled: Boolean(session?.member.id) });
   const subscriptionQuery = useMySubscriptionStatus({ enabled: Boolean(session) });
 
-  if (!session) {
-    return null;
-  }
-
-  const workouts: Workout[] = workoutsQuery.data ?? [];
-  const bookings: Booking[] = bookingsQuery.data?.bookings ?? [];
-  const waitlist = bookingsQuery.data?.waitlist ?? [];
+  const workouts: Workout[] = useMemo(() => workoutsQuery.data ?? [], [workoutsQuery.data]);
+  const bookings: Booking[] = useMemo(() => bookingsQuery.data?.bookings ?? [], [bookingsQuery.data]);
+  const waitlist = useMemo(() => bookingsQuery.data?.waitlist ?? [], [bookingsQuery.data]);
   const confirmedBookings = bookings.filter((booking) => booking.status === "confirmed");
   const activeWaitlist = waitlist.filter((entry) => entry.status === "waiting");
   const subscription: Subscription | undefined = subscriptionQuery.data;
-  const upcomingWorkout = workouts[0];
 
-  const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const clock = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(clock);
+  }, []);
+
+  useEffect(() => {
+    const refresh = setInterval(() => {
+      void workoutsQuery.refetch?.();
+    }, 60_000);
+    return () => clearInterval(refresh);
+  }, [workoutsQuery]);
+
+  const upcomingWorkouts = useMemo(() => {
+    return workouts
+      .filter((workout) => new Date(workout.scheduled_at) > now)
+      .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+  }, [workouts, now]);
+
+  const upcomingWorkout = upcomingWorkouts[0];
+  const showEmptyState = !upcomingWorkouts.length && workoutsQuery.isSuccess;
+
+  if (!session) {
+    return null;
+  }
 
   return (
     <div className="space-y-[var(--section-gap)]">
@@ -72,7 +93,7 @@ export function DashboardPage() {
         <StatCard
           detail="Clases disponibles para reservar hoy."
           label="Próximas clases"
-          value={String(workouts.length)}
+          value={String(upcomingWorkouts.length)}
         />
       </section>
 
@@ -158,7 +179,7 @@ export function DashboardPage() {
         </div>
 
         <div className="grid gap-5">
-          {workouts.slice(0, 3).map((workout) => (
+          {upcomingWorkouts.slice(0, 3).map((workout) => (
             <WorkoutCard key={workout.id} workout={workout} />
           ))}
         </div>

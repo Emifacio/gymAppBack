@@ -9,11 +9,21 @@ interface WorkoutCardProps {
 }
 
 export function WorkoutCard({ workout, onPress }: WorkoutCardProps) {
+  const now = new Date();
+  const isPast = new Date(workout.scheduled_at) <= now;
+
+  const statusLabel = (() => {
+    if (workout.status === "cancelled") return "CANCELADA";
+    if (workout.status === "completed") return "CONCLUÍDA";
+    if (isPast) return "CONCLUÍDA";
+    return "PROGRAMADA";
+  })();
+
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
       <View style={styles.header}>
         <View style={styles.copy}>
-          <Text style={styles.status}>{workout.status.toUpperCase()}</Text>
+          <Text style={styles.status}>{statusLabel}</Text>
           <Text style={styles.title}>{workout.name}</Text>
           <Text style={styles.description} numberOfLines={2}>
             {workout.description ?? "Strength, conditioning, and guided pacing delivered from the shared API contract."}
