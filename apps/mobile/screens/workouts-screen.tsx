@@ -26,7 +26,12 @@ export function WorkoutsScreen() {
     return () => clearInterval(refresh);
   }, [workoutsQuery]);
 
-  const workouts = useMemo(() => workoutsQuery.data ?? [], [workoutsQuery.data]);
+  const upcomingWorkouts = useMemo(() => {
+    const now = new Date();
+    return (workoutsQuery.data ?? [])
+      .filter((workout) => new Date(workout.scheduled_at) > now)
+      .sort((a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
+  }, [workoutsQuery.data]);
 
   return (
     <ScreenShell>
@@ -39,15 +44,19 @@ export function WorkoutsScreen() {
       </View>
 
 
-      {workouts.map((workout) => (
-        <WorkoutCard
-          key={workout.id}
-          onPress={() => {
-            navigation.navigate("WorkoutDetail", { workoutId: workout.id });
-          }}
-          workout={workout}
-        />
-      ))}
+      {upcomingWorkouts.length === 0 ? (
+        <Text style={styles.noWorkoutsText}>No hay clases próximas. Revisa de nuevo en unos minutos.</Text>
+      ) : (
+        upcomingWorkouts.map((workout) => (
+          <WorkoutCard
+            key={workout.id}
+            onPress={() => {
+              navigation.navigate("WorkoutDetail", { workoutId: workout.id });
+            }}
+            workout={workout}
+          />
+        ))
+      )}
     </ScreenShell>
   );
 }
@@ -77,5 +86,11 @@ const styles = StyleSheet.create({
     color: "#5F6F86",
     fontSize: 15,
     lineHeight: 24
+  },
+  noWorkoutsText: {
+    color: "#5F6F86",
+    fontSize: 16,
+    textAlign: "center",
+    marginVertical: 20
   }
 });

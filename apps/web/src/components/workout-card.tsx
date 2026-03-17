@@ -24,14 +24,26 @@ export function WorkoutCard({ workout, actionLabel = "View session", id }: Worko
 
   const barColor = occupancyRate >= 0.9 ? "bg-[#FF3B30]" : occupancyRate >= 0.7 ? "bg-[#FFCC00]" : "bg-[#34C759]";
 
+  const now = new Date();
+  const scheduledAt = new Date(workout.scheduled_at);
+  const isPast = scheduledAt <= now;
+
+  const statusLabel = workout.status === "cancelled"
+    ? "Cancelada"
+    : workout.status === "completed" || isPast
+    ? "Concluída"
+    : "Programada";
+
+  const statusClass = workout.status === "cancelled" || workout.status === "completed" || isPast
+    ? "bg-green-50 text-green-700"
+    : "bg-blue-50 text-blue-600";
+
   return (
     <article className="apple-card p-5 lg:p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 transition-all active:scale-[0.98] lg:hover:translate-y-[-2px] lg:hover:shadow-md" id={id}>
       <div className="flex-1">
         <div className="flex items-center gap-3">
-          <span className={`inline-flex rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${
-            workout.status === 'scheduled' ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'
-          }`}>
-            {workout.status === 'scheduled' ? 'Programada' : workout.status}
+          <span className={`inline-flex rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${statusClass}`}>
+            {statusLabel}
           </span>
           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-500)] flex items-center gap-1">
             <Clock className="h-3 w-3" />
