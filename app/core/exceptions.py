@@ -90,6 +90,15 @@ class DuplicateBookingError(AppException):
         )
 
 
+class ClassPastError(AppException):
+    def __init__(self, detail: str = "Class is in the past") -> None:
+        super().__init__(
+            detail=detail,
+            status_code=status.HTTP_403_FORBIDDEN,
+            code=BookingEligibilityOutcome.CLASS_PAST.value,
+        )
+
+
 class BookingNotAllowedError(AppException):
     def __init__(self, detail: str = "Booking is not allowed") -> None:
         super().__init__(

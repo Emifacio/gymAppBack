@@ -42,6 +42,7 @@ export function WorkoutDetailPage() {
     title: string;
     description: string;
   } | null>(null);
+  const [isRedirectModal, setIsRedirectModal] = useState(false);
   const workoutQuery = useWorkout(workoutId);
   const canManage = canManageOperations(session?.member);
   const classAttendanceQuery = useClassAttendance(workoutId, canManage);
@@ -56,11 +57,16 @@ export function WorkoutDetailPage() {
   const subscription = subscriptionQuery.data;
   const isCheckingEligibility = subscriptionQuery.isPending;
   const precheckErrorCode = getPrecheckErrorCode(subscription);
+  
+  const isPast = workout ? new Date(workout.scheduled_at) < new Date() : false;
+
   const reserveLabel =
     bookingMutation.isPending
       ? "Reservando..."
       : isCheckingEligibility
       ? "Verificando elegibilidad..."
+      : isPast
+      ? "Clase concluida"
       : workout?.member_booking_status === "confirmed"
       ? "Ya reservado"
       : workout?.member_booking_status === "waitlisted"
@@ -184,6 +190,14 @@ export function WorkoutDetailPage() {
           className="mt-8 space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
+            if (isPast) {
+              setIsRedirectModal(true);
+              setEligibilityModal({
+                title: "Clase finalizada",
+                description: "El tiempo de inscripción ha terminado. Por favor, selecciona otra sesión disponible."
+              });
+              return;
+            }
             if (isCheckingEligibility) {
               return;
             }
@@ -207,7 +221,8 @@ export function WorkoutDetailPage() {
               isCheckingEligibility ||
               bookingMutation.isPending ||
               workout.member_booking_status === "confirmed" ||
-              workout.member_booking_status === "waitlisted"
+              workout.member_booking_status === "waitlisted" ||
+              isPast
             }
             loading={bookingMutation.isPending}
             type="submit"
@@ -386,9 +401,14 @@ export function WorkoutDetailPage() {
 
       <BookingEligibilityModal
         description={eligibilityModal?.description ?? ""}
-        onClose={() => setEligibilityModal(null)}
+        onClose={() => {
+          setEligibilityModal(null);
+          setIsRedirectModal(false);
+        }}
         open={eligibilityModal !== null}
         title={eligibilityModal?.title ?? ""}
+        actionLabel={isRedirectModal ? "Ver próximas clases" : undefined}
+        onAction={isRedirectModal ? () => navigate("/workouts") : undefined}
       />
     </div>
   );

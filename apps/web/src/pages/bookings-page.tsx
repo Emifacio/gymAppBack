@@ -106,10 +106,6 @@ export function BookingsPage() {
         ) : null}
       </section>
 
-import { ErrorBoundary } from "@/components/error-handling/ErrorBoundary";
-// ... (existing imports)
-
-// ... inside BookingsPage return
       <section className="grid gap-6 xl:grid-cols-2">
         <ErrorBoundary 
           fallback={

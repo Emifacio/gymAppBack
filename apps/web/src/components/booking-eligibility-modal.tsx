@@ -3,13 +3,17 @@ interface BookingEligibilityModalProps {
   title: string;
   description: string;
   onClose: () => void;
+  actionLabel?: string | undefined;
+  onAction?: (() => void) | undefined;
 }
 
 export function BookingEligibilityModal({
   open,
   title,
   description,
-  onClose
+  onClose,
+  actionLabel,
+  onAction
 }: BookingEligibilityModalProps) {
   if (!open) {
     return null;
@@ -29,13 +33,23 @@ export function BookingEligibilityModal({
         <p className="mt-4 text-sm leading-8 text-[var(--muted)]">{description}</p>
 
         <div className="mt-8 flex justify-end">
-          <button
-            className="rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1f3453]"
-            onClick={onClose}
-            type="button"
-          >
-            Cerrar
-          </button>
+          {actionLabel && onAction ? (
+            <button
+              className="rounded-full bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary)]/90"
+              onClick={onAction}
+              type="button"
+            >
+              {actionLabel}
+            </button>
+          ) : (
+            <button
+              className="rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1f3453]"
+              onClick={onClose}
+              type="button"
+            >
+              Cerrar
+            </button>
+          )}
         </div>
       </div>
     </div>

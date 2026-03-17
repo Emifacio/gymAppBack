@@ -15,6 +15,7 @@ export function WorkoutDetailScreen({ route }: WorkoutDetailScreenProps) {
   const bookingMutation = useCreateBooking();
 
   const workout = workoutQuery.data;
+  const isPast = workout ? new Date(workout.scheduled_at) < new Date() : false;
 
   if (!workout) {
     return (
@@ -54,14 +55,19 @@ export function WorkoutDetailScreen({ route }: WorkoutDetailScreenProps) {
 
       <Pressable
         onPress={() => {
+          if (isPast) {
+            alert("Clase finalizada: El tiempo de inscripción ha terminado.");
+            return;
+          }
           bookingMutation.mutate({
             classId: workout.id,
             memberId: session!.member.id
           });
         }}
         style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
-      >
-        <Text style={styles.primaryButtonText}>{bookingMutation.isPending ? "Reservando..." : "Reservar clase"}</Text>
+        <Text style={styles.primaryButtonText}>
+          {bookingMutation.isPending ? "Reservando..." : isPast ? "Clase concluida" : "Reservar clase"}
+        </Text>
       </Pressable>
 
 

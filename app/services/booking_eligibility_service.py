@@ -5,6 +5,7 @@ from uuid import UUID
 from app.core.exceptions import (
     BookingNotAllowedError,
     ClassFullError,
+    ClassPastError,
     DuplicateBookingError,
     InsufficientCreditsError,
     NoActivePlanError,
@@ -95,6 +96,14 @@ class BookingEligibilityService:
                 member=member,
                 gym_class=gym_class,
                 message="Only scheduled classes can be booked",
+            )
+
+        if gym_class.scheduled_at < now:
+            return BookingEligibilityDecision(
+                outcome=BookingEligibilityOutcome.CLASS_PAST,
+                member=member,
+                gym_class=gym_class,
+                message="Cannot book a class that has already started",
             )
 
         existing_booking = await self.booking_repository.get_by_member_and_class(
@@ -227,6 +236,8 @@ class BookingEligibilityService:
             raise InsufficientCreditsError(decision.message or "Not enough credits")
         if decision.outcome == BookingEligibilityOutcome.CLASS_FULL:
             raise ClassFullError(decision.message or "Class is full")
+        if decision.outcome == BookingEligibilityOutcome.CLASS_PAST:
+            raise ClassPastError(decision.message or "Class is in the past")
         if decision.outcome == BookingEligibilityOutcome.DUPLICATE_BOOKING:
             raise DuplicateBookingError(decision.message or "Member is already booked for this class")
         raise BookingNotAllowedError(decision.message or "Booking is not allowed")
