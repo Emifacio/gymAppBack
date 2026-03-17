@@ -33,6 +33,33 @@ export function ProfilePage() {
     }
   };
 
+  const handleResetOnboarding = async () => {
+    setMessage(null);
+    const storageKey = `onboarding_completed:${member.id}`;
+    try {
+      window.localStorage.removeItem(storageKey);
+      window.localStorage.removeItem("onboarding_completed");
+    } catch {
+      // ignore
+    }
+
+    try {
+      await updateMember.mutateAsync({
+        member_id: member.id,
+        payload: {
+          profile_metadata: {
+            ...(member as any).profile_metadata,
+            onboarding_completed: false,
+          },
+        },
+      } as any);
+      setMessage({ type: "success", text: "Onboarding reiniciado. Vuelve al Dashboard para verlo." });
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: "error", text: "No se pudo reiniciar el onboarding." });
+    }
+  };
+
   return (
     <div className="space-y-[var(--section-gap)]">
       <header>
@@ -92,6 +119,24 @@ export function ProfilePage() {
             Guardar Cambios
           </Button>
         </form>
+      </div>
+
+      <div className="apple-card max-w-2xl">
+        <h2 className="section-title text-[var(--font-size-xl)]">Onboarding</h2>
+        <p className="mt-2 text-sm font-medium text-[var(--ink-500)]">
+          Si acabas de desplegar o necesitas probar el tour, puedes reiniciarlo aquí.
+        </p>
+        <div className="mt-5">
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full h-12"
+            onClick={handleResetOnboarding}
+            loading={updateMember.isPending}
+          >
+            Reiniciar tour de bienvenida
+          </Button>
+        </div>
       </div>
     </div>
   );

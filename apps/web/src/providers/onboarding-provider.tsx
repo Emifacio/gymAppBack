@@ -1,4 +1,4 @@
-import { useEffect, type PropsWithChildren } from "react";
+import { useEffect, useRef, type PropsWithChildren } from "react";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,21 +10,25 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const updateMember = useUpdateMember();
+  const startedRef = useRef(false);
 
   useEffect(() => {
     if (!session || !session.member) return;
 
     const metadata = (session.member as any).profile_metadata || {};
-    const isCompleted =
-      Boolean(metadata.onboarding_completed) ||
-      (typeof window !== "undefined" && window.localStorage.getItem("onboarding_completed") === "true");
+    const storageKey = `onboarding_completed:${session.member.id}`;
+    const isCompleted = Boolean(metadata.onboarding_completed) || window.localStorage.getItem(storageKey) === "true";
 
-    if (!isCompleted && pathname === "/dashboard") {
+    if (startedRef.current) return;
+    if (pathname === "/login") return;
+
+    if (!isCompleted) {
+      startedRef.current = true;
       const tour = createOnboardingTour({
         navigate,
         onComplete: async () => {
           try {
-            window.localStorage.setItem("onboarding_completed", "true");
+            window.localStorage.setItem(storageKey, "true");
           } catch {
             // ignore (private mode / blocked storage)
           }
@@ -44,6 +48,9 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
 
       // Start the tour with a small delay to ensure rendering is complete
       const timeout = setTimeout(() => {
+        if (pathname !== "/dashboard") {
+          navigate("/dashboard");
+        }
         tour.drive();
       }, 1000);
 
