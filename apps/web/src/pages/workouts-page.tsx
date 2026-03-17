@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
@@ -10,6 +10,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCreateWorkout, useMySubscriptionStatus, useWorkouts, useMembers } from "@/hooks/use-workouts";
 import { formatCredits, formatDateTime } from "@/lib/format";
 import { canManageOperations } from "@/lib/roles";
+import type { Workout } from "@/types/gym";
+import type { WorkoutCreatePayload } from "@gym/api-client";
 
 function getFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -30,12 +32,12 @@ export function WorkoutsPage() {
     offset: filters.offset,
     limit: filters.limit
   });
-  const instructorsQuery = useMembers({ role: "instructor" as any });
+  const instructorsQuery = useMembers({ role: "instructor" });
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [classTime, setClassTime] = useState("18:00");
   
   const createWorkout = useCreateWorkout();
-  const workouts = workoutsQuery.data ?? [];
+  const workouts: Workout[] = workoutsQuery.data ?? [];
   const instructors = instructorsQuery.data ?? [];
   const subscription = subscriptionQuery.data;
   const canManage = canManageOperations(session?.member);
@@ -130,16 +132,16 @@ export function WorkoutsPage() {
                 name: getFormValue(formData, "name"),
                 location: getFormValue(formData, "location"),
                 instructor_id: getFormValue(formData, "instructor_id") || null,
-                duration_minutes: parseInt(getFormValue(formData, "duration_minutes")),
-                capacity: parseInt(getFormValue(formData, "capacity")),
+                duration_minutes: parseInt(getFormValue(formData, "duration_minutes"), 10),
+                capacity: parseInt(getFormValue(formData, "capacity"), 10),
                 scheduled_at: dates[0],
                 dates: dates.length > 1 ? dates : undefined,
                 description: getFormValue(formData, "description"),
-                status: "scheduled" as const,
-              };
+                status: "scheduled"
+              } satisfies WorkoutCreatePayload;
 
               try {
-                await createWorkout.mutateAsync(payload as any);
+                await createWorkout.mutateAsync(payload);
                 event.currentTarget.reset();
                 setSelectedDates([]);
                 window.scrollTo({ top: 0, behavior: "smooth" });

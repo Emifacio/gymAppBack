@@ -1,31 +1,43 @@
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/use-auth";
 import { useUpdateMember } from "@/hooks/use-workouts";
+import type { Profile, PartialProfileUpdate } from "@/types/gym";
 
 export function ProfilePage() {
   const { session } = useAuth();
   const updateMember = useUpdateMember();
-  const member = session?.member;
+  const member = session?.member as Profile | undefined;
 
-  const [formData, setFormData] = useState({
-    full_name: member?.full_name || "",
-    email: member?.email || "",
-    phone: member?.phone || "",
-  });
+  const [formData, setFormData] = useState<Pick<Profile, "full_name" | "email" | "phone">>(() => ({
+    full_name: member?.full_name ?? "",
+    email: member?.email ?? "",
+    phone: member?.phone ?? ""
+  }));
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   if (!member) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage(null);
+
+    if (!member) {
+      setMessage({ type: "error", text: "No se encontró el miembro." });
+      return;
+    }
+
+    const payload = {
+      full_name: formData.full_name,
+      phone: formData.phone || null
+    } satisfies PartialProfileUpdate;
+
     try {
       await updateMember.mutateAsync({
-        member_id: member.id,
-        payload: formData
-      } as any);
+        memberId: member.id,
+        payload
+      });
       setMessage({ type: "success", text: "Perfil actualizado exitosamente." });
     } catch (err) {
       console.error(err);
@@ -33,31 +45,20 @@ export function ProfilePage() {
     }
   };
 
-  const handleResetOnboarding = async () => {
+  const handleResetOnboarding = () => {
     setMessage(null);
-    const storageKey = `onboarding_completed:${member.id}`;
+    const storageKey = `onboarding_completed:${member?.id}`;
+
     try {
-      window.localStorage.removeItem(storageKey);
+      if (storageKey) {
+        window.localStorage.removeItem(storageKey);
+      }
       window.localStorage.removeItem("onboarding_completed");
     } catch {
       // ignore
     }
 
-    try {
-      await updateMember.mutateAsync({
-        member_id: member.id,
-        payload: {
-          profile_metadata: {
-            ...(member as any).profile_metadata,
-            onboarding_completed: false,
-          },
-        },
-      } as any);
-      setMessage({ type: "success", text: "Onboarding reiniciado. Vuelve al Dashboard para verlo." });
-    } catch (err) {
-      console.error(err);
-      setMessage({ type: "error", text: "No se pudo reiniciar el onboarding." });
-    }
+    setMessage({ type: "success", text: "Onboarding reiniciado. Vuelve al Dashboard para verlo." });
   };
 
   return (

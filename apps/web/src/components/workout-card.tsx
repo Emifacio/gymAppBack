@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
-import { Clock, MapPin, Users, Ticket } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 
 import type { Workout } from "@gym/api-client";
 
-import { buttonClassName } from "@/components/ui/Button";
+import { buttonClassName } from "@/components/ui/button-utils";
 import { formatWorkoutSchedule } from "@/lib/format";
 
 interface WorkoutCardProps {

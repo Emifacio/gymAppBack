@@ -1,31 +1,32 @@
 import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 
-import { buttonClassName } from "@/components/ui/Button";
+import { buttonClassName } from "@/components/ui/button-utils";
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
 import { WorkoutCard } from "@/components/workout-card";
 import { useAuth } from "@/hooks/use-auth";
 import { useMemberBookings, useMySubscriptionStatus, useWorkouts } from "@/hooks/use-workouts";
 import { formatCredits, formatDateTime, formatRelativeSlot } from "@/lib/format";
+import type { Booking, Subscription, Workout } from "@/types/gym";
 
 export function DashboardPage() {
   const { session } = useAuth();
+
+  const workoutsQuery = useWorkouts({ limit: 6 });
+  const bookingsQuery = useMemberBookings(session?.member.id ?? "", { enabled: Boolean(session?.member.id) });
+  const subscriptionQuery = useMySubscriptionStatus({ enabled: Boolean(session) });
 
   if (!session) {
     return null;
   }
 
-  const workoutsQuery = useWorkouts({ limit: 6 });
-  const bookingsQuery = useMemberBookings(session.member.id);
-  const subscriptionQuery = useMySubscriptionStatus();
-
-  const workouts = workoutsQuery.data ?? [];
-  const bookings = bookingsQuery.data?.bookings ?? [];
+  const workouts: Workout[] = workoutsQuery.data ?? [];
+  const bookings: Booking[] = bookingsQuery.data?.bookings ?? [];
   const waitlist = bookingsQuery.data?.waitlist ?? [];
   const confirmedBookings = bookings.filter((booking) => booking.status === "confirmed");
   const activeWaitlist = waitlist.filter((entry) => entry.status === "waiting");
-  const subscription = subscriptionQuery.data;
+  const subscription: Subscription | undefined = subscriptionQuery.data;
   const upcomingWorkout = workouts[0];
 
   const showEmptyState = !workouts.length && workoutsQuery.isSuccess;

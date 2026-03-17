@@ -7,7 +7,7 @@ import { GoogleButton } from "@/components/ui/GoogleButton";
 import { useAuth } from "@/hooks/use-auth";
 import { useRegisterMutation } from "@/hooks/use-workouts";
 import { getFormValue } from "@/lib/forms";
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -15,19 +15,13 @@ export function RegisterPage() {
   const register = useRegisterMutation();
   
   const [email, setEmail] = useState("");
-  const [emailError, setEmailError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const emailError = useMemo(() => {
     if (email === "") {
-      setEmailError(null);
-      return;
+      return null;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setEmailError("El formato del correo electrónico no es válido");
-    } else {
-      setEmailError(null);
-    }
+    return emailRegex.test(email) ? null : "El formato del correo electrónico no es válido";
   }, [email]);
 
   if (session) {

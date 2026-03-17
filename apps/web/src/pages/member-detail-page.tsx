@@ -1,7 +1,8 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import type { Member } from "@gym/api-client";
 
-import { Button, buttonClassName } from "@/components/ui/Button";
+import { Button } from "@/components/ui/Button";
+import { buttonClassName } from "@/components/ui/button-utils";
 import {
   useAssignSubscription,
   useCancelSubscription,

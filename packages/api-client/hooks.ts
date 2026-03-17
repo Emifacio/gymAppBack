@@ -219,16 +219,28 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     return useQuery(getMemberQueryOptions(client, memberId));
   }
 
-  function useMemberBookings(memberId: string) {
-    return useQuery(getMemberBookingsQueryOptions(client, memberId));
+  function useMemberBookings(memberId: string, opts: { enabled?: boolean } = {}) {
+    return useQuery({
+      ...getMemberBookingsQueryOptions(client, memberId),
+      enabled: Boolean(memberId) && (opts.enabled ?? true),
+      ...opts
+    });
   }
 
-  function useMemberSubscription(memberId: string) {
-    return useQuery(getMemberSubscriptionQueryOptions(client, memberId));
+  function useMemberSubscription(memberId: string, opts: { enabled?: boolean } = {}) {
+    return useQuery({
+      ...getMemberSubscriptionQueryOptions(client, memberId),
+      enabled: Boolean(memberId) && (opts.enabled ?? true),
+      ...opts
+    });
   }
 
-  function useMySubscriptionStatus() {
-    return useQuery(getMemberSelfSubscriptionQueryOptions(client));
+  function useMySubscriptionStatus(opts: { enabled?: boolean } = {}) {
+    return useQuery({
+      ...getMemberSelfSubscriptionQueryOptions(client),
+      enabled: opts.enabled ?? true,
+      ...opts
+    });
   }
 
   function useMemberAttendance(memberId: string) {

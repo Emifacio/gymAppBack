@@ -4,7 +4,6 @@ import type { PropsWithChildren } from "react";
 
 import { queryClient } from "@/api/query-client";
 import { AuthProvider } from "@/providers/auth-provider";
-import { OnboardingProvider } from "@/providers/onboarding-provider";
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (

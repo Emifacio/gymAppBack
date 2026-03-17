@@ -17,21 +17,21 @@ export function IntegrationsPage() {
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+
+  const isConnecting: boolean = Boolean(stravaCallback.isLoading);
 
   // Handle OAuth Callback
   useEffect(() => {
     const code = searchParams.get("code");
     if (code) {
-      setIsConnecting(true);
       setSearchParams({}, { replace: true });
       stravaCallback.mutate({ code }, {
-        onSuccess: () => {
-          setIsConnecting(false);
-        },
-        onError: (error: Error) => {
-          setIsConnecting(false);
-          setErrorMessage(error.message || "Error al completar la conexión con Strava.");
+        onError: (error: unknown) => {
+          if (error instanceof Error) {
+            setErrorMessage(error.message || "Error al completar la conexión con Strava.");
+          } else {
+            setErrorMessage("Error al completar la conexión con Strava.");
+          }
         }
       });
     }
