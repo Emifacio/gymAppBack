@@ -47,6 +47,12 @@ def _uses_railway_private_network(url: str | None) -> bool:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(settings.log_level)
+    
+    # Print for immediate platform visibility
+    print(f"🚀 Starting GymApp in {settings.environment} mode")
+    print(f"🔗 Database: {_describe_service_url(settings.database_url)}")
+    print(f"🔗 Redis: {_describe_service_url(settings.redis_url)}")
+
     logger.info(
         "database_configuration_selected source=%s target=%s connect_timeout_seconds=%s "
         "pool_size=%s max_overflow=%s max_attempts=%s",
@@ -57,44 +63,51 @@ async def lifespan(app: FastAPI):
         settings.database_max_overflow,
         settings.database_startup_max_attempts,
     )
-    if settings.database_url_source == "DATABASE_PUBLIC_URL":
-        logger.warning(
-            "database_configuration_uses_public_railway_url source=%s target=%s",
-            settings.database_url_source,
-            _describe_service_url(settings.database_url),
-        )
-    elif settings.environment != "local" and not _uses_railway_private_network(settings.database_url):
-        logger.info(
-            "database_configuration_non_private_target source=%s target=%s",
-            settings.database_url_source or "unknown",
-            _describe_service_url(settings.database_url),
-        )
-    # Database readiness check
-    logger.info("startup_phase: database_readiness_check_started")
-    try:
-        await wait_for_database_ready()
-        logger.info("startup_phase: database_readiness_check_succeeded")
-    except Exception as e:
-        logger.error("startup_phase: database_readiness_check_failed error=%s", str(e))
-        raise
 
-    # Redis initialization
-    logger.info("startup_phase: redis_initialization_started target=%s", _describe_service_url(settings.redis_url))
+    # Initialize dependency containers
     redis_cache = RedisCache(
         settings.cache_redis_url,
         default_ttl=settings.cache_ttl_seconds,
         connect_timeout_seconds=settings.redis_connect_timeout_seconds,
     )
-    await redis_cache.connect()
-    
-    if redis_cache.client:
-        logger.info("startup_phase: redis_initialization_succeeded")
-    else:
-        logger.warning("startup_phase: redis_initialization_failed_degraded_mode_active")
-    
     app.state.redis_cache = redis_cache
-    logger.info("startup_phase: lifespan_active")
+    app.state.db_connected = False
+    app.state.redis_connected = False
+
+    async def background_probes():
+        # Database check
+        logger.info("background_probe: database_check_started")
+        try:
+            await wait_for_database_ready()
+            app.state.db_connected = True
+            logger.info("background_probe: database_check_succeeded")
+            print("✅ Database connected")
+        except Exception as e:
+            logger.error("background_probe: database_check_failed error=%s", str(e))
+            print(f"❌ Database connection failed: {e}")
+
+        # Redis check
+        logger.info("background_probe: redis_check_started")
+        try:
+            await redis_cache.connect()
+            if redis_cache.client:
+                app.state.redis_connected = True
+                logger.info("background_probe: redis_check_succeeded")
+                print("✅ Redis connected")
+            else:
+                logger.warning("background_probe: redis_check_failed_degraded_mode")
+                print("⚠️ Redis in degraded mode")
+        except Exception as e:
+            logger.error("background_probe: redis_check_error error=%s", str(e))
+            print(f"⚠️ Redis probe error: {e}")
+
+    # Kick off probes in background
+    import asyncio
+    asyncio.create_task(background_probes())
+
+    logger.info("startup_phase: lifespan_yielding_immediately")
     yield
+    
     logger.info("startup_phase: shutting_down")
     await redis_cache.close()
     await dispose_database_engine()
