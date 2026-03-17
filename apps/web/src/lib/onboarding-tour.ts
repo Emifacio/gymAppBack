@@ -58,14 +58,24 @@ export const createOnboardingTour = ({ onComplete, navigate }: OnboardingTourOpt
 
       if (activeIndex === 0) {
         navigate("/workouts");
-        await waitForElement("#tour-workouts");
+        const nextEl = await waitForElement("#tour-workouts");
+        if (!nextEl) {
+          console.warn("Onboarding tour: #tour-workouts not found after navigation, ending tour.");
+          (driverObj as any).destroy?.();
+          return;
+        }
         (driverObj as any).moveNext?.();
         return;
       }
 
       if (activeIndex === 1) {
         navigate("/bookings");
-        await waitForElement("#tour-cancel-booking");
+        const nextEl = await waitForElement("#tour-cancel-booking");
+        if (!nextEl) {
+          console.warn("Onboarding tour: #tour-cancel-booking not found after navigation, ending tour.");
+          (driverObj as any).destroy?.();
+          return;
+        }
         (driverObj as any).moveNext?.();
         return;
       }

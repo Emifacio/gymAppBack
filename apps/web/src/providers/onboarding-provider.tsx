@@ -64,7 +64,12 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
           }
 
           const el = await waitForElement("#tour-credits");
-          el?.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+          if (!el) {
+            console.warn("Onboarding tour: #tour-credits not found, skipping tour start.");
+            return;
+          }
+
+          el.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
 
           // Give layout a beat after scroll for correct popover placement.
           await new Promise((resolve) => setTimeout(resolve, 250));

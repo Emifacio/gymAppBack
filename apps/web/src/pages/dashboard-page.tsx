@@ -28,15 +28,7 @@ export function DashboardPage() {
   const subscription = subscriptionQuery.data;
   const upcomingWorkout = workouts[0];
 
-  if (!workouts.length && workoutsQuery.isSuccess) {
-    return (
-      <EmptyState
-        eyebrow="Listo para crecer"
-        title="Aún no hay entrenamientos programados"
-        description="El stack frontend está activo y conectado al contrato de FastAPI. Tan pronto como se creen clases en el backend, aparecerán aquí automáticamente con total seguridad de tipos."
-      />
-    );
-  }
+  const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
 
   return (
     <div className="space-y-[var(--section-gap)]">
@@ -83,45 +75,53 @@ export function DashboardPage() {
         />
       </section>
 
-      <section className="grid gap-[var(--section-gap)] lg:grid-cols-2">
-        <div className="apple-card">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
-            Suscripción
-          </p>
-          <h2 className="section-title mt-2 text-[var(--font-size-xl)]">Resumen de membresía</h2>
-          {subscription?.active_plan ? (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Plan</p>
-                <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{subscription.plan_name}</p>
-              </div>
-              <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Créditos restantes</p>
-                <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">
-                  {subscription.allows_free_pass
-                    ? "Ilimitados"
-                    : formatCredits(subscription.active_credits)}
-                </p>
-              </div>
-              <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Fin del periodo</p>
-                <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{formatDateTime(subscription.period_end)}</p>
-              </div>
-              <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-                <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Lista de espera</p>
-                <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{activeWaitlist.length} entradas</p>
-              </div>
+      {showEmptyState ? (
+        <EmptyState
+          eyebrow="Listo para crecer"
+          title="Aún no hay entrenamientos programados"
+          description="El stack frontend está activo y conectado al contrato de FastAPI. Tan pronto como se creen clases en el backend, aparecerán aquí automáticamente con total seguridad de tipos."
+        />
+      ) : (
+        <>
+          <section className="grid gap-[var(--section-gap)] lg:grid-cols-2">
+            <div className="apple-card">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
+                Suscripción
+              </p>
+              <h2 className="section-title mt-2 text-[var(--font-size-xl)]">Resumen de membresía</h2>
+              {subscription?.active_plan ? (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
+                    <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Plan</p>
+                    <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{subscription.plan_name}</p>
+                  </div>
+                  <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
+                    <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Créditos restantes</p>
+                    <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">
+                      {subscription.allows_free_pass
+                        ? "Ilimitados"
+                        : formatCredits(subscription.active_credits)}
+                    </p>
+                  </div>
+                  <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
+                    <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Fin del periodo</p>
+                    <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{formatDateTime(subscription.period_end)}</p>
+                  </div>
+                  <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
+                    <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Lista de espera</p>
+                    <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{activeWaitlist.length} entradas</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-6 rounded-[1.25rem] bg-[var(--bg-main)] p-5 text-sm font-medium text-[var(--ink-500)]">
+                  {subscription?.error_code === "PLAN_EXPIRED"
+                    ? `Tu último plan expiró el ${formatDateTime(subscription.period_end)}.`
+                    : "Aún no se ha asignado una suscripción activa."}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="mt-6 rounded-[1.25rem] bg-[var(--bg-main)] p-5 text-sm font-medium text-[var(--ink-500)]">
-              {subscription?.error_code === "PLAN_EXPIRED"
-                ? `Tu último plan expiró el ${formatDateTime(subscription.period_end)}.`
-                : "Aún no se ha asignado una suscripción activa."}
-            </div>
-          )}
-        </div>
 
-        <div className="apple-card">
+            <div className="apple-card">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
             Estado de reserva
           </p>
@@ -162,6 +162,8 @@ export function DashboardPage() {
           ))}
         </div>
       </section>
+    </>
+      )}
     </div>
   );
 }
