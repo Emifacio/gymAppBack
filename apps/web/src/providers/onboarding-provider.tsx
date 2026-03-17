@@ -5,6 +5,16 @@ import { useAuth } from "@/hooks/use-auth";
 import { useUpdateMember } from "@/hooks/use-workouts";
 import { createOnboardingTour } from "@/lib/onboarding-tour";
 
+const waitForElement = async (selector: string, timeoutMs = 8000) => {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const el = document.querySelector(selector);
+    if (el) return el as HTMLElement;
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  return null;
+};
+
 export function OnboardingProvider({ children }: PropsWithChildren) {
   const { session } = useAuth();
   const { pathname } = useLocation();
@@ -48,10 +58,18 @@ export function OnboardingProvider({ children }: PropsWithChildren) {
 
       // Start the tour with a small delay to ensure rendering is complete
       const timeout = setTimeout(() => {
-        if (pathname !== "/dashboard") {
-          navigate("/dashboard");
-        }
-        tour.drive();
+        void (async () => {
+          if (pathname !== "/dashboard") {
+            navigate("/dashboard");
+          }
+
+          const el = await waitForElement("#tour-credits");
+          el?.scrollIntoView({ block: "center", inline: "nearest", behavior: "smooth" });
+
+          // Give layout a beat after scroll for correct popover placement.
+          await new Promise((resolve) => setTimeout(resolve, 250));
+          tour.drive();
+        })();
       }, 1000);
 
       return () => clearTimeout(timeout);

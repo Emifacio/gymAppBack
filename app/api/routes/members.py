@@ -164,5 +164,10 @@ async def get_member_subscription(
 async def cancel_member_subscription(
     member_id: UUID,
     service: SubscriptionService = Depends(get_subscription_service),
+    booking_service: BookingService = Depends(get_booking_service),
 ) -> None:
+    # 1. cancel subscription state and zero credits
     await service.cancel_subscription(member_id)
+
+    # 2. cancel future bookings + waitlist entries
+    await booking_service.cancel_member_future_bookings(member_id)

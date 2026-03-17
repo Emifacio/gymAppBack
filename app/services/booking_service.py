@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 import inspect
 from uuid import UUID, uuid4
 
@@ -10,6 +11,7 @@ from app.domain.enums import (
     BookingActionState,
     BookingEligibilityOutcome,
     BookingStatus,
+    ClassStatus,
     MemberRole,
     WaitlistStatus,
 )
@@ -247,6 +249,37 @@ class BookingService:
 
         for promoted_booking_id in promoted_booking_ids:
             await self._enqueue_waitlist_notification(promoted_booking_id)
+
+    async def cancel_member_future_bookings(self, member_id: UUID) -> None:
+        """Cancel all upcoming confirmed bookings and active waitlist entries for a member.
+
+        This is used when a member subscription is cancelled by an admin.
+        It ensures seat availability is restored and waitlist promotion runs.
+        """
+        now = datetime.now(timezone.utc)
+        admin_actor = SimpleNamespace(id=member_id, role=MemberRole.ADMIN)
+
+        bookings = await self.booking_repository.list_for_member(member_id)
+        for booking in bookings:
+            if booking.status != BookingStatus.CONFIRMED:
+                continue
+            gym_class = booking.gym_class or await self.class_repository.get_by_id(booking.class_id)
+            if gym_class is None or gym_class.status != ClassStatus.SCHEDULED:
+                continue
+            if gym_class.scheduled_at <= now:
+                continue
+            await self.cancel_booking(booking.id, admin_actor)
+
+        waitlist_entries = await self.waitlist_repository.list_for_member(member_id)
+        for waitlist_entry in waitlist_entries:
+            if waitlist_entry.status != WaitlistStatus.WAITING:
+                continue
+            gym_class = waitlist_entry.gym_class or await self.class_repository.get_by_id(waitlist_entry.class_id)
+            if gym_class is None or gym_class.status != ClassStatus.SCHEDULED:
+                continue
+            if gym_class.scheduled_at <= now:
+                continue
+            await self.cancel_booking(waitlist_entry.id, admin_actor)
 
         promoted_schema = None
         if promoted_booking_ids:

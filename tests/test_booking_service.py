@@ -4,11 +4,11 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, Mock, ANY
 from uuid import uuid4
 
 from app.core.exceptions import BookingNotCancellableError
-from app.domain.enums import BookingEligibilityOutcome, BookingStatus, BookingType, MemberRole, WaitlistStatus
+from app.domain.enums import BookingEligibilityOutcome, BookingStatus, BookingType, ClassStatus, MemberRole, WaitlistStatus
 from app.domain.models.booking import Booking
 from app.domain.models.waitlist import Waitlist
 from app.services.booking_eligibility_service import BookingEligibilityDecision
@@ -99,6 +99,71 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
         self.service.promote_waitlist_if_needed.assert_awaited_once()
         self.service._enqueue_waitlist_notification.assert_awaited_once_with(promoted_booking_id)
         self.cache.delete.assert_awaited_once()
+
+    async def test_cancel_member_future_bookings_cancels_upcoming_confirmed_bookings_and_waitlist(self) -> None:
+        member_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        future_class = SimpleNamespace(id=uuid4(), scheduled_at=now + timedelta(days=1), capacity=10, status=ClassStatus.SCHEDULED)
+        past_class = SimpleNamespace(id=uuid4(), scheduled_at=now - timedelta(days=1), capacity=10, status=ClassStatus.SCHEDULED)
+
+        future_booking = Booking(
+            id=uuid4(),
+            member_id=member_id,
+            class_id=future_class.id,
+            status=BookingStatus.CONFIRMED,
+            booking_type=BookingType.CREDIT,
+            credits_consumed=1,
+            booked_at=now - timedelta(days=1),
+            cancelled_at=None,
+        )
+        future_booking.gym_class = future_class
+
+        past_booking = Booking(
+            id=uuid4(),
+            member_id=member_id,
+            class_id=past_class.id,
+            status=BookingStatus.CONFIRMED,
+            booking_type=BookingType.CREDIT,
+            credits_consumed=1,
+            booked_at=now - timedelta(days=3),
+            cancelled_at=None,
+        )
+        past_booking.gym_class = past_class
+
+        future_waitlist = Waitlist(
+            id=uuid4(),
+            member_id=member_id,
+            class_id=future_class.id,
+            position=1,
+            status=WaitlistStatus.WAITING,
+            joined_at=now - timedelta(hours=2),
+            promoted_at=None,
+            cancelled_at=None,
+        )
+        future_waitlist.gym_class = future_class
+
+        past_waitlist = Waitlist(
+            id=uuid4(),
+            member_id=member_id,
+            class_id=past_class.id,
+            position=1,
+            status=WaitlistStatus.WAITING,
+            joined_at=now - timedelta(days=2),
+            promoted_at=None,
+            cancelled_at=None,
+        )
+        past_waitlist.gym_class = past_class
+
+        self.booking_repository.list_for_member = AsyncMock(return_value=[future_booking, past_booking])
+        self.waitlist_repository.list_for_member = AsyncMock(return_value=[future_waitlist, past_waitlist])
+        self.service.cancel_booking = AsyncMock()
+
+        await self.service.cancel_member_future_bookings(member_id)
+
+        self.service.cancel_booking.assert_any_await(future_booking.id, ANY)
+        self.service.cancel_booking.assert_any_await(future_waitlist.id, ANY)
+        self.assertEqual(self.service.cancel_booking.call_count, 2)
 
     async def test_cancel_waitlist_entry_marks_it_cancelled_without_credit_changes(self) -> None:
         actor = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)
