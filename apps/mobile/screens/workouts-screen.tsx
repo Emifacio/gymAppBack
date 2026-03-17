@@ -15,13 +15,13 @@ export function WorkoutsScreen() {
   return (
     <ScreenShell>
       <View style={styles.headerCard}>
-        <Text style={styles.eyebrow}>Shared `/classes` resource</Text>
-        <Text style={styles.title}>Workouts</Text>
+        <Text style={styles.eyebrow}>Recurso compartido `/classes`</Text>
+        <Text style={styles.title}>Clases</Text>
         <Text style={styles.copy}>
-          The product copy says workouts, but the generated API client still targets the backend’s real
-          `/classes` endpoints.
+          Esta sección muestra las sesiones de entrenamiento disponibles, obtenidas directamente de los endpoints reales del backend.
         </Text>
       </View>
+
 
       {workouts.map((workout) => (
         <WorkoutCard

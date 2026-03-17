@@ -168,7 +168,7 @@ export function WorkoutDetailPage() {
               ? subscription.plan_name ?? "Plan asignado"
               : subscription?.error_code === "PLAN_EXPIRED"
                 ? "Plan expirado"
-                : "Sin suscripción asignada"}
+                : "Sin plan activo asignado"}
           </p>
           <p className="mt-1">
             {subscription?.active_plan

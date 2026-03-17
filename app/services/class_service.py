@@ -71,12 +71,22 @@ class ClassService:
                 if instructor is None:
                     raise NotFoundError("Instructor not found")
 
-            gym_class = GymClass(**payload.model_dump())
-            await self.class_repository.add(gym_class)
-            logger.debug(f"create_class_added class_id={gym_class.id} session_id={id(self.session)}")
+            dates = payload.dates if payload.dates else [payload.scheduled_at]
+            first_id = None
+            
+            for dt in dates:
+                data = payload.model_dump(exclude={"dates"})
+                data["scheduled_at"] = dt
+                gym_class = GymClass(**data)
+                await self.class_repository.add(gym_class)
+                if first_id is None:
+                    # Flush to get ID if needed, though get_class model will handle it after commit
+                    await self.session.flush()
+                    first_id = gym_class.id
+                logger.debug(f"create_class_added class_id={gym_class.id} session_id={id(self.session)}")
 
-        result = await self.get_class(gym_class.id)
-        logger.info(f"create_class_success class_id={gym_class.id}")
+        result = await self.get_class(first_id)
+        logger.info(f"create_class_success class_id={first_id} count={len(dates)}")
         return result
 
     async def update_class(self, class_id: UUID, payload: ClassUpdate) -> ClassRead:

@@ -10,6 +10,7 @@ import { LoginPage } from "@/pages/login-page";
 import { MemberDetailPage } from "@/pages/member-detail-page";
 import { MembersPage } from "@/pages/members-page";
 import { PlansPage } from "@/pages/plans-page";
+import { ProfilePage } from "@/pages/profile-page";
 import { RegisterPage } from "@/pages/register-page";
 import { WorkoutDetailPage } from "@/pages/workout-detail-page";
 import { WorkoutsPage } from "@/pages/workouts-page";
@@ -32,6 +33,10 @@ export const router = createBrowserRouter([
           {
             index: true,
             element: <DashboardPage />
+          },
+          {
+            path: "/profile",
+            element: <ProfilePage />
           },
           {
             path: "/workouts",

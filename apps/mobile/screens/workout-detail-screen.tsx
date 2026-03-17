@@ -20,8 +20,8 @@ export function WorkoutDetailScreen({ route }: WorkoutDetailScreenProps) {
     return (
       <ScreenShell>
         <View style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>Loading workout...</Text>
-          <Text style={styles.emptyCopy}>The typed query is resolving the class detail from the backend.</Text>
+          <Text style={styles.emptyTitle}>Cargando clase...</Text>
+          <Text style={styles.emptyCopy}>Estamos obteniendo los detalles de la sesión desde el backend.</Text>
         </View>
       </ScreenShell>
     );
@@ -30,39 +30,40 @@ export function WorkoutDetailScreen({ route }: WorkoutDetailScreenProps) {
   return (
     <ScreenShell>
       <View style={styles.heroCard}>
-        <Text style={styles.status}>{workout.status.toUpperCase()}</Text>
+        <Text style={styles.status}>{workout.status === 'scheduled' ? 'PROGRAMADA' : workout.status.toUpperCase()}</Text>
         <Text style={styles.title}>{workout.name}</Text>
         <Text style={styles.copy}>
           {workout.description ??
-            "This view is powered by the shared `useWorkout` and `useCreateBooking` hooks from the API package."}
+            "Esta vista utiliza los hooks compartidos `useWorkout` y `useCreateBooking` del paquete de API."}
         </Text>
       </View>
 
       <View style={styles.infoCard}>
-        <Text style={styles.infoLabel}>Schedule</Text>
+        <Text style={styles.infoLabel}>Horario</Text>
         <Text style={styles.infoValue}>{formatWorkoutSchedule(workout.scheduled_at)}</Text>
 
-        <Text style={styles.infoLabel}>Location</Text>
+        <Text style={styles.infoLabel}>Ubicación</Text>
         <Text style={styles.infoValue}>{workout.location}</Text>
 
-        <Text style={styles.infoLabel}>Capacity</Text>
-        <Text style={styles.infoValue}>{workout.capacity} athletes</Text>
+        <Text style={styles.infoLabel}>Capacidad</Text>
+        <Text style={styles.infoValue}>{workout.capacity} atletas</Text>
 
-        <Text style={styles.infoLabel}>Duration</Text>
-        <Text style={styles.infoValue}>{workout.duration_minutes} minutes</Text>
+        <Text style={styles.infoLabel}>Duración</Text>
+        <Text style={styles.infoValue}>{workout.duration_minutes} minutos</Text>
       </View>
 
       <Pressable
         onPress={() => {
           bookingMutation.mutate({
-            class_id: workout.id,
-            member_id: session!.member.id
+            classId: workout.id,
+            memberId: session!.member.id
           });
         }}
         style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
       >
-        <Text style={styles.primaryButtonText}>{bookingMutation.isPending ? "Booking..." : "Book workout"}</Text>
+        <Text style={styles.primaryButtonText}>{bookingMutation.isPending ? "Reservando..." : "Reservar clase"}</Text>
       </Pressable>
+
 
       {bookingMutation.data ? (
         <View style={styles.successBox}>

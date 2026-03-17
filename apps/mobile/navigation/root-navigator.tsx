@@ -8,12 +8,17 @@ import { HomeScreen } from "../screens/home-screen";
 import { LoginScreen } from "../screens/login-screen";
 import { WorkoutDetailScreen } from "../screens/workout-detail-screen";
 import { WorkoutsScreen } from "../screens/workouts-screen";
+import { MembersScreen } from "../screens/members-screen";
+import { AttendanceScreen } from "../screens/attendance-screen";
 import type { MainTabParamList, RootStackParamList } from "./types";
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
+  const { session } = useAuth();
+  const canManage = session?.member.role && session.member.role !== "member";
+
   return (
     <Tabs.Navigator
       screenOptions={({ route }) => ({
@@ -27,20 +32,33 @@ function MainTabs() {
           paddingBottom: 12,
           paddingTop: 10
         },
-        tabBarIcon: ({ color, size }) => (
-          <Ionicons
-            color={color}
-            name={route.name === "Home" ? "sparkles-outline" : "barbell-outline"}
-            size={size}
-          />
-        )
+        tabBarIcon: ({ color, size }) => {
+          let iconName: any = "sparkles-outline";
+          if (route.name === "Home") iconName = "sparkles-outline";
+          else if (route.name === "Workouts") iconName = "barbell-outline";
+          else if (route.name === "Members") iconName = "people-outline";
+          else if (route.name === "Attendance") iconName = "list-outline";
+          
+          return <Ionicons color={color} name={iconName} size={size} />;
+        },
+        tabBarLabel: ({ children }) => {
+          const label = children === "Home" ? "Inicio" : children === "Workouts" ? "Clases" : children === "Members" ? "Miembros" : children === "Attendance" ? "Asistencia" : children;
+          return <Text style={{ fontSize: 10, fontWeight: "700", color: "#718198" }}>{label}</Text>;
+        }
       })}
     >
       <Tabs.Screen component={HomeScreen} name="Home" />
       <Tabs.Screen component={WorkoutsScreen} name="Workouts" />
+      {canManage ? (
+        <>
+          <Tabs.Screen component={MembersScreen} name="Members" />
+          <Tabs.Screen component={AttendanceScreen} name="Attendance" />
+        </>
+      ) : null}
     </Tabs.Navigator>
   );
 }
+
 
 function LoadingState() {
   return (

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
   useCancelBooking,
@@ -6,6 +7,7 @@ import {
   useMySubscriptionStatus
 } from "@/hooks/use-workouts";
 import { formatCredits, formatDateTime, formatWorkoutSchedule } from "@/lib/format";
+import { CancellationModal } from "@/components/cancellation-modal";
 
 export function BookingsPage() {
   const { session } = useAuth();
@@ -14,10 +16,49 @@ export function BookingsPage() {
   const subscriptionQuery = useMySubscriptionStatus();
   const cancelBooking = useCancelBooking();
 
+  const [cancelModal, setCancelModal] = useState<{
+    open: boolean;
+    bookingId: string;
+    isLate: boolean;
+  }>({
+    open: false,
+    bookingId: "",
+    isLate: false
+  });
+
   const bookings = bookingsQuery.data?.bookings ?? [];
   const waitlist = bookingsQuery.data?.waitlist ?? [];
   const attendance = attendanceQuery.data ?? [];
   const subscription = subscriptionQuery.data;
+
+  const handleCancelClick = (bookingId: string, scheduledAt: string | undefined | null) => {
+    if (!scheduledAt) {
+      // If it's waitlist or no date, just cancel (or we can check booked_at)
+      setCancelModal({ open: true, bookingId, isLate: false });
+      return;
+    }
+
+    const classDate = new Date(scheduledAt);
+    const now = new Date();
+    const hoursDiff = (classDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    setCancelModal({
+      open: true,
+      bookingId,
+      isLate: hoursDiff < 24
+    });
+  };
+
+  const confirmCancellation = () => {
+    cancelBooking.mutate({
+      bookingId: cancelModal.bookingId,
+      memberId: session!.member.id
+    }, {
+      onSuccess: () => {
+        setCancelModal({ ...cancelModal, open: false });
+      }
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -36,7 +77,7 @@ export function BookingsPage() {
                 ? subscription.plan_name
                 : subscription?.error_code === "PLAN_EXPIRED"
                   ? "Plan expirado"
-                  : "Sin plan activo"}
+                  : "Sin plan activo asignado"}
             </p>
           </div>
           <div className="rounded-[1.5rem] bg-white/80 p-5">
@@ -87,10 +128,7 @@ export function BookingsPage() {
                   className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
                   disabled={cancelBooking.isPending || booking.status !== "confirmed"}
                   onClick={() => {
-                    cancelBooking.mutate({
-                      bookingId: booking.id,
-                      memberId: session!.member.id
-                    });
+                    handleCancelClick(booking.id, booking.gym_class?.scheduled_at);
                   }}
                   type="button"
                 >
@@ -122,10 +160,7 @@ export function BookingsPage() {
                   className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
                   disabled={cancelBooking.isPending || entry.status !== "waiting"}
                   onClick={() => {
-                    cancelBooking.mutate({
-                      bookingId: entry.id,
-                      memberId: session!.member.id
-                    });
+                    handleCancelClick(entry.id, entry.gym_class?.scheduled_at);
                   }}
                   type="button"
                 >
@@ -163,6 +198,15 @@ export function BookingsPage() {
           ) : null}
         </div>
       </section>
+
+      <CancellationModal
+        open={cancelModal.open}
+        onClose={() => setCancelModal({ ...cancelModal, open: false })}
+        onConfirm={confirmCancellation}
+        isLate={cancelModal.isLate}
+        loading={cancelBooking.isPending}
+      />
     </div>
   );
 }
+

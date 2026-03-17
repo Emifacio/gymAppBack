@@ -71,3 +71,17 @@ export function formatPlanPeriod(periodType: "weekly" | "monthly" | null | undef
   }
   return "Not set";
 }
+
+export function formatDate(value: string | Date | null | undefined) {
+  if (!value) {
+    return "N/A";
+  }
+
+  const date = typeof value === "string" ? new Date(value) : value;
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+

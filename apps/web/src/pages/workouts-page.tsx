@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
 import { WorkoutCard } from "@/components/workout-card";
 import { StatCard } from "@/components/stat-card";
+import { WeeklySchedule } from "@/components/weekly-schedule";
 import { useAuth } from "@/hooks/use-auth";
-import { useCreateWorkout, useMySubscriptionStatus, useWorkouts } from "@/hooks/use-workouts";
+import { useCreateWorkout, useMySubscriptionStatus, useWorkouts, useMembers } from "@/hooks/use-workouts";
 import { formatCredits, formatDateTime } from "@/lib/format";
 import { canManageOperations } from "@/lib/roles";
 
@@ -29,8 +30,13 @@ export function WorkoutsPage() {
     offset: filters.offset,
     limit: filters.limit
   });
+  const instructorsQuery = useMembers({ role: "instructor" as any });
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [classTime, setClassTime] = useState("18:00");
+  
   const createWorkout = useCreateWorkout();
   const workouts = workoutsQuery.data ?? [];
+  const instructors = instructorsQuery.data ?? [];
   const subscription = subscriptionQuery.data;
   const canManage = canManageOperations(session?.member);
   const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
@@ -58,9 +64,9 @@ export function WorkoutsPage() {
           detail={
             subscription?.active_plan
               ? subscription.allows_free_pass
-                ? "Capacidad ilimitada"
-                : `${formatCredits(subscription.active_credits)} restantes`
-              : "Reservas bloqueadas"
+              ? "Capacidad ilimitada"
+              : `${formatCredits(subscription.active_credits)} restantes`
+            : "Reservas bloqueadas"
           }
           label="Créditos"
           value={subscription?.active_plan ? String(subscription.active_credits) : "0"}
@@ -112,20 +118,28 @@ export function WorkoutsPage() {
             onSubmit={async (event) => {
               event.preventDefault();
               const formData = new FormData(event.currentTarget);
+              
+              const dates = selectedDates.map(date => `${date}T${classTime}:00`);
+              
               const payload = {
                 name: getFormValue(formData, "name"),
                 location: getFormValue(formData, "location"),
                 instructor_id: getFormValue(formData, "instructor_id") || null,
                 duration_minutes: parseInt(getFormValue(formData, "duration_minutes")),
                 capacity: parseInt(getFormValue(formData, "capacity")),
-                scheduled_at: getFormValue(formData, "scheduled_at"),
+                scheduled_at: dates[0] || getFormValue(formData, "scheduled_at"), // Fallback if single date used
+                dates: dates.length > 1 ? dates : undefined,
                 description: getFormValue(formData, "description"),
                 status: "scheduled" as const,
               };
 
+              // If dates[0] doesn't exist and scheduled_at wasn't filled, validation should handle it
+              // But with our UI, we'll ensure one is picked
+
               try {
-                await createWorkout.mutateAsync(payload);
+                await createWorkout.mutateAsync(payload as any);
                 event.currentTarget.reset();
+                setSelectedDates([]);
                 window.scrollTo({ top: 0, behavior: "smooth" });
               } catch (error) {
                 console.error("Error al crear el entrenamiento:", error);
@@ -146,12 +160,21 @@ export function WorkoutsPage() {
               required 
               defaultValue={searchParams.get("location") || ""}
             />
-            <input 
+            
+            <select 
               className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
               name="instructor_id" 
-              placeholder="ID del instructor (opcional)" 
+              required
               defaultValue={searchParams.get("instructor_id") || ""}
-            />
+            >
+              <option value="">Seleccionar Instructor</option>
+              {instructors.map((instructor) => (
+                <option key={instructor.id} value={instructor.instructor_profile?.id}>
+                  {instructor.full_name}
+                </option>
+              ))}
+            </select>
+
             <input 
               className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
               min={15} 
@@ -159,8 +182,9 @@ export function WorkoutsPage() {
               placeholder="Duración (m)" 
               required 
               type="number" 
-              defaultValue={searchParams.get("duration_minutes") || ""}
+              defaultValue={searchParams.get("duration_minutes") || "60"}
             />
+            
             <input 
               className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
               min={1} 
@@ -168,15 +192,52 @@ export function WorkoutsPage() {
               placeholder="Capacidad" 
               required 
               type="number" 
-              defaultValue={searchParams.get("capacity") || ""}
+              defaultValue={searchParams.get("capacity") || "12"}
             />
-            <input 
-              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
-              name="scheduled_at" 
-              required 
-              type="datetime-local" 
-              defaultValue={searchParams.get("scheduled_at") || ""}
-            />
+
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Fechas</span>
+              <div className="flex gap-2">
+                <input 
+                  className="flex-1 rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
+                  type="date"
+                  onChange={(e) => {
+                    if (e.target.value && !selectedDates.includes(e.target.value)) {
+                      setSelectedDates([...selectedDates, e.target.value].sort());
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+              <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-xl border border-dashed border-[var(--surface-outline)]">
+                {selectedDates.length === 0 && <span className="text-xs text-[var(--ink-400)]">No hay fechas seleccionadas</span>}
+                {selectedDates.map(date => (
+                  <span key={date} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--primary)] text-white text-xs font-bold">
+                    {date}
+                    <button 
+                      type="button" 
+                      className="hover:text-red-200"
+                      onClick={() => setSelectedDates(selectedDates.filter(d => d !== date))}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Hora (para todas las fechas)</span>
+              <input 
+                className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
+                name="class_time" 
+                required 
+                type="time"
+                value={classTime}
+                onChange={(e) => setClassTime(e.target.value)}
+              />
+            </div>
+
             <textarea 
               className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium sm:col-span-2 lg:col-span-3" 
               name="description" 
@@ -200,12 +261,17 @@ export function WorkoutsPage() {
           description="Vuelve más tarde o contacta a los administradores para el próximo bloque de entrenamiento."
         />
       ) : (
-        <div className="grid gap-6">
-          {workouts.map((workout) => (
-            <WorkoutCard key={workout.id} workout={workout} />
-          ))}
+        <div className="space-y-8">
+          <WeeklySchedule classes={workouts} />
+          
+          <div className="grid gap-6">
+            {workouts.map((workout) => (
+              <WorkoutCard key={workout.id} workout={workout} />
+            ))}
+          </div>
         </div>
       )}
     </div>
   );
 }
+

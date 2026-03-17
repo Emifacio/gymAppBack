@@ -14,17 +14,16 @@ export function LoginScreen() {
   return (
     <ScreenShell>
       <View style={styles.heroCard}>
-        <Text style={styles.eyebrow}>Gym Platform</Text>
-        <Text style={styles.heroTitle}>One backend contract. Two polished clients.</Text>
+        <Text style={styles.eyebrow}>Plataforma de Gimnasio</Text>
+        <Text style={styles.heroTitle}>Un contrato, dos clientes impecables.</Text>
         <Text style={styles.heroCopy}>
-          Sign in with your FastAPI account. Mobile stores the JWT in SecureStore while sharing the same
-          generated API client and query hooks as the web app.
+          Inicia sesión con tu cuenta de FastAPI. La aplicación móvil almacena el JWT de forma segura mientras comparte el mismo cliente de API y hooks de consulta que la web.
         </Text>
       </View>
 
       <View style={styles.formCard}>
-        <Text style={styles.formTitle}>Sign in</Text>
-        <Text style={styles.formCopy}>SecureStore persists the token on device and the shared session adapter handles hydration.</Text>
+        <Text style={styles.formTitle}>Entrar</Text>
+        <Text style={styles.formCopy}>El token se persiste en el dispositivo y el adaptador de sesión compartido maneja la hidratación.</Text>
 
         <TextInput
           autoCapitalize="none"
@@ -37,7 +36,7 @@ export function LoginScreen() {
         />
         <TextInput
           onChangeText={setPassword}
-          placeholder="Password"
+          placeholder="Contraseña"
           placeholderTextColor="#8D99AE"
           secureTextEntry
           style={styles.input}
@@ -48,7 +47,7 @@ export function LoginScreen() {
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>
               {isApiResponseError(login.error)
-                ? "Login failed. Check the FastAPI credentials or backend availability."
+                ? "Error al iniciar sesión. Verifica tus credenciales o la disponibilidad del backend."
                 : login.error.message}
             </Text>
           </View>
@@ -60,9 +59,10 @@ export function LoginScreen() {
           }}
           style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
         >
-          <Text style={styles.primaryButtonText}>{login.isPending ? "Signing in..." : "Sign in"}</Text>
+          <Text style={styles.primaryButtonText}>{login.isPending ? "Iniciando sesión..." : "Iniciar sesión"}</Text>
         </Pressable>
       </View>
+
     </ScreenShell>
   );
 }

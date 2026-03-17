@@ -23,27 +23,34 @@ export function HomeScreen() {
   return (
     <ScreenShell>
       <View style={styles.heroCard}>
-        <Text style={styles.eyebrow}>Contract-first mobile</Text>
-        <Text style={styles.heroTitle}>Hi {session?.member.full_name.split(" ")[0]}</Text>
+        <Text style={styles.eyebrow}>Plataforma Móvil</Text>
+        <Text style={styles.heroTitle}>Hola {session?.member.full_name.split(" ")[0]}</Text>
         <Text style={styles.heroCopy}>
-          This home screen is reading the same shared API package as the web dashboard, just with React
-          Navigation and Expo-native storage underneath.
+          Esta pantalla utiliza el mismo paquete de API compartido que el panel web, con navegación nativa y almacenamiento local.
         </Text>
-        <Pressable
-          onPress={() => {
-            void logout();
-          }}
-          style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
-        >
-          <Text style={styles.secondaryButtonText}>Logout</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 8 }}>
+          <Pressable
+            onPress={() => {
+              void logout();
+            }}
+            style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
+          >
+            <Text style={styles.secondaryButtonText}>Cerrar sesión</Text>
+          </Pressable>
+          {session?.member.role !== 'member' && (
+            <View style={[styles.roleBadge, session?.member.role === 'admin' ? styles.adminBadge : styles.instructorBadge]}>
+              <Text style={styles.roleText}>{session?.member.role?.toUpperCase()}</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <View style={styles.statsRow}>
-        <StatChip label="Workouts" tone="accent" value={String(workouts.length)} />
-        <StatChip label="Bookings" tone="highlight" value={String(bookings.length)} />
-        <StatChip label="Waitlist" value={String(waitlist.length)} />
+        <StatChip label="Clases" tone="accent" value={String(workouts.length)} />
+        <StatChip label="Reservas" tone="highlight" value={String(bookings.length)} />
+        <StatChip label="En Espera" value={String(waitlist.length)} />
       </View>
+
 
       {nextWorkout ? (
         <WorkoutCard
@@ -99,5 +106,24 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     gap: 12
+  },
+  roleBadge: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1,
+  },
+  adminBadge: {
+    backgroundColor: "#F3E8FF",
+    borderColor: "#D8B4FE",
+  },
+  instructorBadge: {
+    backgroundColor: "#DBEAFE",
+    borderColor: "#93C5FD",
+  },
+  roleText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#4B5563",
   }
 });

@@ -21,6 +21,7 @@ class ClassCreate(BaseModel):
     description: str | None = None
     instructor_id: UUID | None = None
     scheduled_at: datetime
+    dates: list[datetime] | None = None
     duration_minutes: int = Field(default=60, gt=0)
     capacity: int = Field(gt=0)
     location: str = Field(min_length=2, max_length=120)
