@@ -21,6 +21,7 @@ import {
   useAssignPlan, 
   usePlans 
 } from "../hooks/use-workouts";
+import { useAuth } from "../hooks/use-auth";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -28,6 +29,8 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export function MembersScreen() {
   const queryClient = useQueryClient();
+  const { session } = useAuth();
+  const isAdmin = session?.member.role === "admin";
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedMember, setSelectedMember] = useState<any>(null);
@@ -71,6 +74,7 @@ export function MembersScreen() {
   }, [members, debouncedSearch]);
 
   const handleToggleStatus = async (member: any) => {
+    if (!isAdmin) return;
     const newStatus = member.membership_status === "active" ? "suspended" : "active";
     try {
       await updateMemberMutation.mutateAsync({
@@ -86,7 +90,7 @@ export function MembersScreen() {
   };
 
   const handleAssignPlan = async (planId: string) => {
-    if (!selectedMember) return;
+    if (!selectedMember || !isAdmin) return;
     
     const plan = plans.find(p => p.id === planId);
     
@@ -116,11 +120,14 @@ export function MembersScreen() {
 
   const renderMemberCard = ({ item }: { item: any }) => (
     <View style={styles.memberCard}>
-      <Pressable 
+      <TouchableOpacity 
+        activeOpacity={isAdmin ? 0.7 : 1}
         style={styles.cardMain}
         onPress={() => {
-          setSelectedMember(item);
-          setIsActionModalOpen(true);
+          if (isAdmin) {
+            setSelectedMember(item);
+            setIsActionModalOpen(true);
+          }
         }}
       >
         <View style={styles.avatar}>
@@ -151,31 +158,43 @@ export function MembersScreen() {
             </View>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
-      </Pressable>
+        {isAdmin && <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />}
+      </TouchableOpacity>
 
-      <View style={styles.cardActions}>
-        <TouchableOpacity 
-          style={styles.quickActionButton}
-          onPress={() => {
-            setSelectedMember(item);
-            setIsPlanModalOpen(true);
-          }}
-        >
-          <Ionicons name="card-outline" size={16} color="#4A90E2" />
-          <Text style={styles.quickActionText}>
-            {item.plan_name ? "Cambiar Plan" : "Asignar Plan"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      {isAdmin && (
+        <View style={styles.cardActions}>
+          <TouchableOpacity 
+            style={styles.quickActionButton}
+            onPress={() => {
+              setSelectedMember(item);
+              setIsPlanModalOpen(true);
+            }}
+          >
+            <Ionicons name="card-outline" size={16} color="#4A90E2" />
+            <Text style={styles.quickActionText}>
+              {item.plan_name ? "Cambiar Plan" : "Asignar Plan"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 
   return (
     <ScreenShell>
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>Administración</Text>
-        <Text style={styles.title}>Miembros</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.eyebrow}>Administración</Text>
+            <Text style={styles.title}>Miembros</Text>
+          </View>
+          {!isAdmin && (
+            <View style={styles.readOnlyBadge}>
+              <Ionicons name="lock-closed" size={12} color="#5F6F86" />
+              <Text style={styles.readOnlyText}>Solo lectura</Text>
+            </View>
+          )}
+        </View>
         
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={18} color="#718198" style={styles.searchIcon} />
@@ -340,6 +359,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 16
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 4
+  },
+  readOnlyBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F3F4F6",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 6,
+    marginTop: 8
+  },
+  readOnlyText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#5F6F86"
   },
   eyebrow: {
     color: "#FF7A59",

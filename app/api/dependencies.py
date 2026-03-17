@@ -93,9 +93,15 @@ def require_roles(*roles: MemberRole) -> Callable[[Member], Member]:
 
 
 def enforce_member_access(current_user: Member, target_member_id: UUID) -> None:
-    if current_user.role in {MemberRole.ADMIN, MemberRole.INSTRUCTOR}:
+    if current_user.role == MemberRole.ADMIN:
         return
     if current_user.id != target_member_id:
+        # Instructors can VIEW member details, but others cannot.
+        # However, for MUTATIONS, we need a separate check or this one must be stricter.
+        # The current implementation allows INSTRUCTOR. 
+        # I will leave this as is for VIEWING, and add explicit role checks in mutation routes.
+        if current_user.role == MemberRole.INSTRUCTOR:
+            return
         raise ForbiddenError("You can only access your own member data")
 
 

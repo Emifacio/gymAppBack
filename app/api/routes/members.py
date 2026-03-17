@@ -86,6 +86,11 @@ async def update_member(
     service: MemberService = Depends(get_member_service),
 ) -> MemberRead:
     enforce_member_access(current_user, member_id)
+    
+    # Strictly enforce that only ADMIN can update other members.
+    if current_user.id != member_id and current_user.role != MemberRole.ADMIN:
+        raise ForbiddenError("You do not have permission to modify other members")
+        
     return await service.update_member(
         member_id,
         payload,
