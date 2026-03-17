@@ -3,11 +3,12 @@ interface StatCardProps {
   value: string;
   tone?: "accent" | "highlight" | "default";
   detail: string;
+  id?: string | undefined;
 }
 
-export function StatCard({ label, value, detail }: StatCardProps) {
+export function StatCard({ label, value, detail, id }: StatCardProps) {
   return (
-    <div className="apple-card flex flex-col justify-between">
+    <div className="apple-card flex flex-col justify-between" id={id}>
       <div>
         <h3 className="section-title text-[var(--font-size-sm)] uppercase tracking-[0.16em] text-[var(--ink-500)]">
           {label}
