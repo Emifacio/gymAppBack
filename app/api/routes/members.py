@@ -126,6 +126,20 @@ async def assign_member_subscription(
     return await service.assign_subscription(member_id, payload.plan_id)
 
 
+@router.post(
+    "/{member_id}/assign-plan",
+    response_model=MemberSubscriptionRead,
+    dependencies=[Depends(require_roles(MemberRole.ADMIN))],
+)
+async def assign_plan_alias(
+    member_id: UUID,
+    payload: SubscriptionAssign,
+    service: SubscriptionService = Depends(get_subscription_service),
+) -> MemberSubscriptionRead:
+    """Alias for assign_member_subscription as requested by mobile app."""
+    return await service.assign_subscription(member_id, payload.plan_id)
+
+
 @router.get("/{member_id}/subscription", response_model=MemberSubscriptionRead | None)
 async def get_member_subscription(
     member_id: UUID,

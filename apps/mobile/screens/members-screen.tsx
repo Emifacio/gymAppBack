@@ -10,30 +10,36 @@ import {
   ActivityIndicator, 
   Alert,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform
+  Platform,
+  Dimensions,
+  Animated
 } from "react-native";
 import { ScreenShell } from "../components/screen-shell";
 import { 
   useMembers, 
   useUpdateMember, 
-  useAssignSubscription, 
+  useAssignPlan, 
   usePlans 
 } from "../hooks/use-workouts";
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export function MembersScreen() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   // Queries & Mutations
   const membersQuery = useMembers();
   const plansQuery = usePlans();
   const updateMemberMutation = useUpdateMember();
-  const assignSubscriptionMutation = useAssignSubscription();
+  const assignPlanMutation = useAssignPlan();
 
   const members = membersQuery.data ?? [];
   const plans = plansQuery.data ?? [];
@@ -45,6 +51,14 @@ export function MembersScreen() {
     }, 300);
     return () => clearTimeout(handler);
   }, [search]);
+
+  // Toast Timer
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   // Filtered List
   const filteredMembers = useMemo(() => {
@@ -65,35 +79,50 @@ export function MembersScreen() {
       });
       setIsActionModalOpen(false);
       setSelectedMember(null);
+      setToast(`✅ ${member.full_name} ${newStatus === 'active' ? 'activado' : 'suspendido'}`);
     } catch (error: any) {
-      Alert.alert("Error", error?.message || "No se pudo cambiar el estado del miembro.");
+      Alert.alert("Error", error?.message || "No se pudo cambiar el estado.");
     }
   };
 
-  const handleUpdatePlan = async (planId: string) => {
+  const handleAssignPlan = async (planId: string) => {
     if (!selectedMember) return;
+    
+    const plan = plans.find(p => p.id === planId);
+    
+    // Optimistic Update
+    const previousMembers = queryClient.getQueryData(['gym', 'members', 'list', {}]);
+    queryClient.setQueryData(['gym', 'members', 'list', {}], (old: any) => {
+      if (!old) return old;
+      return old.map((m: any) => 
+        m.id === selectedMember.id ? { ...m, plan_name: plan?.name, membership_status: 'active' } : m
+      );
+    });
+
     try {
-      await assignSubscriptionMutation.mutateAsync({
+      await assignPlanMutation.mutateAsync({
         memberId: selectedMember.id,
         payload: { plan_id: planId }
       });
       setIsPlanModalOpen(false);
       setSelectedMember(null);
-      Alert.alert("Éxito", "Plan actualizado correctamente.");
+      setToast(`✅ Plan ${plan?.name} asignado con éxito`);
     } catch (error: any) {
-      Alert.alert("Error", error?.message || "No se pudo actualizar el plan.");
+      // Rollback
+      queryClient.setQueryData(['gym', 'members', 'list', {}], previousMembers);
+      Alert.alert("Error", error?.message || "No se pudo asignar el plan.");
     }
   };
 
   const renderMemberCard = ({ item }: { item: any }) => (
-    <Pressable 
-      style={({ pressed }) => [styles.memberCard, pressed && styles.cardPressed]}
-      onPress={() => {
-        setSelectedMember(item);
-        setIsActionModalOpen(true);
-      }}
-    >
-      <View style={styles.cardInfo}>
+    <View style={styles.memberCard}>
+      <Pressable 
+        style={styles.cardMain}
+        onPress={() => {
+          setSelectedMember(item);
+          setIsActionModalOpen(true);
+        }}
+      >
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{item.full_name.charAt(0)}</Text>
         </View>
@@ -103,7 +132,7 @@ export function MembersScreen() {
           <View style={styles.metaRow}>
             <View style={styles.planTag}>
               <Ionicons name="fitness-outline" size={10} color="#5F6F86" />
-              <Text style={styles.planText}>{item.plan_name || "Sin plan"}</Text>
+              <Text style={styles.planText}>{item.plan_name || "Sin plan asignado"}</Text>
             </View>
             <View style={[
               styles.statusBadge, 
@@ -122,22 +151,37 @@ export function MembersScreen() {
             </View>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
+        <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
+      </Pressable>
+
+      <View style={styles.cardActions}>
+        <TouchableOpacity 
+          style={styles.quickActionButton}
+          onPress={() => {
+            setSelectedMember(item);
+            setIsPlanModalOpen(true);
+          }}
+        >
+          <Ionicons name="card-outline" size={16} color="#4A90E2" />
+          <Text style={styles.quickActionText}>
+            {item.plan_name ? "Cambiar Plan" : "Asignar Plan"}
+          </Text>
+        </TouchableOpacity>
       </View>
-    </Pressable>
+    </View>
   );
 
   return (
     <ScreenShell>
       <View style={styles.header}>
-        <Text style={styles.eyebrow}>Consola de Administración</Text>
+        <Text style={styles.eyebrow}>Administración</Text>
         <Text style={styles.title}>Miembros</Text>
         
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={18} color="#718198" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Buscar por nombre o email..."
+            placeholder="Buscar miembros..."
             placeholderTextColor="#718198"
             value={search}
             onChangeText={setSearch}
@@ -154,16 +198,17 @@ export function MembersScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderMemberCard}
           contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Ionicons name="people-outline" size={48} color="#E5E7EB" />
-              <Text style={styles.emptyText}>No se encontraron miembros</Text>
+              <Text style={styles.emptyText}>No se encontraron resultados</Text>
             </View>
           }
         />
       )}
 
-      {/* Quick Action Modal */}
+      {/* Action Sheet - Member Management */}
       <Modal
         visible={isActionModalOpen}
         transparent
@@ -171,6 +216,7 @@ export function MembersScreen() {
         onRequestClose={() => setIsActionModalOpen(false)}
       >
         <View style={styles.modalOverlay}>
+          <Pressable style={styles.dismissOverlay} onPress={() => setIsActionModalOpen(false)} />
           <View style={styles.actionSheet}>
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>{selectedMember?.full_name}</Text>
@@ -185,9 +231,9 @@ export function MembersScreen() {
                 }}
               >
                 <View style={[styles.actionIcon, { backgroundColor: '#E0F2FE' }]}>
-                  <Ionicons name="card-outline" size={22} color="#0EA5E9" />
+                  <Ionicons name="card-outline" size={24} color="#0EA5E9" />
                 </View>
-                <Text style={styles.actionLabel}>Cambiar Plan</Text>
+                <Text style={styles.actionLabel}>Gestionar Plan</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -200,7 +246,7 @@ export function MembersScreen() {
                 ]}>
                   <Ionicons 
                     name={selectedMember?.membership_status === 'active' ? "pause-circle-outline" : "checkmark-circle-outline"} 
-                    size={22} 
+                    size={24} 
                     color={selectedMember?.membership_status === 'active' ? "#EF4444" : "#22C55E"} 
                   />
                 </View>
@@ -210,50 +256,81 @@ export function MembersScreen() {
               </TouchableOpacity>
             </View>
 
-            <Pressable 
+            <TouchableOpacity 
               style={styles.cancelButton} 
               onPress={() => setIsActionModalOpen(false)}
             >
-              <Text style={styles.cancelText}>Cancelar</Text>
-            </Pressable>
+              <Text style={styles.cancelText}>Cerrar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Change Plan Modal */}
+      {/* Plan Selection Bottom Sheet */}
       <Modal
         visible={isPlanModalOpen}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setIsPlanModalOpen(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.planModal}>
-            <Text style={styles.modalTitle}>Seleccionar Nuevo Plan</Text>
+          <Pressable style={styles.dismissOverlay} onPress={() => setIsPlanModalOpen(false)} />
+          <View style={styles.planSheet}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>Asignar Plan</Text>
+            <Text style={styles.sheetSubtitle}>Para: {selectedMember?.full_name}</Text>
+            
             <View style={styles.planList}>
-              {plans.map((plan: any) => (
-                <TouchableOpacity
-                  key={plan.id}
-                  style={styles.planItem}
-                  onPress={() => handleUpdatePlan(plan.id)}
-                >
-                  <View>
-                    <Text style={styles.planItemName}>{plan.name}</Text>
-                    <Text style={styles.planItemPrice}>${plan.price} / {plan.duration_days} días</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
-                </TouchableOpacity>
-              ))}
+              {plans.map((plan: any) => {
+                const isPremium = plan.name.toLowerCase().includes('premium') || plan.name.toLowerCase().includes('unlimited');
+                return (
+                  <TouchableOpacity
+                    key={plan.id}
+                    style={[
+                      styles.planItem,
+                      isPremium && styles.planItemPremium
+                    ]}
+                    onPress={() => handleAssignPlan(plan.id)}
+                  >
+                    <View style={styles.planItemInfo}>
+                      <View style={[styles.planIcon, isPremium ? styles.planIconPremium : styles.planIconBasic]}>
+                        <Ionicons 
+                          name={isPremium ? "star" : "fitness"} 
+                          size={20} 
+                          color={isPremium ? "#FFD700" : "#5F6F86"} 
+                        />
+                      </View>
+                      <View>
+                        <Text style={[styles.planItemName, isPremium && styles.planItemNamePremium]}>{plan.name}</Text>
+                        <Text style={styles.planItemMeta}>${plan.price} • {plan.duration_days} días</Text>
+                      </View>
+                    </View>
+                    {selectedMember?.plan_name === plan.name && (
+                      <Ionicons name="checkmark-circle" size={24} color="#34C759" />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-            <Pressable 
-              style={styles.closeButton} 
+
+            <TouchableOpacity 
+              style={styles.cancelButton} 
               onPress={() => setIsPlanModalOpen(false)}
             >
-              <Text style={styles.closeButtonText}>Cancelar</Text>
-            </Pressable>
+              <Text style={styles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
+
+      {/* Toast Notification */}
+      {toast && (
+        <View style={styles.toastContainer}>
+          <View style={styles.toast}>
+            <Text style={styles.toastText}>{toast}</Text>
+          </View>
+        </View>
+      )}
     </ScreenShell>
   );
 }
@@ -262,7 +339,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 20
+    paddingBottom: 16
   },
   eyebrow: {
     color: "#FF7A59",
@@ -276,13 +353,13 @@ const styles = StyleSheet.create({
     color: "#132238",
     fontSize: 34,
     fontWeight: "800",
-    marginBottom: 20
+    marginBottom: 16
   },
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(19, 34, 56, 0.05)",
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 12,
     height: 44
   },
@@ -292,50 +369,49 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: "#132238"
+    color: "#132238",
+    fontWeight: "500"
   },
   listContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 100,
-    gap: 12
+    paddingBottom: 120,
+    gap: 16
   },
   memberCard: {
     backgroundColor: "white",
-    borderRadius: 20,
-    padding: 14,
+    borderRadius: 24,
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(19, 34, 56, 0.06)",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
     elevation: 2
   },
-  cardPressed: {
-    transform: [{ scale: 0.98 }],
-    backgroundColor: "#F9FAFB"
-  },
-  cardInfo: {
+  cardMain: {
     flexDirection: "row",
     alignItems: "center",
+    padding: 16,
     gap: 12
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255, 122, 89, 0.1)",
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#F3F4F6",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(19, 34, 56, 0.04)"
   },
   avatarText: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
-    color: "#FF7A59"
+    color: "#132238"
   },
   textContainer: {
-    flex: 1,
-    gap: 2
+    flex: 1
   },
   memberName: {
     fontSize: 17,
@@ -345,7 +421,7 @@ const styles = StyleSheet.create({
   memberEmail: {
     fontSize: 13,
     color: "#5F6F86",
-    marginBottom: 4
+    marginBottom: 6
   },
   metaRow: {
     flexDirection: "row",
@@ -355,7 +431,7 @@ const styles = StyleSheet.create({
   planTag: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "#EFF6FF",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
@@ -364,7 +440,7 @@ const styles = StyleSheet.create({
   planText: {
     fontSize: 11,
     fontWeight: "600",
-    color: "#5F6F86"
+    color: "#1E40AF"
   },
   statusBadge: {
     flexDirection: "row",
@@ -380,29 +456,51 @@ const styles = StyleSheet.create({
     borderRadius: 3
   },
   statusActive: {
-    backgroundColor: "#EBFDF0"
+    backgroundColor: "#DCFCE7"
   },
   statusSuspended: {
-    backgroundColor: "#FEF2F2"
+    backgroundColor: "#FEE2E2"
   },
   statusText: {
     fontSize: 11,
     fontWeight: "700"
   },
+  cardActions: {
+    backgroundColor: "#F9FAFB",
+    padding: 10,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(19, 34, 56, 0.04)"
+  },
+  quickActionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 6
+  },
+  quickActionText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#4A90E2"
+  },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 60,
+    marginTop: 80,
     gap: 12
   },
   emptyText: {
     color: "#9CA3AF",
-    fontSize: 16
+    fontSize: 16,
+    fontWeight: "500"
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.45)",
     justifyContent: "flex-end"
+  },
+  dismissOverlay: {
+    ...StyleSheet.absoluteFillObject
   },
   actionSheet: {
     backgroundColor: "white",
@@ -411,8 +509,16 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: Platform.OS === 'ios' ? 44 : 32
   },
+  planSheet: {
+    backgroundColor: "white",
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 44 : 32,
+    maxHeight: SCREEN_HEIGHT * 0.8
+  },
   sheetHandle: {
-    width: 40,
+    width: 36,
     height: 5,
     backgroundColor: "#E5E7EB",
     borderRadius: 3,
@@ -429,90 +535,115 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#5F6F86",
     textAlign: "center",
-    marginBottom: 24
+    marginBottom: 28
   },
   actionGrid: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 20
+    marginBottom: 24
   },
   actionButton: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#F3F4F6",
     borderRadius: 20,
-    padding: 16,
+    padding: 20,
     alignItems: "center",
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "rgba(19, 34, 56, 0.04)"
+    gap: 10
   },
   actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center"
   },
   actionLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
     color: "#132238"
   },
-  cancelButton: {
-    paddingVertical: 16,
-    alignItems: "center"
-  },
-  cancelText: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#718198"
-  },
-  planModal: {
-    backgroundColor: "white",
-    borderRadius: 24,
-    margin: 20,
-    padding: 24,
-    maxHeight: "80%"
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#132238",
-    marginBottom: 20,
-    textAlign: "center"
-  },
   planList: {
-    gap: 10
+    gap: 12,
+    marginBottom: 20
   },
   planItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "white",
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(19, 34, 56, 0.04)"
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "#F3F4F6"
+  },
+  planItemPremium: {
+    backgroundColor: "#FAF5FF",
+    borderColor: "#E9D5FF"
+  },
+  planItemInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12
+  },
+  planIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  planIconBasic: {
+    backgroundColor: "#F3F4F6"
+  },
+  planIconPremium: {
+    backgroundColor: "white"
   },
   planItemName: {
     fontSize: 16,
     fontWeight: "700",
     color: "#132238"
   },
-  planItemPrice: {
+  planItemNamePremium: {
+    color: "#7C3AED"
+  },
+  planItemMeta: {
     fontSize: 13,
     color: "#5F6F86",
     marginTop: 2
   },
-  closeButton: {
-    marginTop: 20,
+  cancelButton: {
     paddingVertical: 12,
     alignItems: "center"
   },
-  closeButtonText: {
-    fontSize: 16,
+  cancelText: {
+    fontSize: 17,
     fontWeight: "700",
-    color: "#FF7A59"
+    color: "#718198"
+  },
+  toastContainer: {
+    position: "absolute",
+    bottom: 50,
+    left: 20,
+    right: 20,
+    alignItems: "center",
+    zIndex: 9999
+  },
+  toast: {
+    backgroundColor: "#132238",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 30,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6
+  },
+  toastText: {
+    color: "white",
+    fontSize: 14,
+    fontWeight: "700"
   }
 });
+
 

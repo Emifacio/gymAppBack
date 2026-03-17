@@ -9,4 +9,5 @@ export const useMembers = apiHooks.useMembers;
 export const useMemberAttendance = apiHooks.useMemberAttendance;
 export const useUpdateMember = apiHooks.useUpdateMember;
 export const useAssignSubscription = apiHooks.useAssignSubscription;
+export const useAssignPlan = apiHooks.useAssignPlan;
 export const usePlans = apiHooks.usePlans;

@@ -614,6 +614,41 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     });
   }
 
+  function useAssignPlan(
+    options: Omit<
+      UseMutationOptions<
+        MemberSubscription,
+        Error,
+        { memberId: string; payload: SubscriptionAssignPayload }
+      >,
+      "mutationFn"
+    > = {}
+  ) {
+    const queryClient = useQueryClient();
+    const untypedClient = client as any;
+
+    return useMutation({
+      mutationFn: ({ memberId, payload }) =>
+        unwrapResult<MemberSubscription>(
+          untypedClient.POST("/members/{member_id}/assign-plan", {
+            params: { path: { member_id: memberId } },
+            body: payload
+          })
+        ),
+      ...options,
+      onSuccess: async (result, variables, onMutateResult, context) => {
+        await queryClient.invalidateQueries({
+          queryKey: gymKeys.memberSubscription(variables.memberId)
+        });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberDetail(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.members() });
+        await options.onSuccess?.(result, variables, onMutateResult, context);
+      }
+    });
+  }
+
   function useCancelSubscription(
     options: Omit<UseMutationOptions<void, Error, { memberId: string }>, "mutationFn"> = {}
   ) {
@@ -704,6 +739,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     useUpdatePlan,
     useDeactivatePlan,
     useAssignSubscription,
+    useAssignPlan,
     useCancelSubscription,
     useAssignMemberToClass
   };
