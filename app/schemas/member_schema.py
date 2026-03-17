@@ -61,6 +61,33 @@ class MemberUpdate(BaseModel):
     instructor_specialties: str | None = None
 
 
+class MemberListRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    full_name: str
+    email: EmailStr
+    membership_status: MembershipStatus
+    role: MemberRole
+    created_at: datetime
+    plan_name: str | None = Field(default=None)
+
+    @classmethod
+    def model_validate(cls, obj, **kwargs):
+        data = super().model_validate(obj, **kwargs)
+        # Compute plan_name from membership_plan or subscriptions
+        if hasattr(obj, 'membership_plan') and obj.membership_plan:
+            data.plan_name = obj.membership_plan.name
+        elif hasattr(obj, 'active_subscription') and obj.active_subscription:
+            data.plan_name = obj.active_subscription.plan.name
+        elif hasattr(obj, 'subscriptions') and obj.subscriptions:
+            # Fallback to the most recent active subscription's plan name if possible
+            active = next((s for s in obj.subscriptions if s.is_active), None)
+            if active:
+                data.plan_name = active.plan.name
+        return data
+
+
 class MemberRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

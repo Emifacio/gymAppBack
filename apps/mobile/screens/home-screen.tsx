@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Pressable, StyleSheet, Text, View } from "react-native";
@@ -46,13 +47,23 @@ export function HomeScreen() {
       </View>
 
       <View style={styles.statsRow}>
-        <StatChip label="Clases" tone="accent" value={String(workouts.length)} />
-        <StatChip label="Reservas" tone="highlight" value={String(bookings.length)} />
-        <StatChip label="En Espera" value={String(waitlist.length)} />
+        {session?.member.role === 'admin' ? (
+          <View style={styles.adminWelcome}>
+            <Ionicons name="shield-checkmark" size={48} color="rgba(255,255,255,0.2)" />
+            <Text style={styles.adminWelcomeTitle}>Panel de Control</Text>
+            <Text style={styles.adminWelcomeText}>Gestiona miembros, clases y asistencia desde las pestañas inferiores.</Text>
+          </View>
+        ) : (
+          <>
+            <StatChip label="Clases" tone="accent" value={String(workouts.length)} />
+            <StatChip label="Reservas" tone="highlight" value={String(bookings.length)} />
+            <StatChip label="En Espera" value={String(waitlist.length)} />
+          </>
+        )}
       </View>
 
 
-      {nextWorkout ? (
+      {(session?.member.role !== 'admin' && nextWorkout) ? (
         <WorkoutCard
           onPress={() => {
             navigation.navigate("WorkoutDetail", { workoutId: nextWorkout.id });
@@ -125,5 +136,25 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "800",
     color: "#4B5563",
+  },
+  adminWelcome: {
+    padding: 24,
+    backgroundColor: "#132238",
+    borderRadius: 24,
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,122,89,0.2)"
+  },
+  adminWelcomeTitle: {
+    color: "white",
+    fontSize: 22,
+    fontWeight: "800"
+  },
+  adminWelcomeText: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20
   }
 });

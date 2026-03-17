@@ -11,7 +11,7 @@ from app.infrastructure.cache.redis_client import RedisCache
 from app.repositories.instructor_repository import InstructorRepository
 from app.repositories.member_repository import MemberRepository
 from app.repositories.membership_plan_repository import MembershipPlanRepository
-from app.schemas.member_schema import MemberCreate, MemberRead, MemberUpdate
+from app.schemas.member_schema import MemberCreate, MemberListRead, MemberRead, MemberUpdate
 
 
 class MemberService:
@@ -32,9 +32,9 @@ class MemberService:
     def _cache_key(self, member_id: UUID | str) -> str:
         return f"member:{member_id}"
 
-    async def list_members(self, **filters: object) -> list[MemberRead]:
+    async def list_members(self, **filters: object) -> list[MemberListRead]:
         members = await self.member_repository.list(**filters)
-        return [MemberRead.model_validate(member) for member in members]
+        return [MemberListRead.model_validate(member) for member in members]
 
     async def get_member_model(self, member_id: UUID) -> Member:
         member = await self.member_repository.get_by_id(member_id)

@@ -16,7 +16,7 @@ from app.domain.enums import MemberRole, MembershipStatus
 from app.domain.models.member import Member
 from app.schemas.activity_schema import ActivityRead
 from app.schemas.booking_schema import MemberBookingsResponse
-from app.schemas.member_schema import MemberCreate, MemberRead, MemberUpdate
+from app.schemas.member_schema import MemberCreate, MemberListRead, MemberRead, MemberUpdate
 from app.schemas.subscription_schema import (
     MemberSubscriptionRead,
     MemberSubscriptionStatusRead,
@@ -42,7 +42,7 @@ async def create_member(payload: MemberCreate, service: MemberService = Depends(
 
 @router.get(
     "",
-    response_model=list[MemberRead],
+    response_model=list[MemberListRead],
     dependencies=[Depends(require_roles(MemberRole.ADMIN, MemberRole.INSTRUCTOR))],
 )
 async def list_members(
@@ -51,7 +51,7 @@ async def list_members(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
     service: MemberService = Depends(get_member_service),
-) -> list[MemberRead]:
+) -> list[MemberListRead]:
     return await service.list_members(
         role=role,
         membership_status=membership_status,
