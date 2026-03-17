@@ -84,6 +84,7 @@ export function RegisterPage() {
               }`}
               name="email"
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="hoyentreno@gym.ok"
               required
               type="email"
               value={email}

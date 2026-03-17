@@ -36,9 +36,9 @@ export function WorkoutCard({ workout, actionLabel = "View session" }: WorkoutCa
             <Clock className="h-3 w-3" />
             {workout.duration_minutes} min
           </span>
-          {workout.instructor_id ? (
+          {workout.instructor?.full_name ? (
             <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--primary)] bg-[var(--accent-soft)] px-2 py-1 rounded-lg">
-              Prof: {workout.instructor_id.slice(0, 6)}
+              Prof: {workout.instructor.full_name}
             </span>
           ) : null}
         </div>

@@ -63,8 +63,6 @@ class SubscriptionService:
 
         subscription = await self.member_subscription_repository.get_active_for_member(member_id)
         if subscription is None:
-            subscription = await self.member_subscription_repository.get_latest_for_member(member_id)
-        if subscription is None:
             return None
 
         if subscription.status == SubscriptionStatus.ACTIVE and subscription.period_end <= datetime.now(timezone.utc):
@@ -141,6 +139,7 @@ class SubscriptionService:
             existing = await self.member_subscription_repository.get_active_for_member(member_id, for_update=True)
             if existing is not None:
                 existing.status = SubscriptionStatus.CANCELLED
+                existing.active_credits = 0
 
             period_start = now
             period_end = calculate_period_end(period_start, plan.period_type)
@@ -171,6 +170,7 @@ class SubscriptionService:
             if subscription is None:
                 return
             subscription.status = SubscriptionStatus.CANCELLED
+            subscription.active_credits = 0
         await self._invalidate_member_cache(member_id)
 
     async def reset_due_subscriptions(self) -> int:

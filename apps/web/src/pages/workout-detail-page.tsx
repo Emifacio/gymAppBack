@@ -160,6 +160,10 @@ export function WorkoutDetailPage() {
             <p className="mt-2 text-sm text-[var(--muted)]">{workout.duration_minutes} minutos</p>
           </div>
           <div className="rounded-[1.75rem] bg-white/80 p-5">
+            <p className="text-sm font-semibold text-[var(--ink)]">Instructor</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">{workout.instructor?.full_name ?? "Sin asignar"}</p>
+          </div>
+          <div className="rounded-[1.75rem] bg-white/80 p-5">
             <p className="text-sm font-semibold text-[var(--ink)]">Tu estado</p>
             <p className="mt-2 text-sm capitalize text-[var(--muted)]">
               {workout.member_booking_status ?? "no reservado"}

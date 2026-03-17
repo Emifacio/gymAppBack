@@ -65,7 +65,7 @@ export function LoginPage() {
               <input
                 className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 outline-none transition focus:border-[var(--accent)]"
                 name="email"
-                placeholder="coach@gymplatform.dev"
+                placeholder="hoyentreno@gym.ok"
                 required
                 type="email"
               />

@@ -13,8 +13,15 @@ class InstructorSummary(BaseModel):
 
     id: UUID
     member_id: UUID
+    full_name: str | None = None
     bio: str | None = None
     specialties: str | None = None
+
+    @model_validator(mode="after")
+    def set_full_name(self) -> "InstructorSummary":
+        if hasattr(self, "member") and self.member:
+             self.full_name = self.member.full_name
+        return self
 
 
 class ClassCreate(BaseModel):

@@ -33,6 +33,10 @@ export function WorkoutCard({ workout, onPress }: WorkoutCardProps) {
           <Text style={styles.metaLabel}>Location</Text>
           <Text style={styles.metaValue}>{workout.location}</Text>
         </View>
+        <View>
+          <Text style={styles.metaLabel}>Coach</Text>
+          <Text style={styles.metaValue}>{workout.instructor?.full_name ?? "TBD"}</Text>
+        </View>
       </View>
     </Pressable>
   );

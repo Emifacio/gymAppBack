@@ -53,6 +53,9 @@ export function WorkoutDetailScreen({ route }: WorkoutDetailScreenProps) {
         <Text style={styles.infoLabel}>Ubicación</Text>
         <Text style={styles.infoValue}>{workout.location}</Text>
 
+        <Text style={styles.infoLabel}>Instructor</Text>
+        <Text style={styles.infoValue}>{workout.instructor?.full_name ?? "Sin asignar"}</Text>
+
         <Text style={styles.infoLabel}>Capacidad</Text>
         <Text style={styles.infoValue}>{workout.capacity} atletas</Text>
 

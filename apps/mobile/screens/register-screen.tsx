@@ -70,7 +70,7 @@ export function RegisterScreen({ navigation }: Props) {
               autoCapitalize="none"
               keyboardType="email-address"
               onChangeText={setEmail}
-              placeholder="email@ejemplo.com"
+              placeholder="hoyentreno@gym.ok"
               placeholderTextColor="#8D99AE"
               style={[styles.input, emailError ? styles.inputError : null]}
               value={email}
