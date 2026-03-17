@@ -1,25 +1,41 @@
-import { useMemo, useState, type FormEvent } from "react";
-import { Navigate } from "react-router-dom";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
 
-import { useConnectStrava, useMemberActivities, useSyncActivities } from "@/hooks/use-workouts";
+import { useStravaAuthorize, useStravaCallback, useMemberActivities, useSyncActivities } from "@/hooks/use-workouts";
 import { useAuth } from "@/hooks/use-auth";
 import { formatDateTime, formatDistanceMeters } from "@/lib/format";
 
 export function IntegrationsPage() {
   const { session } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const memberId = session?.member.id ?? "";
+  
   const activitiesQuery = useMemberActivities(memberId);
-  const connectStrava = useConnectStrava();
+  const stravaAuthorize = useStravaAuthorize();
+  const stravaCallback = useStravaCallback();
   const syncActivities = useSyncActivities();
-  const [connectState, setConnectState] = useState({
-    access_token: "",
-    refresh_token: "",
-    token_expires_at: "",
-    external_account_id: ""
-  });
-  const [syncMemberId, setSyncMemberId] = useState(memberId);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  // Handle OAuth Callback
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (code) {
+      setIsConnecting(true);
+      setSearchParams({}, { replace: true });
+      stravaCallback.mutate({ code }, {
+        onSuccess: () => {
+          setIsConnecting(false);
+        },
+        onError: (error: Error) => {
+          setIsConnecting(false);
+          setErrorMessage(error.message || "Error al completar la conexión con Strava.");
+        }
+      });
+    }
+  }, [searchParams, stravaCallback, setSearchParams]);
 
   const totalDistance = useMemo(
     () =>
@@ -35,27 +51,11 @@ export function IntegrationsPage() {
     return <Navigate to="/login" replace />;
   }
 
-  async function handleConnect(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setErrorMessage(null);
-
-    try {
-      await connectStrava.mutateAsync({
-        access_token: connectState.access_token,
-        refresh_token: connectState.refresh_token || null,
-        token_expires_at: connectState.token_expires_at
-          ? new Date(connectState.token_expires_at).toISOString()
-          : null,
-        external_account_id: connectState.external_account_id || null
-      });
-      setConnectState({
-        access_token: "",
-        refresh_token: "",
-        token_expires_at: "",
-        external_account_id: ""
-      });
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "No se pudo conectar Strava.");
+  function handleConnect() {
+    if (stravaAuthorize.data?.url) {
+      window.location.href = stravaAuthorize.data.url;
+    } else {
+      setErrorMessage("No se pudo obtener la URL de autorización de Strava.");
     }
   }
 
@@ -65,9 +65,7 @@ export function IntegrationsPage() {
     setSyncMessage(null);
 
     try {
-      const result = await syncActivities.mutateAsync(
-        syncMemberId ? { memberId: syncMemberId } : {}
-      );
+      const result = await syncActivities.mutateAsync({ memberId });
       setSyncMessage(`Sincronización en cola con la tarea ${result.task_id}. Estado actual: ${result.status}.`);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "No se pudieron sincronizar las actividades.");
@@ -88,118 +86,61 @@ export function IntegrationsPage() {
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="space-y-6">
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Conectar Strava</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Este formulario expone todos los campos opcionales aceptados por la solicitud actual de conexión con Strava.
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Strava</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {isConnecting ? "Completando conexión..." : "Vincula tu cuenta para compartir y sincronizar actividades."}
+                </p>
+              </div>
+              <img src="/strava-logo.png" alt="Strava" className="h-8 opacity-80" />
+            </div>
 
-            <form className="mt-6 space-y-4" onSubmit={handleConnect}>
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Token de acceso</span>
-                <input
-                  required
-                  value={connectState.access_token}
-                  onChange={(event) =>
-                    setConnectState((current) => ({
-                      ...current,
-                      access_token: event.target.value
-                    }))
-                  }
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
-                />
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Token de actualización</span>
-                <input
-                  value={connectState.refresh_token}
-                  onChange={(event) =>
-                    setConnectState((current) => ({
-                      ...current,
-                      refresh_token: event.target.value
-                    }))
-                  }
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
-                />
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Token expira el</span>
-                <input
-                  type="datetime-local"
-                  value={connectState.token_expires_at}
-                  onChange={(event) =>
-                    setConnectState((current) => ({
-                      ...current,
-                      token_expires_at: event.target.value
-                    }))
-                  }
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
-                />
-              </label>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">ID de cuenta externa</span>
-                <input
-                  value={connectState.external_account_id}
-                  onChange={(event) =>
-                    setConnectState((current) => ({
-                      ...current,
-                      external_account_id: event.target.value
-                    }))
-                  }
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
-                />
-              </label>
-
+            <div className="mt-6">
               <button
-                type="submit"
-                disabled={connectStrava.isPending}
-                className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                onClick={handleConnect}
+                disabled={stravaAuthorize.isLoading || isConnecting}
+                className="flex w-full items-center justify-center gap-3 rounded-full bg-[#FC4C02] px-5 py-4 text-sm font-bold text-white transition hover:bg-[#E34402] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {connectStrava.isPending ? "Conectando..." : "Conectar Strava"}
+                {stravaAuthorize.isLoading || isConnecting ? (
+                  "Procesando..."
+                ) : (
+                  <>
+                    <svg className="h-5 w-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169" />
+                    </svg>
+                  Connect with Strava
+                  </>
+                )}
               </button>
-            </form>
+            </div>
+            
+            {errorMessage && (
+              <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {errorMessage}
+              </p>
+            )}
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Sincronizar actividades</h2>
+            <h2 className="text-xl font-semibold text-slate-900">Sincronización forzada</h2>
             <p className="mt-1 text-sm text-slate-500">
-              La pantalla de sincronización también expone el campo opcional `member_id` aceptado por el backend.
+              ¿No ves tus últimas actividades? Ejecuta una sincronización manual para actualizar tu cronología.
             </p>
 
             <form className="mt-6 space-y-4" onSubmit={handleSync}>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                Proveedor: Strava
-              </div>
-
-              <label className="block space-y-2">
-                <span className="text-sm font-medium text-slate-700">Anulación de ID de miembro</span>
-                <input
-                  value={syncMemberId}
-                  onChange={(event) => setSyncMemberId(event.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
-                />
-              </label>
-
               <button
                 type="submit"
                 disabled={syncActivities.isPending}
-                className="w-full rounded-full bg-amber-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-amber-200"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-50"
               >
-                {syncActivities.isPending ? "Sincronizando..." : "Ejecutar sincronización"}
+                {syncActivities.isPending ? "Sincronizando..." : "Sincronizar ahora"}
               </button>
             </form>
 
             {syncMessage ? (
               <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                 {syncMessage}
-              </p>
-            ) : null}
-
-            {errorMessage ? (
-              <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {errorMessage}
               </p>
             ) : null}
           </section>

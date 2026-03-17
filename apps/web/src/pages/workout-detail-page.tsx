@@ -14,6 +14,7 @@ import {
   useCreateBooking,
   useDeleteWorkout,
   useMySubscriptionStatus,
+  useShareToStrava,
   useUpdateWorkout,
   useWorkout
 } from "@/hooks/use-workouts";
@@ -52,6 +53,7 @@ export function WorkoutDetailPage() {
   const assignMemberMutation = useAssignMemberToClass();
   const updateWorkout = useUpdateWorkout();
   const deleteWorkout = useDeleteWorkout();
+  const shareToStrava = useShareToStrava();
 
   const workout = workoutQuery.data;
   const subscription = subscriptionQuery.data;
@@ -255,6 +257,42 @@ export function WorkoutDetailPage() {
             {bookingErrorMessage}
           </div>
         ) : null}
+
+        {isPast && workout.member_booking_status === "confirmed" && (
+          <div className="mt-8 border-t border-[rgba(19,34,56,0.08)] pt-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#FC4C02]">Integración Strava</p>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Comparte tu esfuerzo. Envía esta sesión a tu cuenta de Strava para registrar tus estadísticas de entrenamiento.
+            </p>
+            <Button
+              className="mt-4 w-full bg-[#FC4C02] text-white hover:bg-[#E34402]"
+              disabled={shareToStrava.isPending}
+              loading={shareToStrava.isPending}
+              onClick={() => {
+                shareToStrava.mutate({ bookingId: workout.id }, {
+                  onSuccess: (data) => {
+                    if (data.external_url) {
+                      window.open(data.external_url, "_blank");
+                    }
+                  }
+                });
+              }}
+              variant="primary"
+            >
+              {shareToStrava.isPending ? "Compartiendo..." : "Compartir en Strava"}
+            </Button>
+            {shareToStrava.isSuccess && (
+              <p className="mt-3 text-sm text-emerald-600 font-medium">
+                ¡Actividad compartida correctamente!
+              </p>
+            )}
+            {shareToStrava.error && (
+              <p className="mt-3 text-sm text-rose-600 font-medium">
+                {shareToStrava.error.message || "No se pudo compartir la actividad."}
+              </p>
+            )}
+          </div>
+        )}
 
         {canManage ? (
           <form

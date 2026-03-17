@@ -116,6 +116,8 @@ class Settings(BaseSettings):
     strava_client_id: str | None = None
     strava_client_secret: str | None = None
     strava_api_base_url: str = "https://www.strava.com/api/v3"
+    strava_oauth_base_url: str = "https://www.strava.com/oauth"
+    strava_redirect_uri: str | None = None
     google_client_id: str | None = None
     google_client_secret: str | None = None
     jwt_algorithm: str = "HS256"

@@ -516,6 +516,47 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     });
   }
 
+  function useStravaAuthorize() {
+    return useQuery({
+      queryKey: ["strava", "authorize"],
+      queryFn: () => unwrapResult<{ url: string }>((client as any).GET("/integrations/strava/authorize")),
+      staleTime: Infinity,
+      gcTime: Infinity
+    });
+  }
+
+  function useStravaCallback(
+    options: Omit<UseMutationOptions<IntegrationAccount, Error, { code: string }>, "mutationFn"> = {}
+  ) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+      mutationFn: ({ code }) =>
+        unwrapResult<IntegrationAccount>(
+          (client as any).GET("/integrations/strava/callback", { params: { query: { code } } })
+        ),
+      ...options,
+      onSuccess: async (result, variables, onMutateResult, context) => {
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberActivities(result.member_id) });
+        await options.onSuccess?.(result, variables, onMutateResult, context);
+      }
+    });
+  }
+
+  function useShareToStrava(
+    options: Omit<UseMutationOptions<{ activity_id: string; status: string; external_url?: string }, Error, { bookingId: string }>, "mutationFn"> = {}
+  ) {
+    return useMutation({
+      mutationFn: ({ bookingId }) =>
+        unwrapResult<{ activity_id: string; status: string; external_url?: string }>(
+          (client as any).POST("/activities/{booking_id}/share", {
+            params: { path: { booking_id: bookingId } }
+          })
+        ),
+      ...options
+    });
+  }
+
   function useCreatePlan(
     options: Omit<UseMutationOptions<Plan, Error, PlanCreatePayload>, "mutationFn"> = {}
   ) {
@@ -735,6 +776,9 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     useMarkAttendance,
     useConnectStrava,
     useSyncActivities,
+    useStravaAuthorize,
+    useStravaCallback,
+    useShareToStrava,
     useCreatePlan,
     useUpdatePlan,
     useDeactivatePlan,

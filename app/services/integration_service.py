@@ -81,5 +81,69 @@ class IntegrationService:
         account = await self.integration_repository.get_by_member_provider(member_id, IntegrationProvider.STRAVA)
         if account is None or account.status != IntegrationStatus.CONNECTED:
             raise NotFoundError("Connected Strava account not found")
-        task = sync_member_activities_task.delay(str(member_id))
-        return TaskEnqueueResponse(task_id=task.id, status="queued")
+    async def complete_strava_auth(self, member_id: UUID, code: str) -> IntegrationAccountRead:
+        from app.infrastructure.integrations.strava_client import StravaClient
+        client = StravaClient()
+        token_data = await client.exchange_token(code)
+        
+        async with self.session.begin():
+            account = await self.integration_repository.get_by_member_provider(member_id, IntegrationProvider.STRAVA)
+            
+            # Strava returns athlete ID in the token exchange usually, 
+            # but let's just use what's returned in token_data
+            external_id = str(token_data.get("athlete", {}).get("id", ""))
+            
+            if account is None:
+                account = IntegrationAccount(
+                    member_id=member_id,
+                    provider=IntegrationProvider.STRAVA,
+                    external_account_id=external_id,
+                    access_token=token_data["access_token"],
+                    refresh_token=token_data["refresh_token"],
+                    token_expires_at=datetime.fromtimestamp(token_data["expires_at"]),
+                    status=IntegrationStatus.CONNECTED,
+                    provider_metadata=token_data.get("athlete", {}),
+                )
+                await self.integration_repository.add(account)
+            else:
+                account.external_account_id = external_id
+                account.access_token = token_data["access_token"]
+                account.refresh_token = token_data["refresh_token"]
+                account.token_expires_at = datetime.fromtimestamp(token_data["expires_at"])
+                account.status = IntegrationStatus.CONNECTED
+                account.provider_metadata = token_data.get("athlete", {})
+                
+        return IntegrationAccountRead.model_validate(account)
+
+    async def share_workout_to_strava(self, member_id: UUID, booking_id: UUID) -> dict:
+        from app.infrastructure.integrations.strava_client import StravaClient
+        from app.repositories.booking_repository import BookingRepository
+        
+        account = await self.integration_repository.get_by_member_provider(member_id, IntegrationProvider.STRAVA)
+        if not account or account.status != IntegrationStatus.CONNECTED:
+            raise NotFoundError("Strava account not connected")
+            
+        # Refresh token if expired
+        if account.token_expires_at and account.token_expires_at <= datetime.now(account.token_expires_at.tzinfo):
+            client = StravaClient()
+            new_tokens = await client.refresh_token(account.refresh_token)
+            account.access_token = new_tokens["access_token"]
+            account.refresh_token = new_tokens["refresh_token"]
+            account.token_expires_at = datetime.fromtimestamp(new_tokens["expires_at"])
+            await self.session.commit()
+            
+        booking = await BookingRepository(self.session).get_by_id(booking_id)
+        if not booking:
+            raise NotFoundError("Booking not found")
+            
+        gym_class = booking.gym_class
+        client = StravaClient()
+        result = await client.create_activity(
+            access_token=account.access_token,
+            name=f"Clase de {gym_class.title} en GymApp",
+            type="Workout",
+            start_date_local=gym_class.start_time,
+            elapsed_time=int((gym_class.end_time - gym_class.start_time).total_seconds()),
+            description=f"Entrenamiento completado. {gym_class.description or ''}"
+        )
+        return result

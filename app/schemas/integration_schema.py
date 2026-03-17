@@ -32,6 +32,17 @@ class ActivitySyncRequest(BaseModel):
     member_id: UUID | None = None
 
 
+class ActivityShareResponse(BaseModel):
+    activity_id: str
+    status: str
+    external_url: str | None = None
+
+
+class StravaCallbackRequest(BaseModel):
+    code: str
+    state: str | None = None
+
+
 class TaskEnqueueResponse(BaseModel):
     task_id: str
     status: str
