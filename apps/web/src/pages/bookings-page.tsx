@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import {
   useCancelBooking,
@@ -26,39 +26,73 @@ export function BookingsPage() {
     bookingId: "",
     isLate: false
   });
+  const [toast, setToast] = useState<string | null>(null);
 
-  const bookings = bookingsQuery.data?.bookings ?? [];
-  const waitlist = bookingsQuery.data?.waitlist ?? [];
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const bookings = bookingsQuery.data?.bookings ?? [];  const waitlist = bookingsQuery.data?.waitlist ?? [];
   const attendance = attendanceQuery.data ?? [];
   const subscription = subscriptionQuery.data;
 
-  const handleCancelClick = (bookingId: string, scheduledAt: string | undefined | null) => {
-    if (!scheduledAt) {
-      // If it's waitlist or no date, just cancel (or we can check booked_at)
-      setCancelModal({ open: true, bookingId, isLate: false });
-      return;
-    }
-
+  const isBookingLateCancelable = (scheduledAt: string | undefined | null) => {
+    if (!scheduledAt) return false;
     const classDate = new Date(scheduledAt);
     const now = new Date();
     const hoursDiff = (classDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    return hoursDiff < 24;
+  };
+
+  const isBookingPast = (scheduledAt: string | undefined | null) => {
+    if (!scheduledAt) return false;
+    const classDate = new Date(scheduledAt);
+    return classDate <= new Date();
+  };
+
+  const handleCancelClick = (bookingId: string, scheduledAt: string | undefined | null) => {
+    const isLateCancellation = isBookingLateCancelable(scheduledAt);
+    const isPastBooking = isBookingPast(scheduledAt);
+
+    if (isPastBooking) {
+      // Avoid sending cancellation requests for classes that already happened.
+      setCancelModal({ open: false, bookingId: "", isLate: false });
+      return;
+    }
 
     setCancelModal({
       open: true,
       bookingId,
-      isLate: hoursDiff < 24
+      isLate: isLateCancellation
     });
   };
 
   const confirmCancellation = () => {
-    cancelBooking.mutate({
-      bookingId: cancelModal.bookingId,
-      memberId: session!.member.id
-    }, {
-      onSuccess: () => {
-        setCancelModal({ ...cancelModal, open: false });
+    if (cancelModal.isLate) {
+      setCancelModal({ ...cancelModal, open: false });
+      setToast("Las clases dentro de las últimas 24 horas no pueden cancelarse desde aquí.");
+      return;
+    }
+
+    setToast(null);
+    cancelBooking.mutate(
+      {
+        bookingId: cancelModal.bookingId,
+        memberId: session!.member.id
+      },
+      {
+        onSuccess: () => {
+          setCancelModal({ ...cancelModal, open: false });
+          setToast("Reserva cancelada correctamente.");
+        },
+        onError: (error: Error) => {
+          setCancelModal({ ...cancelModal, open: false });
+          setToast(error.message || "Error al cancelar la reserva. Intenta de nuevo.");
+        }
       }
-    });
+    );
   };
 
   return (
@@ -106,6 +140,12 @@ export function BookingsPage() {
         ) : null}
       </section>
 
+      {toast ? (
+        <div className="rounded-[1.5rem] bg-green-50 border border-green-100 p-4 text-sm text-green-700">
+          {toast}
+        </div>
+      ) : null}
+
       <section className="grid gap-6 xl:grid-cols-2">
         <ErrorBoundary 
           fallback={
@@ -136,13 +176,24 @@ export function BookingsPage() {
                   <button
                     id={index === 0 ? "tour-cancel-booking" : undefined}
                     className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
-                    disabled={cancelBooking.isPending || booking.status !== "confirmed"}
+                    disabled={
+                      cancelBooking.isPending ||
+                      booking.status !== "confirmed" ||
+                      isBookingLateCancelable(booking.gym_class?.scheduled_at) ||
+                      isBookingPast(booking.gym_class?.scheduled_at)
+                    }
                     onClick={() => {
                       handleCancelClick(booking.id, booking.gym_class?.scheduled_at);
                     }}
                     type="button"
                   >
-                    {booking.status === "confirmed" ? "Cancelar reserva" : "No cancelable"}
+                    {isBookingPast(booking.gym_class?.scheduled_at)
+                      ? "Clase finalizada"
+                      : isBookingLateCancelable(booking.gym_class?.scheduled_at)
+                      ? "No cancelable (menos de 24h)"
+                      : booking.status === "confirmed"
+                      ? "Cancelar reserva"
+                      : "No cancelable"}
                   </button>
                 </div>
               ))}

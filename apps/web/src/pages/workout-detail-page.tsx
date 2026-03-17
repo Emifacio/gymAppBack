@@ -71,7 +71,7 @@ export function WorkoutDetailPage() {
       ? "Clase concluida"
       : workout?.member_booking_status === "confirmed"
       ? "Ya reservado"
-      : workout?.member_booking_status === "waitlisted"
+      : workout?.member_booking_status === "en lista de espera"
         ? "Ya en la lista de espera"
         : (workout?.available_spots ?? 0) > 0
           ? "Reservar clase"
@@ -234,7 +234,7 @@ export function WorkoutDetailPage() {
               isCheckingEligibility ||
               bookingMutation.isPending ||
               workout.member_booking_status === "confirmed" ||
-              workout.member_booking_status === "waitlisted" ||
+              workout.member_booking_status === "en lista de espera" ||
               isPast
             }
             loading={bookingMutation.isPending}
@@ -245,7 +245,7 @@ export function WorkoutDetailPage() {
           </Button>
           {precheckErrorCode ? (
             <p className="text-sm text-[var(--accent)]">
-              La reserva permanecerá bloqueada hasta que se restaure el acceso a tu membresía.
+              Tus créditos semanales se han agotado. Contactate con administración para más información o para ajustar tu plan de membresía.
             </p>
           ) : null}
         </form>

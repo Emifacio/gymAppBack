@@ -20,6 +20,9 @@ const waitForElement = async (selector: string, timeoutMs = 8000): Promise<HTMLE
 
 export const createOnboardingTour = ({ onComplete, navigate }: OnboardingTourOptions): Driver => {
   let completed = false;
+  // eslint-disable-next-line prefer-const
+  let driverInstance!: Driver;
+
   const steps: DriveStep[] = [
     {
       element: "#tour-credits",
@@ -27,7 +30,25 @@ export const createOnboardingTour = ({ onComplete, navigate }: OnboardingTourOpt
         title: "Tus Créditos",
         description: "Aquí puedes ver cuántos créditos tienes disponibles para reservar clases.",
         side: "bottom",
-        align: "start"
+        align: "start",
+        onNextClick: () => {
+          void (async () => {
+            navigate("/workouts");
+            const nextEl = await waitForElement("#tour-workouts");
+
+            if (!nextEl) {
+              console.info("Onboarding tour: #tour-workouts not found after navigation; ending tour early.");
+              completed = true;
+              onComplete();
+              driverInstance.destroy();
+              return;
+            }
+
+            nextEl.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            driverInstance.moveNext();
+          })();
+        }
       }
     },
     {
@@ -36,7 +57,25 @@ export const createOnboardingTour = ({ onComplete, navigate }: OnboardingTourOpt
         title: "Reservar clase",
         description: "Elige una clase y resérvala para asegurar tu lugar.",
         side: "bottom",
-        align: "start"
+        align: "start",
+        onNextClick: () => {
+          void (async () => {
+            navigate("/bookings");
+            const nextEl = await waitForElement("#tour-cancel-booking");
+
+            if (!nextEl) {
+              console.info("Onboarding tour: #tour-cancel-booking not found after navigation; completing tour.");
+              completed = true;
+              onComplete();
+              driverInstance.destroy();
+              return;
+            }
+
+            nextEl.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
+            await new Promise((resolve) => setTimeout(resolve, 250));
+            driverInstance.moveNext();
+          })();
+        }
       }
     },
     {
@@ -45,7 +84,12 @@ export const createOnboardingTour = ({ onComplete, navigate }: OnboardingTourOpt
         title: "Cancelar clase",
         description: "Si no puedes asistir, cancela con tiempo para liberar el cupo.",
         side: "top",
-        align: "start"
+        align: "start",
+        onNextClick: () => {
+          completed = true;
+          onComplete();
+          driverInstance.destroy();
+        }
       }
     }
   ];
@@ -53,56 +97,15 @@ export const createOnboardingTour = ({ onComplete, navigate }: OnboardingTourOpt
   const config: Config = {
     showProgress: true,
     steps,
-    onNextClick: () => {
-      void (async () => {
-        const activeIndex = driverInstance.getActiveIndex() ?? 0;
-
-        if (activeIndex === 0) {
-          navigate("/workouts");
-          const nextEl = await waitForElement("#tour-workouts");
-          if (!nextEl) {
-            console.info("Onboarding tour: #tour-workouts not found after navigation; ending tour early.");
-            completed = true;
-            onComplete();
-            driverInstance.destroy();
-            return;
-          }
-          driverInstance.moveNext();
-          return;
-        }
-
-        if (activeIndex === 1) {
-          navigate("/bookings");
-          const nextEl = await waitForElement("#tour-cancel-booking");
-          if (!nextEl) {
-            console.info("Onboarding tour: #tour-cancel-booking not found after navigation; completing tour.");
-            completed = true;
-            onComplete();
-            driverInstance.destroy();
-            return;
-          }
-          driverInstance.moveNext();
-          return;
-        }
-
-        if (activeIndex === steps.length - 1) {
-          completed = true;
-          onComplete();
-          driverInstance.destroy();
-          return;
-        }
-
-        driverInstance.moveNext();
-      })();
-    },
     onCloseClick: () => {
       driverInstance.destroy();
     },
     onDestroyed: () => {
-      if (!completed) return;
+      // If the user cancels early we don't auto-fire completion side effects.
+      if (completed) return;
     }
   };
 
-  const driverInstance = driver(config);
+  driverInstance = driver(config);
   return driverInstance;
 };

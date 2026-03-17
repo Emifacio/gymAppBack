@@ -168,7 +168,7 @@ class ClassService:
             )
             member_status_by_class.update({class_id: "confirmed" for class_id in confirmed_class_ids})
             for class_id in waiting_class_ids:
-                member_status_by_class.setdefault(class_id, "waitlisted")
+                member_status_by_class.setdefault(class_id, "en lista de espera")
 
         serialized_classes: list[ClassRead] = []
         for gym_class in classes:

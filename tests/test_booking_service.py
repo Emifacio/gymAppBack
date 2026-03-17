@@ -198,6 +198,12 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
         self.service.promote_waitlist_if_needed.assert_not_awaited()
         self.service._enqueue_waitlist_notification.assert_not_awaited()
 
+    def test_cancellation_is_early_boundary(self) -> None:
+        now = datetime.now(timezone.utc)
+        self.assertTrue(BookingService.cancellation_is_early(now + timedelta(hours=24)))
+        self.assertFalse(BookingService.cancellation_is_early(now + timedelta(hours=23, minutes=59)))
+        self.assertFalse(BookingService.cancellation_is_early(now - timedelta(hours=1)))
+
     async def test_cancel_booking_rejects_non_cancellable_statuses(self) -> None:
         actor = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)
         booking = Booking(

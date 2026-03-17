@@ -6,21 +6,21 @@ export interface BookingEligibilityModalContent {
 }
 
 const NO_ACTIVE_PLAN_CONTENT: BookingEligibilityModalContent = {
-  title: "No active plan assigned",
+  title: "No posees un plan activo",
   description:
-    "You cannot reserve classes until a membership plan is assigned. Please contact the administration."
+    "Parece que no tienes un plan de membresía activo. Por favor, contacta a administración para obtener más información sobre cómo adquirir un plan y comenzar a reservar clases."
 };
 
 const INSUFFICIENT_CREDITS_CONTENT: BookingEligibilityModalContent = {
-  title: "Insufficient credits to reserve this class.",
+  title: "Créditos insuficientes para reservar esta clase.",
   description:
-    "Please contact administration to upgrade your plan or purchase additional credits."
+    "Parece que no tienes suficientes créditos para reservar esta clase. Por favor, contacta a administración para obtener más información sobre cómo adquirir más créditos."
 };
 
 const PLAN_EXPIRED_CONTENT: BookingEligibilityModalContent = {
-  title: "Plan expired",
+  title: "Plan expirado",
   description:
-    "Your membership plan has expired. Please contact the administration to renew or reactivate your access."
+    "Tu plan de membresía ha expirado. Por favor, contacta a administración para renovarlo o reactivar tu acceso."
 };
 
 export function getPrecheckErrorCode(

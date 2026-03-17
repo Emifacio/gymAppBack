@@ -26,10 +26,10 @@ export function CancellationModal({ open, onClose, onConfirm, isLate, loading }:
         {isLate ? (
           <div className="p-4 rounded-2xl bg-red-50 border border-red-100 space-y-2">
             <p className="text-xs font-bold uppercase tracking-wider text-red-600">
-              ⚠️ Aviso de cancelación tardía
+              ⚠️ Cancelación dentro de 24 horas no permitida
             </p>
             <p className="text-sm font-medium text-red-700 leading-relaxed">
-              Faltan menos de 24 horas para la clase. Si cancelas ahora, **perderás el crédito** utilizado para esta reserva.
+              Faltan menos de 24 horas para esta clase y no es posible cancelar desde aquí. Por favor, contacta con soporte si necesitas asistencia.
             </p>
           </div>
         ) : null}
@@ -40,8 +40,9 @@ export function CancellationModal({ open, onClose, onConfirm, isLate, loading }:
             className="w-full h-12"
             onClick={onConfirm}
             loading={loading}
+            disabled={isLate}
           >
-            Confirmar Cancelación
+            {isLate ? "Cancelación no permitida" : "Confirmar Cancelación"}
           </Button>
           <Button
             variant="secondary"
