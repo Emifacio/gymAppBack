@@ -122,14 +122,40 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Outermost: CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_origin_regex=settings.cors_origin_regex,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://gym-app-back-web.vercel.app",
+        "https://gym-app-back-web.vercel.app/",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Middle: Readiness Check
+@app.middleware("http")
+async def readiness_middleware(request: Request, call_next):
+    # Skip for health and docs
+    if request.url.path in ("/health", "/docs", "/redoc", "/openapi.json"):
+        return await call_next(request)
+    
+    # Check if DB is ready
+    if not getattr(request.app.state, "db_connected", False):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=503,
+            content={
+                "detail": "Service is starting up. Connecting to database...",
+                "code": "service_starting"
+            },
+            headers={"Retry-After": "5"}
+        )
+    return await call_next(request)
 
 app.add_exception_handler(AppException, app_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
@@ -140,5 +166,10 @@ app.include_router(api_router)
 
 
 @app.get("/health", tags=["health"])
-async def healthcheck() -> dict[str, str]:
-    return {"status": "ok"}
+async def healthcheck(request: Request) -> dict[str, Any]:
+    return {
+        "status": "ok" if request.app.state.db_connected else "connecting",
+        "database": "connected" if request.app.state.db_connected else "pending",
+        "redis": "connected" if request.app.state.redis_connected else "pending",
+        "environment": settings.environment
+    }
