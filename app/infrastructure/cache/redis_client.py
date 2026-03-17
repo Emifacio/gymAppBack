@@ -35,14 +35,15 @@ class RedisCache:
                 socket_connect_timeout=self.connect_timeout_seconds,
                 socket_timeout=self.connect_timeout_seconds,
             )
+            # Use a ping to verify connectivity
             await asyncio.wait_for(self.client.ping(), timeout=self.connect_timeout_seconds)
-        except Exception:
+        except (asyncio.TimeoutError, Exception) as e:
             elapsed_seconds = time.perf_counter() - started_at
             logger.warning(
-                "redis_connection_failed timeout_seconds=%s elapsed_seconds=%.2f",
+                "redis_connection_failed reason=%s timeout_seconds=%s elapsed_seconds=%.2f. Falling back to no-cache mode.",
+                str(e) or type(e).__name__,
                 self.connect_timeout_seconds,
                 elapsed_seconds,
-                exc_info=True,
             )
             self.client = None
         else:

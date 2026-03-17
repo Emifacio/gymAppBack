@@ -90,7 +90,7 @@ class Settings(BaseSettings):
     database_url_source: str | None = None
     database_connect_timeout_seconds: float = 5.0
     database_command_timeout_seconds: float = 30.0
-    database_startup_max_attempts: int = 10
+    database_startup_max_attempts: int = 5
     database_startup_initial_backoff_seconds: float = 1.0
     database_startup_max_backoff_seconds: float = 8.0
     database_startup_backoff_multiplier: float = 1.5

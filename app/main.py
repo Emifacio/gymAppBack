@@ -69,28 +69,36 @@ async def lifespan(app: FastAPI):
             settings.database_url_source or "unknown",
             _describe_service_url(settings.database_url),
         )
-    await wait_for_database_ready()
-    if settings.redis_configured:
-        logger.info(
-            "redis_configuration_selected source=%s target=%s",
-            settings.redis_url_source or "unknown",
-            _describe_service_url(settings.redis_url),
-        )
-    else:
-        logger.warning(
-            "redis_configuration_missing source=%s background_jobs_available=false cache_available=false",
-            settings.redis_url_source or "unknown",
-        )
+    # Database readiness check
+    logger.info("startup_phase: database_readiness_check_started")
+    try:
+        await wait_for_database_ready()
+        logger.info("startup_phase: database_readiness_check_succeeded")
+    except Exception as e:
+        logger.error("startup_phase: database_readiness_check_failed error=%s", str(e))
+        raise
+
+    # Redis initialization
+    logger.info("startup_phase: redis_initialization_started target=%s", _describe_service_url(settings.redis_url))
     redis_cache = RedisCache(
         settings.cache_redis_url,
         default_ttl=settings.cache_ttl_seconds,
         connect_timeout_seconds=settings.redis_connect_timeout_seconds,
     )
     await redis_cache.connect()
+    
+    if redis_cache.client:
+        logger.info("startup_phase: redis_initialization_succeeded")
+    else:
+        logger.warning("startup_phase: redis_initialization_failed_degraded_mode_active")
+    
     app.state.redis_cache = redis_cache
+    logger.info("startup_phase: lifespan_active")
     yield
+    logger.info("startup_phase: shutting_down")
     await redis_cache.close()
     await dispose_database_engine()
+    logger.info("startup_phase: cleanup_complete")
 
 
 app = FastAPI(
