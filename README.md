@@ -255,16 +255,62 @@ Key variables:
 - `STRAVA_CLIENT_ID`: optional Strava OAuth client id
 - `STRAVA_CLIENT_SECRET`: optional Strava OAuth client secret
 
+### Google Sign-In Setup
+
+The app uses Google Identity Services with a popup/token flow (not redirect flow).
+
+#### Required Environment Variables
+
+**Frontend (`apps/web/.env`):**
+
+```bash
+VITE_API_URL=https://your-backend-url.com
+VITE_GOOGLE_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+```
+
+**Backend (`.env`):**
+
+```bash
+GOOGLE_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
+# Optional: add mobile client ID as well
+GOOGLE_CLIENT_IDS=your-web-client-id.apps.googleusercontent.com,your-mobile-client-id.apps.googleusercontent.com
+```
+
+#### Google Cloud Console Configuration
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Select your project
+3. Navigate to **APIs & Services** > **Credentials**
+4. Create or select an OAuth 2.0 Client ID (Web application type)
+5. Add **Authorized JavaScript origins**:
+
+   - `http://localhost:5173` (local development)
+   - `https://your-production-domain.com` (production)
+
+6. **No redirect URI is required** for Google Identity Services popup flow
+
+#### How It Works
+
+1. Frontend loads Google Identity Services script
+2. User clicks "Sign in with Google" button
+3. GSI shows popup, user authenticates with Google
+4. GSI returns `id_token` directly to frontend (no redirect)
+5. Frontend sends `id_token` to `POST /auth/google-login`
+6. Backend validates token against configured `GOOGLE_CLIENT_ID`
+7. Backend issues app JWT and creates member if needed
+
 ## Authentication
 
 Authentication uses bearer tokens.
 
 - `POST /auth/register`
 - `POST /auth/login`
+- `POST /auth/google-login` (Google Identity Services popup flow)
 
 Frontend auth support includes:
 
 - login and logout flows
+- Google Sign-In via popup (no redirect URI required)
 - web token storage via `localStorage`
 - mobile token storage via `expo-secure-store`
 - refresh-ready session utilities in the shared API package
@@ -279,6 +325,7 @@ Behavior:
 - the first registered account is automatically created as `admin`
 - later self-registrations default to `member`
 - protected endpoints expect `Authorization: Bearer <token>`
+- Google login auto-provisions new members if email doesn't exist
 
 ## Roles
 
