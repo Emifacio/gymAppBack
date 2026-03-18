@@ -1,16 +1,56 @@
 import { useState, useEffect } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
 
 import { isApiResponseError } from "@gym/api-client";
 
 import { ScreenShell } from "../components/screen-shell";
-import { useLoginMutation } from "../hooks/use-workouts";
+import { useLoginMutation, useGoogleLoginMutation } from "../hooks/use-workouts";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export function LoginScreen({ navigation }: any) {
   const login = useLoginMutation();
+  const googleLogin = useGoogleLoginMutation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState<boolean>(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    expoClientId: process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID,
+    scopes: ["openid", "email", "profile"]
+  });
+
+  useEffect(() => {
+    if (
+      response?.type === "success" &&
+      response.params &&
+      typeof response.params.id_token === "string"
+    ) {
+      setGoogleError(null);
+
+      void googleLogin
+        .mutateAsync({ id_token: response.params.id_token })
+        .catch((err) => {
+          if (isApiResponseError(err)) {
+            setGoogleError("Error al iniciar sesión con Google. Verifique su cuenta e intente nuevamente.");
+          } else {
+            setGoogleError((err as Error)?.message ?? "Error al iniciar sesión con Google.");
+          }
+        });
+
+      return;
+    }
+
+    if (response?.type === "error") {
+      setGoogleError("No se pudo autenticar con Google. Intente de nuevo.");
+    }
+  }, [response, googleLogin]);
 
   useEffect(() => {
     if (email === "") {
@@ -62,6 +102,11 @@ export function LoginScreen({ navigation }: any) {
             </Text>
           </View>
         ) : null}
+        {googleError ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{googleError}</Text>
+          </View>
+        ) : null}
 
         <Pressable
           onPress={() => {
@@ -80,8 +125,16 @@ export function LoginScreen({ navigation }: any) {
         </View>
 
         <Pressable
-          onPress={() => Alert.alert("Próximamente", "Integración con Google en camino.")}
+          onPress={() => {
+            setGoogleError(null);
+            if (!request) {
+              setGoogleError("Configuración de Google login no disponible");
+              return;
+            }
+            void promptAsync();
+          }}
           style={({ pressed }) => [styles.googleButton, pressed && styles.buttonPressed]}
+          disabled={googleLogin.isPending || !request}
         >
           <Text style={styles.googleButtonText}>Continuar con Google</Text>
         </Pressable>

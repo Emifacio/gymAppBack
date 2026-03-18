@@ -119,6 +119,7 @@ class Settings(BaseSettings):
     strava_oauth_base_url: str = "https://www.strava.com/oauth"
     strava_redirect_uri: str | None = None
     google_client_id: str | None = None
+    google_client_ids: list[str] | None = None
     google_client_secret: str | None = None
     jwt_algorithm: str = "HS256"
 
@@ -141,6 +142,20 @@ class Settings(BaseSettings):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
 
+    @field_validator("google_client_ids", mode="before")
+    @classmethod
+    def parse_google_client_ids(cls, value: Any) -> list[str] | None:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                return None
+            return [item.strip() for item in value.split(",") if item.strip()]
+        if isinstance(value, list):
+            return [item.strip() for item in value if isinstance(item, str) and item.strip()]
+        return None
+
     @field_validator("database_url", mode="before")
     @classmethod
     def normalize_database_url(cls, value: Any) -> Any:
@@ -152,6 +167,14 @@ class Settings(BaseSettings):
     def apply_runtime_defaults(self) -> "Settings":
         if not self.secret_key:
             self.secret_key = secrets.token_urlsafe(32)
+
+        if not self.google_client_ids:
+            self.google_client_ids = []
+
+        if self.google_client_id:
+            normalized_google_client_id = self.google_client_id.strip()
+            if normalized_google_client_id and normalized_google_client_id not in self.google_client_ids:
+                self.google_client_ids.append(normalized_google_client_id)
 
         if not self.database_url:
             database_url, database_url_source = _first_present_env_with_name(

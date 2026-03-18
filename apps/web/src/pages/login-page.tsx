@@ -1,9 +1,10 @@
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 import { isApiResponseError } from "@gym/api-client";
 
 import { useAuth } from "@/hooks/use-auth";
-import { useLoginMutation } from "@/hooks/use-workouts";
+import { useLoginMutation, useGoogleLoginMutation } from "@/hooks/use-workouts";
 import { getFormValue } from "@/lib/forms";
 import { GoogleButton } from "@/components/ui/GoogleButton";
 
@@ -12,12 +13,107 @@ export function LoginPage() {
   const location = useLocation();
   const { session } = useAuth();
   const login = useLoginMutation();
+  const googleLogin = useGoogleLoginMutation();
+
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const [googleReady, setGoogleReady] = useState(false);
+
+  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/";
+
+  useEffect(() => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+    if (!clientId) {
+      setGoogleError("Google login is not configured. Missing VITE_GOOGLE_CLIENT_ID.");
+      setGoogleReady(false);
+      return;
+    }
+
+    const cleanUpScript = () => {
+      const existing = document.querySelector("script[data-google-identity]");
+      existing?.remove();
+      setGoogleReady(false);
+    };
+
+    if ((window as any).google?.accounts?.id) {
+      (window as any).google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredentialResponse
+      });
+      setGoogleReady(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.dataset.googleIdentity = "true";
+
+    script.onload = () => {
+      if (!(window as any).google?.accounts?.id) {
+        setGoogleError("Google Identity Services not available in browser.");
+        setGoogleReady(false);
+        return;
+      }
+      (window as any).google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredentialResponse
+      });
+      setGoogleError(null);
+      setGoogleReady(true);
+    };
+
+    script.onerror = () => {
+      setGoogleError("No se pudo cargar Google Identity Service. Por favor intente nuevamente.");
+      setGoogleReady(false);
+    };
+
+    document.body.appendChild(script);
+
+    return () => {
+      cleanUpScript();
+    };
+  }, []);
+
+  const handleGoogleCredentialResponse = async (response: { credential?: string }): Promise<void> => {
+    if (!response?.credential) {
+      setGoogleError("No se pudo obtener la credencial de Google.");
+      return;
+    }
+
+    setGoogleError(null);
+
+    googleLogin.mutate(
+      { id_token: response.credential },
+      {
+        onSuccess: () => {
+          navigate(redirectTo, { replace: true });
+        },
+        onError: (err) => {
+          if (isApiResponseError(err)) {
+            setGoogleError("Error al iniciar sesión con Google. Verifique su cuenta e intente nuevamente.");
+          } else {
+            setGoogleError((err as Error)?.message ?? "Error al iniciar sesión con Google.");
+          }
+        }
+      }
+    );
+  };
+
+  const handleGoogleLoginClick = () => {
+    if (!googleReady || !(window as any).google?.accounts?.id) {
+      setGoogleError("Google login aún no está listo. Espere e intente de nuevo.");
+      return;
+    }
+
+    setGoogleError(null);
+    (window as any).google.accounts.id.prompt();
+  };
 
   if (session) {
     return <Navigate to="/" replace />;
   }
-
-  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/";
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12">
@@ -91,6 +187,12 @@ export function LoginPage() {
               </div>
             ) : null}
 
+            {googleError ? (
+              <div className="rounded-2xl border border-[rgba(255,122,89,0.2)] bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--accent)]">
+                {googleError}
+              </div>
+            ) : null}
+
             <button
               className="w-full rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1f3453] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={login.isPending}
@@ -108,7 +210,10 @@ export function LoginPage() {
               </div>
             </div>
 
-            <GoogleButton onClick={() => alert("Próximamente: Integración con Google")} />
+            <GoogleButton
+              onClick={handleGoogleLoginClick}
+              disabled={!googleReady || googleLogin.isPending}
+            />
           </form>
 
           <p className="mt-5 text-sm text-[var(--muted)]">

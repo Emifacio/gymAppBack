@@ -13,6 +13,7 @@ export const useClassMembers = apiHooks.useClassMembers;
 export const useMemberActivities = apiHooks.useMemberActivities;
 export const usePlans = apiHooks.usePlans;
 export const useLoginMutation = apiHooks.useLogin;
+export const useGoogleLoginMutation = apiHooks.useGoogleLogin;
 export const useRegisterMutation = apiHooks.useRegister;
 export const useCreateBooking = apiHooks.useCreateBooking;
 export const useCancelBooking = apiHooks.useCancelBooking;

@@ -20,10 +20,13 @@ async def login(payload: LoginRequest, service: AuthService = Depends(get_auth_s
 
 @router.post("/google-login", response_model=TokenResponse)
 async def google_login(payload: GoogleLoginRequest, service: AuthService = Depends(get_auth_service)) -> TokenResponse:
-    if not settings.google_client_id:
+    allowed_client_ids = settings.google_client_ids or []
+    if not allowed_client_ids:
         from app.core.exceptions import ForbiddenError
+
         raise ForbiddenError("Google OAuth is not configured")
-    return await service.google_login(payload.id_token, settings.google_client_id)
+
+    return await service.google_login(payload.id_token, allowed_client_ids)
 
 
 @router.post("/refresh", response_model=TokenResponse)

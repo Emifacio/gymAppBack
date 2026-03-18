@@ -122,36 +122,47 @@ class AuthService:
             ),
         )
 
-    async def google_login(self, id_token_str: str, client_id: str) -> TokenResponse:
-        try:
-            # Specify the CLIENT_ID of the app that accesses the backend:
-            idinfo = id_token.verify_oauth2_token(id_token_str, requests.Request(), client_id)
+    async def google_login(self, id_token_str: str, client_ids: list[str]) -> TokenResponse:
+        idinfo = None
+        last_error: Exception | None = None
 
-            # ID token is valid. Get the user's Google Account ID from the decoded token.
-            email = idinfo['email']
-            full_name = idinfo.get('name', email.split('@')[0])
-            
-            member = await self._get_member_by_email(email)
-            if member is None:
-                # Provision new user
-                role = await self._resolve_registration_role()
-                member = Member(
-                    email=email.lower().strip(),
-                    full_name=full_name,
-                    password_hash="", # No password for OAuth users
-                    role=role,
-                    membership_status=MembershipStatus.ACTIVE,
-                    is_active=True,
-                    profile_metadata={},
-                )
-                if self.session.in_transaction():
-                    await self.session.rollback()
+        for client_id in client_ids:
+            try:
+                idinfo = id_token.verify_oauth2_token(id_token_str, requests.Request(), client_id)
+                break
+            except ValueError as exc:
+                last_error = exc
 
-                async with self.session.begin():
-                    self.session.add(member)
-                await self.session.refresh(member)
-                
-            return self._build_token_response(member)
-        except ValueError:
-            # Invalid token
-            raise UnauthorizedError("Invalid Google ID token")
+        if idinfo is None:
+            raise UnauthorizedError("Invalid Google ID token") from last_error
+
+        email = idinfo.get("email")
+        if not email:
+            raise UnauthorizedError("Google ID token missing email")
+
+        if idinfo.get("email_verified") is False:
+            raise UnauthorizedError("Google account email is not verified")
+
+        full_name = idinfo.get("name", email.split("@")[0])
+
+        member = await self._get_member_by_email(email)
+        if member is None:
+            # Provision new user
+            role = await self._resolve_registration_role()
+            member = Member(
+                email=email.lower().strip(),
+                full_name=full_name,
+                password_hash="",  # No password for OAuth users
+                role=role,
+                membership_status=MembershipStatus.ACTIVE,
+                is_active=True,
+                profile_metadata={},
+            )
+            if self.session.in_transaction():
+                await self.session.rollback()
+
+            async with self.session.begin():
+                self.session.add(member)
+            await self.session.refresh(member)
+
+        return self._build_token_response(member)

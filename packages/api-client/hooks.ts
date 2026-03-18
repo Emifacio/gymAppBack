@@ -18,6 +18,7 @@ import {
   type IntegrationAccount,
   type IntegrationConnectPayload,
   type LoginPayload,
+  type GoogleLoginPayload,
   type Member,
   type MemberBookings,
   type MemberCreatePayload,
@@ -282,6 +283,32 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     return useMutation({
       mutationFn: async (payload: LoginPayload) => {
         const response = await unwrapResult(client.POST("/auth/login", { body: payload }));
+        const session = toAuthSession(response);
+
+        if (sessionManager) {
+          await sessionManager.setSession(session);
+        }
+
+        return session;
+      },
+      ...options,
+      onSuccess: async (session, variables, onMutateResult, context) => {
+        await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(session.member.id) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.workouts() });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });
+        await options.onSuccess?.(session, variables, onMutateResult, context);
+      }
+    });
+  }
+
+  function useGoogleLogin(
+    options: Omit<UseMutationOptions<AuthSession, Error, GoogleLoginPayload>, "mutationFn"> = {}
+  ) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+      mutationFn: async (payload: GoogleLoginPayload) => {
+        const response = await unwrapResult(client.POST("/auth/google-login", { body: payload }));
         const session = toAuthSession(response);
 
         if (sessionManager) {

@@ -103,6 +103,7 @@ export type WorkoutFilters = NonNullable<paths["/classes"]["get"]["parameters"][
 export type WorkoutCreatePayload = components["schemas"]["ClassCreate"];
 export type WorkoutUpdatePayload = components["schemas"]["ClassUpdate"];
 export type LoginPayload = components["schemas"]["LoginRequest"];
+export type GoogleLoginPayload = components["schemas"]["GoogleLoginRequest"];
 export type RegisterPayload = components["schemas"]["RegisterRequest"];
 export type BookingPayload = components["schemas"]["BookingCreate"];
 export type BookingRecord = components["schemas"]["BookingRead"] & {
