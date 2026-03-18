@@ -29,6 +29,11 @@ export function BookingsPage() {
   });
   const [toast, setToast] = useState<string | null>(null);
 
+  type MemberBookingsCache = {
+    bookings: Array<{ id: string }>;
+    waitlist: Array<{ id: string }>;
+  };
+
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), 3000);
@@ -86,15 +91,15 @@ export function BookingsPage() {
         memberId: session!.member.id
       },
       {
-        onMutate: async (variables) => {
+        onMutate: async (variables: { bookingId: string; memberId: string }) => {
           await queryClient.cancelQueries(memberBookingsKey);
 
-          const previous = queryClient.getQueryData(memberBookingsKey);
+          const previous = queryClient.getQueryData<MemberBookingsCache>(memberBookingsKey);
 
-          queryClient.setQueryData(memberBookingsKey, (oldData: any) => {
+          queryClient.setQueryData<MemberBookingsCache>(memberBookingsKey, (oldData) => {
             if (!oldData) return oldData;
-            const updatedBookings = (oldData.bookings || []).filter((b: any) => b.id !== variables.bookingId);
-            const updatedWaitlist = (oldData.waitlist || []).filter((w: any) => w.id !== variables.bookingId);
+            const updatedBookings = oldData.bookings.filter((b) => b.id !== variables.bookingId);
+            const updatedWaitlist = oldData.waitlist.filter((w) => w.id !== variables.bookingId);
             return {
               ...oldData,
               bookings: updatedBookings,
@@ -104,17 +109,18 @@ export function BookingsPage() {
 
           return { previous };
         },
-        onError: (error: Error, _variables, context) => {
+        onError: (error: unknown, _variables, context) => {
           if (context?.previous) {
             queryClient.setQueryData(memberBookingsKey, context.previous);
           }
 
-          setToast(error.message || "Error al cancelar la reserva. Intenta de nuevo.");
+          const message = error instanceof Error ? error.message : String(error);
+          setToast(message || "Error al cancelar la reserva. Intenta de nuevo.");
         },
         onSettled: () => {
-          queryClient.invalidateQueries(memberBookingsKey);
-          queryClient.invalidateQueries(["memberAttendance", session!.member.id]);
-          queryClient.invalidateQueries(["mySubscriptionStatus"]);
+          void queryClient.invalidateQueries(memberBookingsKey);
+          void queryClient.invalidateQueries(["memberAttendance", session!.member.id]);
+          void queryClient.invalidateQueries(["mySubscriptionStatus"]);
         },
         onSuccess: () => {
           setCancelModal({ ...cancelModal, open: false });

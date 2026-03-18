@@ -25,8 +25,6 @@ export const createOnboardingTour = ({
   onComplete,
   navigate,
 }: OnboardingTourOptions): Driver => {
-  let completed = false;
-
   const goToStep = async (
     driverInstance: Driver,
     path: string,
