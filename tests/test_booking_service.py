@@ -7,7 +7,7 @@ from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock, ANY
 from uuid import uuid4
 
-from app.core.exceptions import BookingNotCancellableError
+from app.core.exceptions import BookingNotCancellableError, ForbiddenError
 from app.domain.enums import BookingEligibilityOutcome, BookingStatus, BookingType, ClassStatus, MemberRole, WaitlistStatus
 from app.domain.models.booking import Booking
 from app.domain.models.waitlist import Waitlist
@@ -210,11 +210,11 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
             id=uuid4(),
             member_id=actor.id,
             class_id=uuid4(),
-            status=BookingStatus.CANCELLED,
+            status=BookingStatus.ATTENDED,
             booking_type=BookingType.CREDIT,
             credits_consumed=1,
             booked_at=datetime.now(timezone.utc),
-            cancelled_at=datetime.now(timezone.utc),
+            cancelled_at=None,
         )
 
         self.booking_repository.get_by_id = AsyncMock(return_value=booking)
@@ -243,6 +243,56 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
         self.assertEqual(response.status, "cancelled")
         self.assertFalse(response.credit_restored)
         self.assertIsNone(response.promoted_booking)
+
+    async def test_cancel_booking_without_subscription_is_safe(self) -> None:
+        actor = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)
+        class_id = uuid4()
+        booking_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        booking = Booking(
+            id=booking_id,
+            member_id=actor.id,
+            class_id=class_id,
+            subscription_id=None,
+            status=BookingStatus.CONFIRMED,
+            booking_type=BookingType.CREDIT,
+            credits_consumed=1,
+            booked_at=now - timedelta(days=1),
+            cancelled_at=None,
+        )
+        gym_class = SimpleNamespace(scheduled_at=now + timedelta(days=2), capacity=10)
+
+        self.booking_repository.get_by_id = AsyncMock(return_value=booking)
+        self.class_repository.get_by_id = AsyncMock(return_value=gym_class)
+        self.subscription_service.restore_credit_for_booking_cancellation = AsyncMock(return_value=False)
+        self.service.promote_waitlist_if_needed = AsyncMock(return_value=[])
+
+        response = await self.service.cancel_booking(booking_id, actor)
+
+        self.assertEqual(response.status, "cancelled")
+        self.assertFalse(response.credit_restored)
+        self.assertIsNone(response.promoted_booking)
+
+    async def test_cancel_booking_unauthorized_user_denied(self) -> None:
+        owner = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)
+        actor = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)
+        now = datetime.now(timezone.utc)
+        booking = Booking(
+            id=uuid4(),
+            member_id=owner.id,
+            class_id=uuid4(),
+            status=BookingStatus.CONFIRMED,
+            booking_type=BookingType.CREDIT,
+            credits_consumed=1,
+            booked_at=now - timedelta(days=1),
+            cancelled_at=None,
+        )
+
+        self.booking_repository.get_by_id = AsyncMock(return_value=booking)
+
+        with self.assertRaises(ForbiddenError):
+            await self.service.cancel_booking(booking.id, actor)
 
     async def test_cancel_waitlist_idempotent_already_cancelled(self) -> None:
         actor = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)

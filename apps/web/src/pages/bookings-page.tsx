@@ -6,6 +6,7 @@ import {
   useMemberBookings,
   useMySubscriptionStatus
 } from "@/hooks/use-workouts";
+import { queryClient } from "@/api/query-client";
 import { formatCredits, formatDateTime, formatWorkoutSchedule } from "@/lib/format";
 import { CancellationModal } from "@/components/cancellation-modal";
 import { ErrorBoundary } from "@/components/error-handling/ErrorBoundary";
@@ -77,19 +78,47 @@ export function BookingsPage() {
     }
 
     setToast(null);
+    const memberBookingsKey = ["memberBookings", session!.member.id];
+
     cancelBooking.mutate(
       {
         bookingId: cancelModal.bookingId,
         memberId: session!.member.id
       },
       {
+        onMutate: async (variables) => {
+          await queryClient.cancelQueries(memberBookingsKey);
+
+          const previous = queryClient.getQueryData(memberBookingsKey);
+
+          queryClient.setQueryData(memberBookingsKey, (oldData: any) => {
+            if (!oldData) return oldData;
+            const updatedBookings = (oldData.bookings || []).filter((b: any) => b.id !== variables.bookingId);
+            const updatedWaitlist = (oldData.waitlist || []).filter((w: any) => w.id !== variables.bookingId);
+            return {
+              ...oldData,
+              bookings: updatedBookings,
+              waitlist: updatedWaitlist,
+            };
+          });
+
+          return { previous };
+        },
+        onError: (error: Error, _variables, context) => {
+          if (context?.previous) {
+            queryClient.setQueryData(memberBookingsKey, context.previous);
+          }
+
+          setToast(error.message || "Error al cancelar la reserva. Intenta de nuevo.");
+        },
+        onSettled: () => {
+          queryClient.invalidateQueries(memberBookingsKey);
+          queryClient.invalidateQueries(["memberAttendance", session!.member.id]);
+          queryClient.invalidateQueries(["mySubscriptionStatus"]);
+        },
         onSuccess: () => {
           setCancelModal({ ...cancelModal, open: false });
           setToast("Reserva cancelada correctamente.");
-        },
-        onError: (error: Error) => {
-          setCancelModal({ ...cancelModal, open: false });
-          setToast(error.message || "Error al cancelar la reserva. Intenta de nuevo.");
         }
       }
     );

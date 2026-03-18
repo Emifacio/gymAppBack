@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 import inspect
+import logging
 from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -180,6 +181,9 @@ class BookingService:
         )
 
     async def cancel_booking(self, booking_id: UUID, actor: Member) -> BookingCancellationResponse:
+        logger = logging.getLogger(__name__)
+        logger.info("cancel_booking_start", extra={"booking_id": str(booking_id), "user_id": str(actor.id)})
+
         promoted_booking_ids: list[UUID] = []
         related_member_ids: set[UUID] = set()
         related_class_id: UUID | None = None
@@ -190,73 +194,104 @@ class BookingService:
         if self.session.in_transaction():
             await self.session.rollback()
 
-        async with self.session.begin():
-            now = datetime.now(timezone.utc)
-            booking = await self.booking_repository.get_by_id(booking_id)
-            if booking is not None:
-                # Make cancellation idempotent: already-cancelled bookings are treated as success.
-                if booking.status == BookingStatus.CANCELLED:
-                    return BookingCancellationResponse(status="cancelled", credit_restored=False, promoted_booking=None)
+        result: BookingCancellationResponse | None = None
+        try:
+            async with self.session.begin():
+                now = datetime.now(timezone.utc)
+                booking = await self.booking_repository.get_by_id(booking_id)
 
-                booking_member_id = booking.member_id
-                booking_class_id = booking.class_id
-                booking_status = booking.status
-                self._ensure_cancellation_access(actor_role, actor_id, booking_member_id)
-                self._ensure_booking_cancellable(booking_status)
+                if booking is None:
+                    waitlist_entry = await self.waitlist_repository.get_by_id(booking_id)
+                    if waitlist_entry is None:
+                        raise NotFoundError("Booking not found")
 
-                gym_class = await self.class_repository.get_by_id(booking_class_id, for_update=True)
-                if gym_class is None:
-                    raise NotFoundError("Class not found")
+                    if waitlist_entry.status == WaitlistStatus.CANCELLED:
+                        logger.info("cancel_booking_idempotent_waitlist", extra={"booking_id": str(booking_id), "user_id": str(actor.id)})
+                        result = BookingCancellationResponse(status="cancelled", credit_restored=False, promoted_booking=None)
+                    else:
+                        self._ensure_cancellation_access(actor_role, actor_id, waitlist_entry.member_id)
+                        self._ensure_waitlist_cancellable(waitlist_entry.status)
 
-                related_member_ids.add(booking.member_id)
-                related_class_id = booking.class_id
+                        gym_class = await self.class_repository.get_by_id(waitlist_entry.class_id, for_update=True)
+                        if gym_class is None:
+                            raise NotFoundError("Class not found")
 
-                was_confirmed = booking.status == BookingStatus.CONFIRMED
-                if was_confirmed and self.cancellation_is_early(gym_class.scheduled_at, reference_time=now):
-                    credit_restored = await self.subscription_service.restore_credit_for_booking_cancellation(
-                        booking
-                    )
+                        related_member_ids.add(waitlist_entry.member_id)
+                        related_class_id = waitlist_entry.class_id
 
-                self._transition_booking_status(booking, BookingStatus.CANCELLED)
-                booking.cancelled_at = now
-                await self.session.flush()
+                        self._transition_waitlist_status(waitlist_entry, WaitlistStatus.CANCELLED)
+                        waitlist_entry.cancelled_at = now
 
-                if was_confirmed:
-                    promoted_booking_ids = await self.promote_waitlist_if_needed(
-                        booking.class_id,
-                        now=now,
-                        related_member_ids=related_member_ids,
-                    )
-            else:
-                waitlist_entry = await self.waitlist_repository.get_by_id(booking_id)
-                if waitlist_entry is None:
-                    raise NotFoundError("Booking not found")
+                        logger.info("cancel_booking_waitlist_success", extra={"booking_id": str(booking_id), "user_id": str(actor.id)})
+                        result = BookingCancellationResponse(status="cancelled", credit_restored=False, promoted_booking=None)
 
-                # Idempotent cancellation for waitlist entries.
-                if waitlist_entry.status == WaitlistStatus.CANCELLED:
-                    return BookingCancellationResponse(status="cancelled", credit_restored=False, promoted_booking=None)
+                else:
+                    # booking exists
+                    if booking.status == BookingStatus.CANCELLED:
+                        logger.info("cancel_booking_idempotent", extra={"booking_id": str(booking_id), "user_id": str(actor.id)})
+                        result = BookingCancellationResponse(status="cancelled", credit_restored=False, promoted_booking=None)
+                    else:
+                        self._ensure_cancellation_access(actor_role, actor_id, booking.member_id)
+                        self._ensure_booking_cancellable(booking.status)
 
-                waitlist_member_id = waitlist_entry.member_id
-                waitlist_class_id = waitlist_entry.class_id
-                waitlist_status = waitlist_entry.status
-                self._ensure_cancellation_access(actor_role, actor_id, waitlist_member_id)
-                self._ensure_waitlist_cancellable(waitlist_status)
+                        gym_class = await self.class_repository.get_by_id(booking.class_id, for_update=True)
+                        if gym_class is None:
+                            raise NotFoundError("Class not found")
 
-                gym_class = await self.class_repository.get_by_id(waitlist_class_id, for_update=True)
-                if gym_class is None:
-                    raise NotFoundError("Class not found")
+                        related_member_ids.add(booking.member_id)
+                        related_class_id = booking.class_id
 
-                related_member_ids.add(waitlist_entry.member_id)
-                related_class_id = waitlist_entry.class_id
+                        was_confirmed = booking.status == BookingStatus.CONFIRMED
+                        if was_confirmed and self.cancellation_is_early(gym_class.scheduled_at, reference_time=now):
+                            credit_restored = await self.subscription_service.restore_credit_for_booking_cancellation(booking)
 
-                self._transition_waitlist_status(waitlist_entry, WaitlistStatus.CANCELLED)
-                waitlist_entry.cancelled_at = now
+                        self._transition_booking_status(booking, BookingStatus.CANCELLED)
+                        booking.cancelled_at = now
 
-        if related_class_id is not None:
-            await self._invalidate_related_cache(related_class_id, list(related_member_ids))
+                        await self.session.flush()
 
-        for promoted_booking_id in promoted_booking_ids:
-            await self._enqueue_waitlist_notification(promoted_booking_id)
+                        if was_confirmed:
+                            promoted_booking_ids = await self.promote_waitlist_if_needed(
+                                booking.class_id,
+                                now=now,
+                                related_member_ids=related_member_ids,
+                            )
+
+                        result = BookingCancellationResponse(status="cancelled", credit_restored=credit_restored, promoted_booking=None)
+
+            # Transaction committed
+
+            if related_class_id is not None:
+                await self._invalidate_related_cache(related_class_id, list(related_member_ids))
+
+            promoted_booking = None
+            if promoted_booking_ids:
+                promoted_booking = await self.booking_repository.get_by_id(promoted_booking_ids[0])
+
+            for promoted_booking_id in promoted_booking_ids:
+                await self._enqueue_waitlist_notification(promoted_booking_id)
+
+            if promoted_booking is not None:
+                result = BookingCancellationResponse(
+                    status="cancelled",
+                    credit_restored=result.credit_restored if result is not None else credit_restored,
+                    promoted_booking=BookingRead.model_validate(promoted_booking),
+                )
+
+            logger.info("cancel_booking_success", extra={"booking_id": str(booking_id), "user_id": str(actor.id), "credit_restored": credit_restored, "promoted_booking_id": [str(x) for x in promoted_booking_ids]})
+
+            if result is None:
+                result = BookingCancellationResponse(
+                    status="cancelled",
+                    credit_restored=credit_restored,
+                    promoted_booking=None,
+                )
+
+            return result
+
+        except Exception as e:
+            logger.error("cancel_booking_failed", exc_info=e, extra={"booking_id": str(booking_id), "user_id": str(actor.id), "error": str(e)})
+            raise
 
     async def cancel_member_future_bookings(self, member_id: UUID) -> None:
         """Cancel all upcoming confirmed bookings and active waitlist entries for a member.

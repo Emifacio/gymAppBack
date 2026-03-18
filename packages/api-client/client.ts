@@ -222,6 +222,14 @@ export function createApiClient(options: CreateApiClientOptions = {}): GymApiCli
     fetch: async (request) => {
       const response = await requestFetch(request);
 
+      if (response.status === 403) {
+        window.dispatchEvent(new CustomEvent("gym:api-forbidden", { detail: { status: 403 } }));
+      }
+
+      if (response.status === 500) {
+        window.dispatchEvent(new CustomEvent("gym:api-server-error", { detail: { status: 500 } }));
+      }
+
       if (
         response.status !== 401 ||
         !sessionManager ||
@@ -230,6 +238,7 @@ export function createApiClient(options: CreateApiClientOptions = {}): GymApiCli
       ) {
         if (response.status === 401 && sessionManager && !sessionManager.hasRefreshStrategy()) {
           await sessionManager.clearSession();
+          window.dispatchEvent(new CustomEvent("gym:api-unauthorized", { detail: { status: 401 } }));
           await onUnauthorized?.();
         }
 
