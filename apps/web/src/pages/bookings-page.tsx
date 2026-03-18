@@ -91,36 +91,9 @@ export function BookingsPage() {
         memberId: session!.member.id
       },
       {
-        onMutate: async (variables: { bookingId: string; memberId: string }) => {
-          await queryClient.cancelQueries(memberBookingsKey);
-
-          const previous = queryClient.getQueryData<MemberBookingsCache>(memberBookingsKey);
-
-          queryClient.setQueryData<MemberBookingsCache>(memberBookingsKey, (oldData) => {
-            if (!oldData) return oldData;
-            const updatedBookings = oldData.bookings.filter((b) => b.id !== variables.bookingId);
-            const updatedWaitlist = oldData.waitlist.filter((w) => w.id !== variables.bookingId);
-            return {
-              ...oldData,
-              bookings: updatedBookings,
-              waitlist: updatedWaitlist,
-            };
-          });
-
-          return { previous };
-        },
-        onError: (error: unknown, _variables, context) => {
-          if (context?.previous) {
-            queryClient.setQueryData(memberBookingsKey, context.previous);
-          }
-
+        onError: (error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
           setToast(message || "Error al cancelar la reserva. Intenta de nuevo.");
-        },
-        onSettled: () => {
-          void queryClient.invalidateQueries(memberBookingsKey);
-          void queryClient.invalidateQueries(["memberAttendance", session!.member.id]);
-          void queryClient.invalidateQueries(["mySubscriptionStatus"]);
         },
         onSuccess: () => {
           setCancelModal({ ...cancelModal, open: false });
