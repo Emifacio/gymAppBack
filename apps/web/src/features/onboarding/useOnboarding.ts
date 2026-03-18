@@ -13,6 +13,7 @@ declare global {
 let hasStartedGlobally = false;
 
 export interface UseOnboardingOptions {
+  targetPath?: string;
   shouldRun?: (pathname: string) => boolean;
   devMode?: boolean;
 }
@@ -41,9 +42,11 @@ function waitForElement(selector: string, timeout = DEFAULT_TIMEOUT_MS): Promise
   });
 }
 
-export function useOnboarding({ shouldRun = (pathname) => pathname === "/dashboard", devMode = false }: UseOnboardingOptions = {}) {
+export function useOnboarding({ targetPath = "/dashboard", shouldRun, devMode = false }: UseOnboardingOptions = {}) {
   const { pathname } = useLocation();
   const hasStarted = useRef(false);
+
+  const effectiveShouldRun = shouldRun ?? ((path) => path === targetPath);
 
   useEffect(() => {
     if (devMode) {
@@ -53,7 +56,7 @@ export function useOnboarding({ shouldRun = (pathname) => pathname === "/dashboa
       };
     }
 
-    if (!shouldRun(pathname)) {
+    if (!effectiveShouldRun(pathname)) {
       return;
     }
 
