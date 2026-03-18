@@ -84,11 +84,13 @@ export function useOnboarding({ targetPath = "/dashboard", shouldRun, devMode = 
     const startTour = async () => {
       try {
         const steps = getOnboardingSteps();
-        const elementSelectors = steps
+        const firstElementSelector = steps
           .map((step) => step.element)
-          .filter((selector): selector is string => typeof selector === "string");
+          .find((selector): selector is string => typeof selector === "string");
 
-        await Promise.all(elementSelectors.map((selector) => waitForElement(selector, DEFAULT_TIMEOUT_MS)));
+        if (firstElementSelector) {
+          await waitForElement(firstElementSelector, DEFAULT_TIMEOUT_MS);
+        }
 
         if (!isMounted) return;
 

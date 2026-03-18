@@ -1,4 +1,4 @@
-import createClient, { type Client, type HeadersOptions } from "openapi-fetch";
+import createClient, { type Client, type FetchResponse, type HeadersOptions } from "openapi-fetch";
 
 import type { AuthSession, SessionManager } from "./auth";
 import type { components, paths } from "./schema";
@@ -194,6 +194,14 @@ function formatBearerToken(session: Pick<AuthSession, "accessToken" | "tokenType
   return `${session.tokenType ?? "bearer"} ${session.accessToken}`;
 }
 
+function dispatchApiEvent(name: string, detail: Record<string, unknown>) {
+  const target = globalThis as unknown as { dispatchEvent?: (event: Event) => boolean };
+
+  if (typeof target.dispatchEvent === "function") {
+    target.dispatchEvent(new CustomEvent(name, { detail }));
+  }
+}
+
 async function parseErrorPayload(response: Response): Promise<unknown> {
   const contentType = response.headers.get("content-type") ?? "";
 
@@ -223,11 +231,11 @@ export function createApiClient(options: CreateApiClientOptions = {}): GymApiCli
       const response = await requestFetch(request);
 
       if (response.status === 403) {
-        window.dispatchEvent(new CustomEvent("gym:api-forbidden", { detail: { status: 403 } }));
+        dispatchApiEvent("gym:api-forbidden", { status: 403 });
       }
 
       if (response.status === 500) {
-        window.dispatchEvent(new CustomEvent("gym:api-server-error", { detail: { status: 500 } }));
+        dispatchApiEvent("gym:api-server-error", { status: 500 });
       }
 
       if (
@@ -238,7 +246,7 @@ export function createApiClient(options: CreateApiClientOptions = {}): GymApiCli
       ) {
         if (response.status === 401 && sessionManager && !sessionManager.hasRefreshStrategy()) {
           await sessionManager.clearSession();
-          window.dispatchEvent(new CustomEvent("gym:api-unauthorized", { detail: { status: 401 } }));
+          dispatchApiEvent("gym:api-unauthorized", { status: 401 });
           await onUnauthorized?.();
         }
 
@@ -290,7 +298,10 @@ export function createApiClient(options: CreateApiClientOptions = {}): GymApiCli
 }
 
 export async function unwrapResult<TData, TError = unknown>(
-  request: Promise<{ data?: TData; error?: TError; response: Response }>
+  request: Promise<
+    | { data?: TData; error?: TError; response: Response }
+    | FetchResponse<Record<string, any>, any, any>
+  >
 ): Promise<TData> {
   const result = await request;
 
