@@ -327,23 +327,27 @@ export function WorkoutsPage() {
         </section>
       ) : null}
 
-      {showEmptyState ? (
-        <EmptyState
-          eyebrow="Disponibilidad"
-          title="No hay clases programadas"
-          description="Vuelve más tarde o contacta a los administradores para el próximo bloque de entrenamiento."
-        />
-      ) : (
-        <div className="space-y-8">
-          <WeeklySchedule classes={workouts} />
-          
-          <div className="grid gap-6">
-            {workouts.map((workout, index) => (
-              <WorkoutCard key={workout.id} workout={workout} id={index === 0 ? "tour-workouts" : undefined} />
-            ))}
-          </div>
-        </div>
-      )}
+      <div id="tour-workouts" className="space-y-8">
+        {workoutsQuery.isLoading ? (
+          <div className="text-center py-8 text-[var(--muted)]">Cargando clases...</div>
+        ) : showEmptyState ? (
+          <EmptyState
+            eyebrow="Disponibilidad"
+            title="No hay clases programadas"
+            description="Vuelve más tarde o contacta a los administradores para el próximo bloque de entrenamiento."
+          />
+        ) : (
+          <>
+            <WeeklySchedule classes={workouts} />
+            
+            <div className="grid gap-6">
+              {workouts.map((workout) => (
+                <WorkoutCard key={workout.id} workout={workout} />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

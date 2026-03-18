@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useLocation } from "react-router-dom";
-import { getDriver, destroyDriver } from "./onboarding.driver";
-import { hasSeenTour, resetTour } from "./onboarding.store";
+import { useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { OnboardingController } from "./onboarding.controller";
 import { getOnboardingSteps } from "./onboarding.steps";
+import { hasSeenTour, resetTour } from "./onboarding.store";
 import { useAuth } from "@/hooks/use-auth";
 
 declare global {
@@ -14,54 +14,39 @@ declare global {
 let hasStartedGlobally = false;
 
 export interface UseOnboardingOptions {
-  targetPath?: string;
-  shouldRun?: (pathname: string) => boolean;
   devMode?: boolean;
 }
 
-const DEFAULT_TIMEOUT_MS = 5000;
-
-function waitForElement(selector: string, timeout = DEFAULT_TIMEOUT_MS): Promise<HTMLElement> {
-  return new Promise((resolve, reject) => {
-    const interval = 50;
-    let elapsed = 0;
-
-    const timer = window.setInterval(() => {
-      const el = document.querySelector<HTMLElement>(selector);
-      if (el) {
-        clearInterval(timer);
-        resolve(el);
-        return;
-      }
-
-      elapsed += interval;
-      if (elapsed >= timeout) {
-        clearInterval(timer);
-        reject(new Error(`Element not found: ${selector}`));
-      }
-    }, interval);
-  });
-}
-
-export function useOnboarding({ targetPath = "/dashboard", shouldRun, devMode = false }: UseOnboardingOptions = {}) {
+export function useOnboarding({ devMode = false }: UseOnboardingOptions = {}) {
   const { session } = useAuth();
   const memberId = session?.member?.id;
-  const { pathname } = useLocation();
+  const memberRole = session?.member?.role;
+  const navigate = useNavigate();
+  const controllerRef = useRef<OnboardingController | null>(null);
   const hasStarted = useRef(false);
 
-  const effectiveShouldRun = useMemo(() => {
-    return shouldRun ?? ((path: string) => path === targetPath);
-  }, [shouldRun, targetPath]);
+  const isMember = memberRole === "member";
+
+  const destroyController = useCallback(() => {
+    if (controllerRef.current) {
+      controllerRef.current.destroy();
+      controllerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (devMode) {
       window.resetOnboardingTour = () => {
-        console.log("Onboarding: resetTour() called");
-        resetTour(memberId);
+        console.log("[Onboarding] Dev reset triggered");
+        destroyController();
+        resetTour(memberId ?? undefined);
+        hasStartedGlobally = false;
+        hasStarted.current = false;
       };
     }
 
-    if (!effectiveShouldRun(pathname)) {
+    if (!isMember) {
+      console.log("[Onboarding] Skipped: not a member role");
       return;
     }
 
@@ -69,51 +54,56 @@ export function useOnboarding({ targetPath = "/dashboard", shouldRun, devMode = 
       return;
     }
 
-    if (hasSeenTour(memberId)) {
-      console.log("Onboarding skipped: already completed");
+    if (hasSeenTour(memberId ?? undefined)) {
+      console.log("[Onboarding] Skipped: already completed");
       return;
     }
 
     hasStarted.current = true;
     hasStartedGlobally = true;
 
-    const driverInstance = getDriver(memberId);
+    const steps = getOnboardingSteps();
+    if (steps.length === 0) {
+      console.log("[Onboarding] No steps defined, skipping");
+      return;
+    }
 
-    let isMounted = true;
+    console.log("[Onboarding] Initializing controller");
 
-    const startTour = async () => {
-      try {
-        const steps = getOnboardingSteps();
-        const firstElementSelector = steps
-          .map((step) => step.element)
-          .find((selector): selector is string => typeof selector === "string");
+    const controller = new OnboardingController(steps, (path) => navigate(path), {
+      userId: memberId ?? null,
+      onComplete: () => {
+        console.log("[Onboarding] Tour completed");
+        destroyController();
+      },
+      onClose: () => {
+        console.log("[Onboarding] Tour closed early");
+        destroyController();
+      },
+      onAbort: (reason) => {
+        console.warn("[Onboarding] Tour aborted:", reason);
+        destroyController();
+      },
+      onStepChange: (index, total) => {
+        console.log(`[Onboarding] Step ${index + 1}/${total}`);
+      },
+    });
 
-        if (firstElementSelector) {
-          await waitForElement(firstElementSelector, DEFAULT_TIMEOUT_MS);
-        }
+    controllerRef.current = controller;
 
-        if (!isMounted) return;
-
-        console.log("Onboarding started");
-        driverInstance.drive();
-      } catch (error) {
-        console.error("Onboarding start failed", error);
-        destroyDriver();
+    setTimeout(() => {
+      if (controllerRef.current === controller) {
+        controller.start();
       }
-    };
-
-    void startTour();
+    }, 500);
 
     return () => {
-      isMounted = false;
-      destroyDriver();
-
-      hasStarted.current = false;
-      hasStartedGlobally = false;
-
       if (devMode) {
         delete window.resetOnboardingTour;
       }
+      destroyController();
+      hasStarted.current = false;
+      hasStartedGlobally = false;
     };
-  }, [pathname, effectiveShouldRun, devMode, memberId]);
+  }, [memberId, memberRole, isMember, destroyController, devMode, navigate]);
 }
