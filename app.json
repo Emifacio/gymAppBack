@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "5020f39c-d942-43b3-b8a9-56299c5b41f9"
+      }
+    },
+    "android": {
+      "package": "com.emifacio.gymplatform"
+    }
+  }
+}
