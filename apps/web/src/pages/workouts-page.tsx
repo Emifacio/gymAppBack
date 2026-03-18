@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
@@ -16,10 +19,20 @@ import { canManageOperations } from "@/lib/roles";
 import type { Workout } from "@/types/gym";
 import type { WorkoutCreatePayload } from "@gym/api-client";
 
-function getFormValue(formData: FormData, key: string) {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : "";
-}
+const workoutCreateSchema = z.object({
+  name: z.string().trim().min(1, "El nombre es obligatorio"),
+  location: z.string().trim().min(1, "La ubicación es obligatoria"),
+  instructor_id: z.string().nullable().optional(),
+  duration_minutes: z.number().int().min(15, "La duración mínima es de 15 minutos"),
+  capacity: z.number().int().min(1, "La capacidad debe ser al menos 1"),
+  class_time: z
+    .string()
+    .regex(/^\d{2}:\d{2}$/, "Formato de hora inválido")
+    .transform((value) => value),
+  description: z.string().max(500, "Descripción demasiado larga").optional().nullable()
+});
+
+type WorkoutCreateFormValues = z.infer<typeof workoutCreateSchema>;
 
 export function WorkoutsPage() {
   const { session } = useAuth();
@@ -41,13 +54,71 @@ export function WorkoutsPage() {
     enabled: canManage
   });
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [classTime, setClassTime] = useState("18:00");
-  
+  const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting }
+  } = useForm<WorkoutCreateFormValues>({
+    resolver: zodResolver(workoutCreateSchema),
+    defaultValues: {
+      class_time: "18:00",
+      duration_minutes: 60,
+      capacity: 12
+    }
+  });
+
   const createWorkout = useCreateWorkout();
   const workouts: Workout[] = workoutsQuery.data ?? [];
   const instructors = instructorsQuery.data ?? [];
   const subscription = subscriptionQuery.data;
   const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
+
+  const onSubmit = async (values: WorkoutCreateFormValues) => {
+    if (selectedDates.length === 0) {
+      setSubmissionMessage("Por favor, selecciona al menos una fecha para la clase.");
+      return;
+    }
+
+    setSubmissionMessage(null);
+
+    const payloads: WorkoutCreatePayload[] = selectedDates.map((date) => ({
+      name: values.name,
+      location: values.location,
+      instructor_id: values.instructor_id?.trim() || null,
+      duration_minutes: values.duration_minutes,
+      capacity: values.capacity,
+      scheduled_at: `${date}T${values.class_time}:00`,
+      description: values.description ?? "",
+      status: "scheduled"
+    }));
+
+    const results = await Promise.allSettled<Workout>(payloads.map((payload) => createWorkout.mutateAsync(payload)));
+
+    const successCount = results.filter((r): r is PromiseFulfilledResult<Workout> => r.status === "fulfilled").length;
+    const failedResults = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
+
+    if (successCount > 0) {
+      reset();
+      setSelectedDates([]);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    if (failedResults.length > 0) {
+      const firstError: unknown = failedResults[0]!.reason;
+      const errorReason = firstError instanceof Error ? firstError.message : String(firstError);
+      setSubmissionMessage(
+        `Se crearon ${successCount} de ${payloads.length} entrenamientos; ${failedResults.length} fallaron. Error: ${errorReason}`
+      );
+      return;
+    }
+
+    setSubmissionMessage(`¡${successCount} entrenamiento(s) creado(s) con éxito!`);
+  };
+
+  const isFormDisabled = isSubmitting || createWorkout.isPending;
 
   return (
     <div className="space-y-[var(--section-gap)]">
@@ -121,145 +192,136 @@ export function WorkoutsPage() {
             <p className="mt-1 text-sm font-medium text-[var(--ink-500)] lg:text-base">Programa una nueva sesión de entrenamiento para la comunidad.</p>
           </div>
 
-          <form
-            className="grid gap-[var(--stack-gap)] sm:grid-cols-2 lg:grid-cols-3"
-            onSubmit={async (event) => {
-              event.preventDefault();
-              const formData = new FormData(event.currentTarget);
-              
-              if (selectedDates.length === 0) {
-                alert("Por favor, selecciona al menos una fecha para la clase.");
-                return;
-              }
-
-              const dates = selectedDates.map(date => `${date}T${classTime}:00`);
-              
-              const scheduledAt = dates[0]!;
-
-              const payload: WorkoutCreatePayload = {
-                name: getFormValue(formData, "name"),
-                location: getFormValue(formData, "location"),
-                instructor_id: getFormValue(formData, "instructor_id") || null,
-                duration_minutes: parseInt(getFormValue(formData, "duration_minutes"), 10),
-                capacity: parseInt(getFormValue(formData, "capacity"), 10),
-                scheduled_at: scheduledAt,
-                description: getFormValue(formData, "description"),
-                status: "scheduled"
-              };
-
-              try {
-                await createWorkout.mutateAsync(payload);
-                event.currentTarget.reset();
-                setSelectedDates([]);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              } catch (error) {
-                console.error("Error al crear el entrenamiento:", error);
-              }
-            }}
-          >
-            <input 
-              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
-              name="name" 
-              placeholder="Nombre del entrenamiento" 
-              required 
-              defaultValue={searchParams.get("name") || ""}
-            />
-            <input 
-              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
-              name="location" 
-              placeholder="Ubicación" 
-              required 
-              defaultValue={searchParams.get("location") || ""}
-            />
-            
-            <select 
-              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
-              name="instructor_id" 
-              required
-              defaultValue={searchParams.get("instructor_id") || ""}
-            >
-              <option value="">Seleccionar Instructor</option>
-              {instructors.map((instructor) => (
-                <option key={instructor.id} value={instructor.instructor_profile?.id}>
-                  {instructor.full_name}
-                </option>
-              ))}
-            </select>
-
-            <input 
-              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
-              min={15} 
-              name="duration_minutes" 
-              placeholder="Duración (m)" 
-              required 
-              type="number" 
-              defaultValue={searchParams.get("duration_minutes") || "60"}
-            />
-            
-            <input 
-              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
-              min={1} 
-              name="capacity" 
-              placeholder="Capacidad" 
-              required 
-              type="number" 
-              defaultValue={searchParams.get("capacity") || "12"}
-            />
-
-            <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Fechas</span>
-              <div className="flex gap-2">
-                <input 
-                  className="flex-1 rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
-                  type="date"
-                  onChange={(e) => {
-                    if (e.target.value && !selectedDates.includes(e.target.value)) {
-                      setSelectedDates([...selectedDates, e.target.value].sort());
-                    }
-                    e.target.value = "";
-                  }}
-                />
+          <form className="grid gap-[var(--stack-gap)] sm:grid-cols-2 lg:grid-cols-3" onSubmit={handleSubmit(onSubmit)}>
+            {submissionMessage ? (
+              <div className="sm:col-span-2 lg:col-span-3 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+                {submissionMessage}
               </div>
-              <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-xl border border-dashed border-[var(--surface-outline)]">
-                {selectedDates.length === 0 ? <span className="text-xs text-[var(--ink-400)]">No hay fechas seleccionadas</span> : null}
-                {selectedDates.map(date => (
-                  <span key={date} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--primary)] text-white text-xs font-bold">
-                    {date}
-                    <button 
-                      type="button" 
-                      className="hover:text-red-200"
-                      onClick={() => setSelectedDates(selectedDates.filter(d => d !== date))}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
+            ) : null}
+
+            <div className="sm:col-span-2 lg:col-span-3 rounded-xl border border-[var(--surface-outline)] bg-white p-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <input
+                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
+                    placeholder="Nombre del entrenamiento"
+                    {...register("name")}
+                    defaultValue={searchParams.get("name") ?? ""}
+                  />
+                  {errors.name ? <p className="mt-1 text-xs text-red-500">{errors.name.message}</p> : null}
+                </div>
+
+                <div>
+                  <input
+                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
+                    placeholder="Ubicación"
+                    {...register("location")}
+                    defaultValue={searchParams.get("location") ?? ""}
+                  />
+                  {errors.location ? <p className="mt-1 text-xs text-red-500">{errors.location.message}</p> : null}
+                </div>
+
+                <div>
+                  <select
+                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
+                    {...register("instructor_id")}
+                    defaultValue={searchParams.get("instructor_id") ?? ""}
+                  >
+                    <option value="">Seleccionar Instructor</option>
+                    {instructors.map((instructor) => (
+                      <option key={instructor.id} value={instructor.instructor_profile?.id ?? ""}>
+                        {instructor.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <input
+                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
+                    type="number"
+                    min={15}
+                    placeholder="Duración (m)"
+                    {...register("duration_minutes", { valueAsNumber: true })}
+                    defaultValue={Number(searchParams.get("duration_minutes") ?? "60")}
+                  />
+                  {errors.duration_minutes ? (
+                    <p className="mt-1 text-xs text-red-500">{errors.duration_minutes.message}</p>
+                  ) : null}
+                </div>
+
+                <div>
+                  <input
+                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
+                    type="number"
+                    min={1}
+                    placeholder="Capacidad"
+                    {...register("capacity", { valueAsNumber: true })}
+                    defaultValue={Number(searchParams.get("capacity") ?? "12")}
+                  />
+                  {errors.capacity ? <p className="mt-1 text-xs text-red-500">{errors.capacity.message}</p> : null}
+                </div>
+
+                <div className="space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Fechas</span>
+                  <div className="flex gap-2">
+                    <input
+                      className="flex-1 rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
+                      type="date"
+                      onChange={(e) => {
+                        if (e.target.value && !selectedDates.includes(e.target.value)) {
+                          setSelectedDates((prevDates) => [...new Set([...prevDates, e.target.value])].sort());
+                        }
+                        e.target.value = "";
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-xl border border-dashed border-[var(--surface-outline)]">
+                    {selectedDates.length === 0 ? (
+                      <span className="text-xs text-[var(--ink-400)]">No hay fechas seleccionadas</span>
+                    ) : null}
+                    {selectedDates.map((date) => (
+                      <span key={date} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--primary)] text-white text-xs font-bold">
+                        {date}
+                        <button
+                          type="button"
+                          className="hover:text-red-200"
+                          onClick={() => setSelectedDates((dates) => dates.filter((d) => d !== date))}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Hora (para todas las fechas)</span>
+                  <input
+                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
+                    type="time"
+                    {...register("class_time")}
+                  />
+                  {errors.class_time ? <p className="mt-1 text-xs text-red-500">{errors.class_time.message}</p> : null}
+                </div>
+
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <textarea
+                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
+                    placeholder="Descripción"
+                    {...register("description")}
+                    defaultValue={searchParams.get("description") ?? ""}
+                  />
+                  {errors.description ? <p className="mt-1 text-xs text-red-500">{errors.description.message}</p> : null}
+                </div>
+
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <Button className="w-full h-12" loading={isFormDisabled} disabled={isFormDisabled} type="submit" variant="primary">
+                    {isFormDisabled ? "Programando..." : "Crear entrenamiento"}
+                  </Button>
+                </div>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Hora (para todas las fechas)</span>
-              <input 
-                className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium" 
-                name="class_time" 
-                required 
-                type="time"
-                value={classTime}
-                onChange={(e) => setClassTime(e.target.value)}
-              />
-            </div>
-
-            <textarea 
-              className="rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium sm:col-span-2 lg:col-span-3" 
-              name="description" 
-              placeholder="Descripción" 
-              defaultValue={searchParams.get("description") || ""}
-            />
-            
-            <div className="sm:col-span-2 lg:col-span-3">
-              <Button className="w-full h-12" loading={createWorkout.isPending} type="submit" variant="primary">
-                {createWorkout.isPending ? "Programando..." : "Crear entrenamiento"}
-              </Button>
             </div>
           </form>
         </section>
