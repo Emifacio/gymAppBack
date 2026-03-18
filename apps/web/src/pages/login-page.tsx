@@ -90,7 +90,7 @@ export function LoginPage() {
         onSuccess: () => {
           navigate(redirectTo, { replace: true });
         },
-        onError: (err) => {
+        onError: (err: Error) => {
           if (isApiResponseError(err)) {
             setGoogleError("Error al iniciar sesión con Google. Verifique su cuenta e intente nuevamente.");
           } else {

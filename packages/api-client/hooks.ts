@@ -809,6 +809,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     useMemberActivities,
     usePlans,
     useLogin,
+    useGoogleLogin,
     useRegister,
     useCreateBooking,
     useCancelBooking,

@@ -637,6 +637,13 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** GoogleLoginRequest */
+        GoogleLoginRequest: {
+            /**
+             * Id Token
+             */
+            id_token: string;
+        };
         /** MemberBookingsResponse */
         MemberBookingsResponse: {
             /** Bookings */
