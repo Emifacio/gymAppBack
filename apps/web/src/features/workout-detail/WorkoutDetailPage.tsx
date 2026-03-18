@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/use-auth";
 import { useShareToStrava } from "@/hooks/use-workouts";
 import { canManageOperations } from "@/lib/roles";
+import { isApiResponseError } from "@gym/api-client";
 import { WorkoutInfoPanel } from "./components/WorkoutInfoPanel";
 import { BookingPanel } from "./components/BookingPanel";
 import { AdminPanel } from "./components/AdminPanel";
@@ -21,6 +22,7 @@ export function WorkoutDetailPage() {
 
   const {
     workout,
+    workoutQuery,
     subscription,
     bookingButtonConfig,
     bookingFeedbackMessage,
@@ -34,17 +36,18 @@ export function WorkoutDetailPage() {
   } = useWorkoutBooking(workoutId);
 
   const canManage = canManageOperations(session?.member);
-  const { classMembersQuery, classAttendanceQuery, assignMemberMutation, updateWorkoutMutation, deleteWorkoutMutation } = useWorkoutAdmin(workoutId);
+  const { classMembersQuery, classAttendanceQuery, assignMemberMutation, updateWorkoutMutation, deleteWorkoutMutation } = useWorkoutAdmin(workoutId, canManage);
   const shareToStrava = useShareToStrava();
 
-  const isLoading = !workout && (isCheckingEligibility || bookingMutation.isPending);
   const isPast = useMemo(() => (workout ? new Date(workout.scheduled_at) < new Date() : false), [workout]);
+  const isLoading = workoutQuery.isPending || isCheckingEligibility || bookingMutation.isPending;
+  const isNotFound = workoutQuery.isSuccess && !workout;
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!workout) {
+  if (isNotFound || (workoutQuery.isError && isApiResponseError(workoutQuery.error) && workoutQuery.error.status === 404)) {
     return (
       <div className="pt-10">
         <p className="text-center text-xl text-[var(--accent)]">Clase no encontrada o ya eliminada.</p>
@@ -52,14 +55,23 @@ export function WorkoutDetailPage() {
     );
   }
 
+  if (workoutQuery.isError) {
+    return (
+      <div className="pt-10">
+        <p className="text-center text-xl text-[var(--accent)]">Error al cargar la clase. Por favor intenta de nuevo.</p>
+      </div>
+    );
+  }
+
   const handleDelete = async () => {
+    if (!workout) return;
     await deleteWorkoutMutation.mutateAsync({ workoutId: workout.id });
     void navigate("/workouts");
   };
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-      <WorkoutInfoPanel workout={workout} isPast={isPast} />
+      <WorkoutInfoPanel workout={workout!} isPast={isPast} />
 
       <BookingPanel
         bookingButtonConfig={bookingButtonConfig}
@@ -74,7 +86,7 @@ export function WorkoutDetailPage() {
         onRedirect={() => navigate("/workouts")}
       />
 
-      {isPast && workout.member_booking_status === "confirmed" && (
+      {isPast && workout?.member_booking_status === "confirmed" && (
         <div className="xl:col-span-2 glass-panel rounded-[2.25rem] p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#FC4C02]">Integración Strava</p>
           <p className="mt-2 text-sm text-[var(--muted)]">
@@ -85,6 +97,7 @@ export function WorkoutDetailPage() {
             disabled={shareToStrava.isPending}
             loading={shareToStrava.isPending}
             onClick={() => {
+              if (!workout) return;
               shareToStrava.mutate({ bookingId: workout.id }, {
                 onSuccess: (data) => {
                   if (data.external_url) {
@@ -112,7 +125,7 @@ export function WorkoutDetailPage() {
 
       {canManage ? (
         <AdminPanel
-          workout={workout}
+          workout={workout!}
           onDelete={handleDelete}
           assignMemberMutation={assignMemberMutation}
           updateWorkoutMutation={updateWorkoutMutation}

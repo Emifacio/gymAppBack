@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/use-auth";
 import { useUpdateMember } from "@/hooks/use-workouts";
+import { resetTour } from "@/features/onboarding/onboarding.store";
 import type { Profile, PartialProfileUpdate } from "@/types/gym";
 
 export function ProfilePage() {
@@ -47,15 +48,11 @@ export function ProfilePage() {
 
   const handleResetOnboarding = () => {
     setMessage(null);
-    const storageKey = `onboarding_completed:${member?.id}`;
 
     try {
-      if (storageKey) {
-        window.localStorage.removeItem(storageKey);
-      }
-      window.localStorage.removeItem("onboarding_completed");
+      resetTour(member?.id);
     } catch {
-      // ignore
+      // ignore localStorage failures
     }
 
     setMessage({ type: "success", text: "Onboarding reiniciado. Vuelve al Dashboard para verlo." });

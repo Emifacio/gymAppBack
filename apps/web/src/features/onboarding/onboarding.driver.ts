@@ -8,7 +8,7 @@ interface ManagedDriver extends Driver {
 
 let driverInstance: ManagedDriver | null = null;
 
-function createDriver(): ManagedDriver {
+function createDriver(userId?: string): ManagedDriver {
   const steps = getOnboardingSteps();
   let hasClosed = false;
 
@@ -21,7 +21,7 @@ function createDriver(): ManagedDriver {
   const onDestroyed: DriverHook = () => {
     if (!hasClosed) {
       console.log("Onboarding completed");
-      completeTour();
+      completeTour(userId);
     }
     cleanupDriverInstance();
   };
@@ -50,9 +50,9 @@ function cleanupDriverInstance(): void {
   driverInstance = null;
 }
 
-export function getDriver(): Driver {
+export function getDriver(userId?: string): Driver {
   if (!driverInstance || driverInstance._isDestroyed) {
-    driverInstance = createDriver();
+    driverInstance = createDriver(userId);
   }
   return driverInstance;
 }

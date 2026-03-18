@@ -8,6 +8,7 @@ import type { Workout } from "@gym/api-client";
 
 export interface UseWorkoutBookingResult {
   workout: Workout | null;
+  workoutQuery: ReturnType<typeof useWorkout>;
   subscription: MemberSubscriptionStatus | null | undefined;
   bookingState: BookingUIState;
   bookingButtonConfig: { label: string; disabled: boolean };
@@ -97,6 +98,7 @@ export function useWorkoutBooking(workoutId: string | undefined): UseWorkoutBook
 
   return {
     workout,
+    workoutQuery,
     subscription,
     bookingState,
     bookingButtonConfig,

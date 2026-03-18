@@ -208,7 +208,10 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
   }
 
   function useWorkout(workoutId: string) {
-    return useQuery(getWorkoutQueryOptions(client, workoutId));
+    return useQuery({
+      ...getWorkoutQueryOptions(client, workoutId),
+      retry: 0
+    });
   }
 
   function useMembers(filters: MemberFilters = {}) {
@@ -250,14 +253,16 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
   function useClassAttendance(classId: string, enabled = true) {
     return useQuery({
       ...getClassAttendanceQueryOptions(client, classId),
-      enabled
+      enabled,
+      retry: 0
     });
   }
 
   function useClassMembers(classId: string, enabled = true) {
     return useQuery({
       ...getClassMembersQueryOptions(client, classId),
-      enabled
+      enabled,
+      retry: 0
     });
   }
 

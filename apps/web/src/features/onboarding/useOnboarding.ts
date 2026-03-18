@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { getDriver, destroyDriver } from "./onboarding.driver";
 import { hasSeenTour, resetTour } from "./onboarding.store";
 import { getOnboardingSteps } from "./onboarding.steps";
+import { useAuth } from "@/hooks/use-auth";
 
 declare global {
   interface Window {
@@ -43,16 +44,20 @@ function waitForElement(selector: string, timeout = DEFAULT_TIMEOUT_MS): Promise
 }
 
 export function useOnboarding({ targetPath = "/dashboard", shouldRun, devMode = false }: UseOnboardingOptions = {}) {
+  const { session } = useAuth();
+  const memberId = session?.member?.id;
   const { pathname } = useLocation();
   const hasStarted = useRef(false);
 
-  const effectiveShouldRun = shouldRun ?? ((path) => path === targetPath);
+  const effectiveShouldRun = useMemo(() => {
+    return shouldRun ?? ((path: string) => path === targetPath);
+  }, [shouldRun, targetPath]);
 
   useEffect(() => {
     if (devMode) {
       window.resetOnboardingTour = () => {
         console.log("Onboarding: resetTour() called");
-        resetTour();
+        resetTour(memberId);
       };
     }
 
@@ -64,7 +69,7 @@ export function useOnboarding({ targetPath = "/dashboard", shouldRun, devMode = 
       return;
     }
 
-    if (hasSeenTour()) {
+    if (hasSeenTour(memberId)) {
       console.log("Onboarding skipped: already completed");
       return;
     }
@@ -72,7 +77,7 @@ export function useOnboarding({ targetPath = "/dashboard", shouldRun, devMode = 
     hasStarted.current = true;
     hasStartedGlobally = true;
 
-    const driverInstance = getDriver();
+    const driverInstance = getDriver(memberId);
 
     let isMounted = true;
 
@@ -108,5 +113,5 @@ export function useOnboarding({ targetPath = "/dashboard", shouldRun, devMode = 
         delete window.resetOnboardingTour;
       }
     };
-  }, [pathname, shouldRun, devMode]);
+  }, [pathname, effectiveShouldRun, devMode, memberId]);
 }

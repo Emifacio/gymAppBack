@@ -8,11 +8,20 @@ import { AuthProvider } from "@/providers/auth-provider";
 
 export function AppProviders({ children }: PropsWithChildren) {
   useEffect(() => {
+    let lastForbiddenAt = 0;
+    let lastUnauthorizedAt = 0;
+
     const handleUnauthorized = () => {
+      const now = Date.now();
+      if (now - lastUnauthorizedAt < 1000) return;
+      lastUnauthorizedAt = now;
       window.location.href = "/login";
     };
 
     const handleForbidden = () => {
+      const now = Date.now();
+      if (now - lastForbiddenAt < 1000) return;
+      lastForbiddenAt = now;
       window.alert("No estás autorizado para realizar esta acción. Por favor inicia sesión con una cuenta con permisos adecuados.");
     };
 
