@@ -1,4 +1,4 @@
-import { driver, type Driver, type Config } from "driver.js";
+import { driver, type Driver, type Config, type DriverHook } from "driver.js";
 import { getOnboardingSteps } from "./onboarding.steps";
 import { completeTour } from "./onboarding.store";
 
@@ -10,22 +10,28 @@ let driverInstance: ManagedDriver | null = null;
 
 function createDriver(): ManagedDriver {
   const steps = getOnboardingSteps();
+  let hasClosed = false;
+
+  const onClose: DriverHook = () => {
+    console.log("Onboarding closed");
+    hasClosed = true;
+    cleanupDriverInstance();
+  };
+
+  const onDestroyed: DriverHook = () => {
+    if (!hasClosed) {
+      console.log("Onboarding completed");
+      completeTour();
+    }
+    cleanupDriverInstance();
+  };
 
   const config: Config = {
     allowClose: true,
     showProgress: true,
     steps,
-    onCloseClick: () => {
-      console.log("Onboarding closed");
-      cleanupDriverInstance();
-      // explicit: close does not mark completion (strict UX)
-      // completeTour();
-    },
-    onComplete: () => {
-      console.log("Onboarding completed");
-      completeTour();
-      cleanupDriverInstance();
-    },
+    onCloseClick: onClose,
+    onDestroyed,
   };
 
   const instance = driver(config) as ManagedDriver;

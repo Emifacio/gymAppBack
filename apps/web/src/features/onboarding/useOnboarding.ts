@@ -76,11 +76,11 @@ export function useOnboarding({ shouldRun = (pathname) => pathname === "/dashboa
     const startTour = async () => {
       try {
         const steps = getOnboardingSteps();
-        const firstElement = typeof steps[0]?.element === "string" ? steps[0].element : undefined;
+        const elementSelectors = steps
+          .map((step) => step.element)
+          .filter((selector): selector is string => typeof selector === "string");
 
-        if (firstElement) {
-          await waitForElement(firstElement, DEFAULT_TIMEOUT_MS);
-        }
+        await Promise.all(elementSelectors.map((selector) => waitForElement(selector, DEFAULT_TIMEOUT_MS)));
 
         if (!isMounted) return;
 
