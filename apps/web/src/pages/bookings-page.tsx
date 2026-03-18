@@ -6,7 +6,6 @@ import {
   useMemberBookings,
   useMySubscriptionStatus
 } from "@/hooks/use-workouts";
-import { queryClient } from "@/api/query-client";
 import { formatCredits, formatDateTime, formatWorkoutSchedule } from "@/lib/format";
 import { CancellationModal } from "@/components/cancellation-modal";
 import { ErrorBoundary } from "@/components/error-handling/ErrorBoundary";
@@ -28,11 +27,6 @@ export function BookingsPage() {
     isLate: false
   });
   const [toast, setToast] = useState<string | null>(null);
-
-  type MemberBookingsCache = {
-    bookings: Array<{ id: string }>;
-    waitlist: Array<{ id: string }>;
-  };
 
   useEffect(() => {
     if (!toast) return;
@@ -83,7 +77,6 @@ export function BookingsPage() {
     }
 
     setToast(null);
-    const memberBookingsKey = ["memberBookings", session!.member.id];
 
     cancelBooking.mutate(
       {

@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
+import { apiClient } from "@/api/client";
 import { WorkoutCard } from "@/components/workout-card";
 import { StatCard } from "@/components/stat-card";
 import { WeeklySchedule } from "@/components/weekly-schedule";
 import { useAuth } from "@/hooks/use-auth";
-import { useCreateWorkout, useMySubscriptionStatus, useWorkouts, useMembers } from "@/hooks/use-workouts";
+import { useCreateWorkout, useMySubscriptionStatus, useWorkouts } from "@/hooks/use-workouts";
+import { getMembersQueryOptions } from "@gym/api-client";
 import { formatCredits, formatDateTime } from "@/lib/format";
 import { canManageOperations } from "@/lib/roles";
 import type { Workout } from "@/types/gym";
@@ -32,7 +35,11 @@ export function WorkoutsPage() {
     offset: filters.offset,
     limit: filters.limit
   });
-  const instructorsQuery = useMembers({ role: "instructor" });
+  const canManage = canManageOperations(session?.member);
+  const instructorsQuery = useQuery({
+    ...getMembersQueryOptions(apiClient, { role: "instructor" }),
+    enabled: canManage
+  });
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [classTime, setClassTime] = useState("18:00");
   
@@ -40,7 +47,6 @@ export function WorkoutsPage() {
   const workouts: Workout[] = workoutsQuery.data ?? [];
   const instructors = instructorsQuery.data ?? [];
   const subscription = subscriptionQuery.data;
-  const canManage = canManageOperations(session?.member);
   const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
 
   return (

@@ -25,8 +25,6 @@ export const createOnboardingTour = ({
   onComplete,
   navigate,
 }: OnboardingTourOptions): Driver => {
-  let completed = false;
-
   const goToStep = async (
     driverInstance: Driver,
     path: string,
@@ -101,7 +99,6 @@ export const createOnboardingTour = ({
       "/workouts",
       "#tour-workouts",
       () => {
-        completed = true;
         onComplete();
       }
     );
@@ -116,7 +113,6 @@ export const createOnboardingTour = ({
       "/bookings",
       "#tour-cancel-booking",
       () => {
-        completed = true;
         onComplete();
       }
     );
@@ -126,7 +122,6 @@ export const createOnboardingTour = ({
     instance.moveNext();
 
     // FINAL STEP
-    completed = true;
     onComplete();
   };
 
