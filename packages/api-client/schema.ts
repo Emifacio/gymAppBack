@@ -712,6 +712,10 @@ export interface components {
             membership_status: components["schemas"]["MembershipStatus"];
             /** Is Active */
             is_active: boolean;
+            /** Google Picture Url */
+            google_picture_url?: string | null;
+            /** Profile Image Url */
+            profile_image_url?: string | null;
             active_subscription?: components["schemas"]["MemberSubscriptionRead"] | null;
             membership_plan?: components["schemas"]["MembershipPlanRead"] | null;
             instructor_profile?: components["schemas"]["InstructorProfileRead"] | null;
@@ -792,6 +796,8 @@ export interface components {
             instructor_bio?: string | null;
             /** Instructor Specialties */
             instructor_specialties?: string | null;
+            /** Profile Image Url */
+            profile_image_url?: string | null;
         };
         /** MembershipPlanRead */
         MembershipPlanRead: {

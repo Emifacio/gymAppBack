@@ -61,6 +61,7 @@ class MemberUpdate(BaseModel):
     instructor_bio: str | None = None
     instructor_specialties: str | None = None
     profile_metadata: dict[str, Any] | None = None
+    profile_image_url: str | None = Field(default=None, max_length=500)
 
 
 class MemberListRead(BaseModel):
@@ -110,6 +111,8 @@ class MemberRead(BaseModel):
     role: MemberRole
     membership_status: MembershipStatus
     is_active: bool
+    google_picture_url: str | None = None
+    profile_image_url: str | None = None
     membership_plan: MembershipPlanRead | None = None
     active_subscription: MemberSubscriptionRead | None = None
     instructor_profile: InstructorProfileRead | None = None

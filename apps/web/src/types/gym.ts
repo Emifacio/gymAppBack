@@ -3,7 +3,6 @@ import type {
   Member,
   MemberSubscriptionStatus,
   Workout as ApiClientWorkout,
-  MemberUpdatePayload
 } from "@gym/api-client";
 
 export interface OnboardingMetadata {
@@ -19,6 +18,9 @@ export type Booking = BookingRecord;
 export type Workout = ApiClientWorkout;
 export type Subscription = MemberSubscriptionStatus;
 
-export type PartialProfileUpdate = Pick<MemberUpdatePayload, "full_name" | "phone"> & {
+export type PartialProfileUpdate = {
+  full_name?: string | null;
+  phone?: string | null;
   profile_metadata?: OnboardingMetadata;
+  profile_image_url?: string | null;
 };

@@ -1,6 +1,7 @@
 import { LayoutDashboard, Calendar, BookCheck, Puzzle, CreditCard, Users, History, LogOut, Sparkles, User } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
+import { Avatar } from "@/components/ui/Avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { canManageOperations, canManagePlans } from "@/lib/roles";
 
@@ -48,35 +49,29 @@ export function DashboardLayout() {
           </div>
           <span className="text-lg font-bold tracking-tight text-[var(--ink-900)]">Gimnasio</span>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-[#FF3B30] hover:bg-red-100 transition-colors"
-            onClick={() => {
-              void logout();
-            }}
-            type="button"
-            title="Cerrar sesión"
-          >
-            <LogOut className="h-5 w-5" />
-          </button>
-          <div className="flex flex-col items-end">
-            <span className="text-[10px] font-bold text-[var(--ink-900)] line-clamp-1">{session?.member.full_name}</span>
-            <RoleBadge role={session?.member.role} />
+          <div className="flex items-center gap-3">
+            <button
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-[#FF3B30] hover:bg-red-100 transition-colors"
+              onClick={() => {
+                void logout();
+              }}
+              type="button"
+              title="Cerrar sesión"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-bold text-[var(--ink-900)] line-clamp-1">{session?.member.full_name}</span>
+              <RoleBadge role={session?.member.role} />
+            </div>
+            <Avatar member={session?.member} size="sm" />
           </div>
-          <div className="h-8 w-8 rounded-full bg-[var(--ink-100)] flex items-center justify-center shrink-0">
-            <span className="text-[10px] font-bold text-[var(--ink-700)]">
-              {session?.member.full_name?.split(" ").map(n => n[0]).join("")}
-            </span>
-          </div>
-        </div>
       </header>
 
       {/* Sidebar navigation (Hidden on Mobile, Visible on Desktop) */}
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-[var(--surface-outline)] bg-[var(--bg-sidebar)] px-6 py-8 lg:flex flex-col">
         <div className="flex items-center gap-2 px-2 mb-10">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary)] text-white text-lg font-bold">
-            {session?.member.full_name?.[0]}
-          </div>
+          <Avatar member={session?.member} size="lg" />
           <div className="flex flex-col">
             <span className="text-sm font-bold tracking-tight text-[var(--ink-900)] truncate w-32">{session?.member.full_name}</span>
             <div className="mt-0.5">

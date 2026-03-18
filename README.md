@@ -291,55 +291,9 @@ GOOGLE_CLIENT_IDS=your-web-client-id.apps.googleusercontent.com,your-mobile-clie
 
 6. **No redirect URI is required** for Google Identity Services popup flow
 
-#### Mobile Google Sign-In (Expo/React Native)
+#### Mobile Google Sign-In
 
-Mobile uses `expo-auth-session` with system browser, **not** the web GIS flow.
-
-**Required OAuth Clients (Google Cloud Console):**
-
-| Client Type | Purpose | Env Variable |
-|------------|---------|-------------|
-| Web application | Expo auth session | `EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID` |
-| iOS | Native iOS OAuth | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` |
-| Android | Native Android OAuth | `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` |
-
-**Redirect URIs to register (for each client):**
-
-```
-https://auth.expo.io/@your-expo-username/gym-platform
-```
-
-> Run `eas whoami` locally to find your Expo username.
-
-**Android also needs:**
-```
-urn:ietf:wg:oauth:2.0:oob
-```
-
-**Mobile Environment Variables (`apps/mobile/.env.local`):**
-
-```bash
-EXPO_PUBLIC_API_URL=https://your-backend-url.com
-EXPO_PUBLIC_GOOGLE_CLIENT_ID=<web-client-id>
-EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID=<web-client-id>
-EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=<ios-client-id>
-EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=<android-client-id>
-```
-
-**Backend (`GOOGLE_CLIENT_IDS`):**
-
-```bash
-GOOGLE_CLIENT_IDS=web-client-id,ios-client-id,android-client-id
-```
-
-**EAS Secrets for cloud builds:**
-
-```bash
-eas secret:create --name EXPO_PUBLIC_GOOGLE_CLIENT_ID --value <web-client-id>
-eas secret:create --name EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID --value <web-client-id>
-eas secret:create --name EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID --value <ios-client-id>
-eas secret:create --name EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID --value <android-client-id>
-```
+See [docs/google-auth-setup.md](docs/google-auth-setup.md) for complete mobile setup documentation.
 
 #### How It Works
 

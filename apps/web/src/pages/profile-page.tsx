@@ -1,7 +1,11 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useState, useRef } from "react";
+import { Camera, Trash2 } from "lucide-react";
+
+import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/use-auth";
 import { useUpdateMember } from "@/hooks/use-workouts";
+import { getAvatarData } from "@/lib/avatar";
 import { resetTour } from "@/features/onboarding/onboarding.store";
 import type { Profile, PartialProfileUpdate } from "@/types/gym";
 
@@ -9,6 +13,9 @@ export function ProfilePage() {
   const { session } = useAuth();
   const updateMember = useUpdateMember();
   const member = session?.member as Profile | undefined;
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const avatarData = getAvatarData(member);
 
   const [formData, setFormData] = useState<Pick<Profile, "full_name" | "email" | "phone">>(() => ({
     full_name: member?.full_name ?? "",
@@ -17,6 +24,7 @@ export function ProfilePage() {
   }));
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [avatarMessage, setAvatarMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   if (!member) return null;
 
@@ -58,6 +66,63 @@ export function ProfilePage() {
     setMessage({ type: "success", text: "Onboarding reiniciado. Vuelve al Dashboard para verlo." });
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setAvatarMessage({ type: "error", text: "Por favor selecciona una imagen." });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarMessage({ type: "error", text: "La imagen debe ser menor a 5MB." });
+      return;
+    }
+
+    setAvatarMessage(null);
+
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        
+        await updateMember.mutateAsync({
+          memberId: member.id,
+          payload: { profile_image_url: base64 }
+        });
+        
+        setAvatarMessage({ type: "success", text: "Foto de perfil actualizada." });
+      };
+      reader.onerror = () => {
+        setAvatarMessage({ type: "error", text: "Error al procesar la imagen." });
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setAvatarMessage({ type: "error", text: "Error al subir la imagen." });
+    }
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setAvatarMessage(null);
+
+    try {
+      await updateMember.mutateAsync({
+        memberId: member.id,
+        payload: { profile_image_url: null }
+      });
+      setAvatarMessage({ type: "success", text: "Foto de perfil eliminada." });
+    } catch (err) {
+      console.error(err);
+      setAvatarMessage({ type: "error", text: "Error al eliminar la foto." });
+    }
+  };
+
   return (
     <div className="space-y-[var(--section-gap)]">
       <header>
@@ -66,6 +131,60 @@ export function ProfilePage() {
           Administra tu información personal y de contacto.
         </p>
       </header>
+
+      <div className="apple-card max-w-2xl">
+        <h2 className="section-title text-[var(--font-size-xl)]">Foto de Perfil</h2>
+        <div className="mt-4 flex items-center gap-6">
+          <Avatar member={member} size="xl" />
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={updateMember.isPending}
+              >
+                <Camera className="h-4 w-4 mr-1" />
+                Subir foto
+              </Button>
+              {avatarData.hasCustomImage && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRemoveAvatar}
+                  disabled={updateMember.isPending}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Eliminar
+                </Button>
+              )}
+            </div>
+            {avatarMessage ? (
+              <p className={`text-xs ${avatarMessage.type === "success" ? "text-green-600" : "text-red-600"}`}>
+                {avatarMessage.text}
+              </p>
+            ) : (
+              <p className="text-xs text-[var(--ink-400)]">
+                {avatarData.hasGoogleImage
+                  ? avatarData.hasCustomImage
+                    ? "Usando foto personalizada. Google foto disponible como respaldo."
+                    : "Usando foto de Google."
+                  : "Sin foto. Subí una imagen JPG o PNG (máx. 5MB)."}
+              </p>
+            )}
+          </div>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleAvatarUpload}
+        />
+      </div>
 
       <div className="apple-card max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-6">

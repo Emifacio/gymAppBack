@@ -113,11 +113,14 @@ class AuthService:
 
         normalized_email = email.lower().strip()
         full_name = idinfo.get("name", email.split("@")[0])
+        google_picture_url = idinfo.get("picture")
 
         existing_by_sub = await self.member_repository.get_by_google_sub(google_sub)
         if existing_by_sub is not None:
             if not existing_by_sub.is_active:
                 raise UnauthorizedError("Authenticated member not found or inactive")
+            if google_picture_url and existing_by_sub.google_picture_url != google_picture_url:
+                existing_by_sub.google_picture_url = google_picture_url
             return self._build_token_response(existing_by_sub)
 
         existing_by_email = await self._get_member_by_email(email)
@@ -125,6 +128,8 @@ class AuthService:
             if existing_by_email.auth_provider == AuthProvider.GOOGLE:
                 if existing_by_email.google_sub is None:
                     existing_by_email.google_sub = google_sub
+                    if google_picture_url:
+                        existing_by_email.google_picture_url = google_picture_url
                     if not existing_by_email.is_active:
                         raise UnauthorizedError("Authenticated member not found or inactive")
                     return self._build_token_response(existing_by_email)
@@ -142,6 +147,8 @@ class AuthService:
                     )
 
                 existing_by_email.google_sub = google_sub
+                if google_picture_url:
+                    existing_by_email.google_picture_url = google_picture_url
                 if not existing_by_email.is_active:
                     raise UnauthorizedError("Authenticated member not found or inactive")
                 return self._build_token_response(existing_by_email)
@@ -157,6 +164,7 @@ class AuthService:
             profile_metadata={},
             auth_provider=AuthProvider.GOOGLE,
             google_sub=google_sub,
+            google_picture_url=google_picture_url,
         )
         if self.session.in_transaction():
             await self.session.rollback()
@@ -206,6 +214,8 @@ class AuthService:
                 role=member.role,
                 membership_status=member.membership_status,
                 is_active=member.is_active,
+                google_picture_url=member.google_picture_url,
+                profile_image_url=member.profile_image_url,
                 membership_plan=membership_plan,
                 instructor_profile=instructor_profile,
                 created_at=member.created_at,
