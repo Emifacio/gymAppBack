@@ -309,25 +309,46 @@ Authentication uses bearer tokens.
 - `POST /auth/login`
 - `POST /auth/google-login` (Google Identity Services popup flow)
 
-Frontend auth support includes:
+### Auth Provider Modeling
 
-- login and logout flows
-- Google Sign-In via popup (no redirect URI required)
-- web token storage via `localStorage`
-- mobile token storage via `expo-secure-store`
-- refresh-ready session utilities in the shared API package
+Members are explicitly categorized by authentication origin:
 
-Current backend contract note:
+| Provider | Description |
+|----------|-------------|
+| `local` | Registered with email + password |
+| `google` | Authenticated via Google Sign-In |
 
-- the FastAPI API currently returns an access token but does not expose a refresh-token endpoint
-- the shared auth layer is prepared for refresh token support, but today it falls back to clearing the session on `401` responses until the backend adds a refresh flow
+The `auth_provider` field on the Member model distinguishes the authentication origin. This replaces the previous implicit approach of using empty password hash for Google users.
 
-Behavior:
+### Google Account Linking
 
-- the first registered account is automatically created as `admin`
-- later self-registrations default to `member`
-- protected endpoints expect `Authorization: Bearer <token>`
-- Google login auto-provisions new members if email doesn't exist
+Google authentication uses the stable Google `sub` (subject) identifier for account linkage.
+
+**`google_sub` stores only the real Google subject from verified tokens.** It is never synthetic. Legacy Google accounts (created before this feature) may have `google_sub=NULL` temporarily; the first successful Google login backfills the verified `sub`.
+
+**Linking flow:**
+
+1. **Same `google_sub` exists**: Login succeeds
+2. **No `google_sub` match, but email exists**:
+   - `auth_provider=google`, `google_sub=NULL` → Backfill real `sub` from verified token, login succeeds
+   - `auth_provider=local`, `google_sub=NULL` → Link Google by storing real `sub`, preserve password, login succeeds
+   - `google_sub` already linked to different account → **Reject** (conflict)
+3. **No account exists**: Auto-provision new member with real `google_sub`
+
+### Security Rules
+
+- Local login requires valid password; fails for Google-only accounts
+- Google login requires verified email and valid `sub` claim
+- `google_sub` is always from a verified Google token (never synthetic)
+- Account linking is conservative: same Google identity cannot be reassigned to another email
+- Legacy accounts may have `google_sub=NULL` until first successful Google login
+
+### Backend Environment Variables
+
+```bash
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_IDS=web-client-id,mobile-client-id  # optional: allow multiple
+```
 
 ## Roles
 

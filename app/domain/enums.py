@@ -84,5 +84,10 @@ class IntegrationStatus(StrEnum):
     REVOKED = "revoked"
 
 
+class AuthProvider(StrEnum):
+    LOCAL = "local"
+    GOOGLE = "google"
+
+
 def enum_values(enum_cls: type[StrEnum]) -> list[str]:
     return [member.value for member in enum_cls]

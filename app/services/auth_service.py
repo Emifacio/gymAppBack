@@ -1,8 +1,7 @@
 from uuid import UUID
-import asyncio
-from google.oauth2 import id_token
-from google.auth.transport import requests
 
+from google.auth.transport import requests
+from google.oauth2 import id_token
 from sqlalchemy import func, inspect as sa_inspect, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,7 +13,7 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
-from app.domain.enums import MemberRole, MembershipStatus
+from app.domain.enums import AuthProvider, MemberRole, MembershipStatus
 from app.domain.models.member import Member
 from app.repositories.member_repository import MemberRepository
 from app.schemas.auth_schema import LoginRequest, RefreshTokenRequest, RegisterRequest, TokenResponse
@@ -27,14 +26,13 @@ class AuthService:
         self.member_repository = member_repository
 
     async def register(self, payload: RegisterRequest) -> TokenResponse:
-        # Email is normalized in _get_member_by_email
         existing_member = await self._get_member_by_email(payload.email)
         if existing_member is not None:
             raise ConflictError("A member with this email already exists")
 
         role = await self._resolve_registration_role()
         member = Member(
-            email=payload.email,
+            email=payload.email.lower().strip(),
             full_name=payload.full_name,
             password_hash=hash_password(payload.password),
             phone=payload.phone,
@@ -42,6 +40,7 @@ class AuthService:
             membership_status=MembershipStatus.ACTIVE,
             is_active=True,
             profile_metadata={},
+            auth_provider=AuthProvider.LOCAL,
         )
 
         if self.session.in_transaction():
@@ -58,10 +57,18 @@ class AuthService:
 
     async def login(self, payload: LoginRequest) -> TokenResponse:
         member = await self._get_member_by_email(payload.email)
-        if member is None or not verify_password(payload.password, member.password_hash):
+        if member is None:
             raise UnauthorizedError("Invalid email or password")
+
+        if member.auth_provider == AuthProvider.GOOGLE and not member.password_hash:
+            raise UnauthorizedError("This account uses Google Sign-In. Please use the Google button to log in.")
+
+        if not verify_password(payload.password, member.password_hash):
+            raise UnauthorizedError("Invalid email or password")
+
         if not member.is_active:
             raise UnauthorizedError("Authenticated member not found or inactive")
+
         return self._build_token_response(member)
 
     async def refresh_token(self, payload: RefreshTokenRequest) -> TokenResponse:
@@ -78,6 +85,90 @@ class AuthService:
         if member is None or not member.is_active:
             raise UnauthorizedError("Authenticated member not found or inactive")
         return self._build_token_response(member)
+
+    async def google_login(self, id_token_str: str, client_ids: list[str]) -> TokenResponse:
+        idinfo = None
+        last_error: Exception | None = None
+
+        for client_id in client_ids:
+            try:
+                idinfo = id_token.verify_oauth2_token(id_token_str, requests.Request(), client_id)
+                break
+            except ValueError as exc:
+                last_error = exc
+
+        if idinfo is None:
+            raise UnauthorizedError("Invalid Google ID token") from last_error
+
+        google_sub = idinfo.get("sub")
+        if not google_sub:
+            raise UnauthorizedError("Google ID token missing subject")
+
+        email = idinfo.get("email")
+        if not email:
+            raise UnauthorizedError("Google ID token missing email")
+
+        if idinfo.get("email_verified") is False:
+            raise UnauthorizedError("Google account email is not verified")
+
+        normalized_email = email.lower().strip()
+        full_name = idinfo.get("name", email.split("@")[0])
+
+        existing_by_sub = await self.member_repository.get_by_google_sub(google_sub)
+        if existing_by_sub is not None:
+            if not existing_by_sub.is_active:
+                raise UnauthorizedError("Authenticated member not found or inactive")
+            return self._build_token_response(existing_by_sub)
+
+        existing_by_email = await self._get_member_by_email(email)
+        if existing_by_email is not None:
+            if existing_by_email.auth_provider == AuthProvider.GOOGLE:
+                if existing_by_email.google_sub is None:
+                    existing_by_email.google_sub = google_sub
+                    if not existing_by_email.is_active:
+                        raise UnauthorizedError("Authenticated member not found or inactive")
+                    return self._build_token_response(existing_by_email)
+                else:
+                    raise ConflictError(
+                        "This Google account is already linked to another member. "
+                        "If you own this Google account, please contact support."
+                    )
+
+            if existing_by_email.auth_provider == AuthProvider.LOCAL:
+                if existing_by_email.google_sub is not None:
+                    raise ConflictError(
+                        "A different Google account is already linked to this email. "
+                        "Please use a different Google account or log in with your password."
+                    )
+
+                existing_by_email.google_sub = google_sub
+                if not existing_by_email.is_active:
+                    raise UnauthorizedError("Authenticated member not found or inactive")
+                return self._build_token_response(existing_by_email)
+
+        role = await self._resolve_registration_role()
+        member = Member(
+            email=normalized_email,
+            full_name=full_name,
+            password_hash="",
+            role=role,
+            membership_status=MembershipStatus.ACTIVE,
+            is_active=True,
+            profile_metadata={},
+            auth_provider=AuthProvider.GOOGLE,
+            google_sub=google_sub,
+        )
+        if self.session.in_transaction():
+            await self.session.rollback()
+
+        async with self.session.begin():
+            self.session.add(member)
+        await self.session.refresh(member)
+
+        created_member = await self.member_repository.get_by_id(member.id)
+        if created_member is None:
+            raise NotFoundError("Google member could not be reloaded")
+        return self._build_token_response(created_member)
 
     async def _get_member_by_email(self, email: str) -> Member | None:
         normalized_email = email.lower().strip()
@@ -121,48 +212,3 @@ class AuthService:
                 updated_at=member.updated_at,
             ),
         )
-
-    async def google_login(self, id_token_str: str, client_ids: list[str]) -> TokenResponse:
-        idinfo = None
-        last_error: Exception | None = None
-
-        for client_id in client_ids:
-            try:
-                idinfo = id_token.verify_oauth2_token(id_token_str, requests.Request(), client_id)
-                break
-            except ValueError as exc:
-                last_error = exc
-
-        if idinfo is None:
-            raise UnauthorizedError("Invalid Google ID token") from last_error
-
-        email = idinfo.get("email")
-        if not email:
-            raise UnauthorizedError("Google ID token missing email")
-
-        if idinfo.get("email_verified") is False:
-            raise UnauthorizedError("Google account email is not verified")
-
-        full_name = idinfo.get("name", email.split("@")[0])
-
-        member = await self._get_member_by_email(email)
-        if member is None:
-            # Provision new user
-            role = await self._resolve_registration_role()
-            member = Member(
-                email=email.lower().strip(),
-                full_name=full_name,
-                password_hash="",  # No password for OAuth users
-                role=role,
-                membership_status=MembershipStatus.ACTIVE,
-                is_active=True,
-                profile_metadata={},
-            )
-            if self.session.in_transaction():
-                await self.session.rollback()
-
-            async with self.session.begin():
-                self.session.add(member)
-            await self.session.refresh(member)
-
-        return self._build_token_response(member)

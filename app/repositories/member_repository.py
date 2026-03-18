@@ -50,6 +50,10 @@ class MemberRepository(BaseRepository[Member]):
         stmt = self._summary_query().where(func.lower(Member.email) == email.lower())
         return await self.session.scalar(stmt)
 
+    async def get_by_google_sub(self, google_sub: str) -> Member | None:
+        stmt = self._summary_query().where(Member.google_sub == google_sub)
+        return await self.session.scalar(stmt)
+
     async def list(
         self,
         *,

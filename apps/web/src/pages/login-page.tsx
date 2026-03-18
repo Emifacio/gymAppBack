@@ -1,12 +1,12 @@
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { isApiResponseError } from "@gym/api-client";
 
 import { useAuth } from "@/hooks/use-auth";
 import { useLoginMutation, useGoogleLoginMutation } from "@/hooks/use-workouts";
 import { getFormValue } from "@/lib/forms";
-import { GoogleButton } from "@/components/ui/GoogleButton";
+import { GoogleSignIn } from "@/components/ui/GoogleSignIn";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -16,100 +16,36 @@ export function LoginPage() {
   const googleLogin = useGoogleLoginMutation();
 
   const [googleError, setGoogleError] = useState<string | null>(null);
-  const [googleReady, setGoogleReady] = useState(false);
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/";
 
-  useEffect(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-    if (!clientId) {
-      setGoogleError("Google login is not configured. Missing VITE_GOOGLE_CLIENT_ID.");
-      setGoogleReady(false);
-      return;
-    }
-
-    const cleanUpScript = () => {
-      const existing = document.querySelector("script[data-google-identity]");
-      existing?.remove();
-      setGoogleReady(false);
-    };
-
-    if ((window as any).google?.accounts?.id) {
-      (window as any).google.accounts.id.initialize({
-        client_id: clientId,
-        callback: handleGoogleCredentialResponse
-      });
-      setGoogleReady(true);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.dataset.googleIdentity = "true";
-
-    script.onload = () => {
-      if (!(window as any).google?.accounts?.id) {
-        setGoogleError("Google Identity Services not available in browser.");
-        setGoogleReady(false);
-        return;
-      }
-      (window as any).google.accounts.id.initialize({
-        client_id: clientId,
-        callback: handleGoogleCredentialResponse
-      });
+  const handleGoogleSuccess = useCallback(
+    (credential: string) => {
       setGoogleError(null);
-      setGoogleReady(true);
-    };
 
-    script.onerror = () => {
-      setGoogleError("No se pudo cargar Google Identity Service. Por favor intente nuevamente.");
-      setGoogleReady(false);
-    };
-
-    document.body.appendChild(script);
-
-    return () => {
-      cleanUpScript();
-    };
-  }, []);
-
-  const handleGoogleCredentialResponse = async (response: { credential?: string }): Promise<void> => {
-    if (!response?.credential) {
-      setGoogleError("No se pudo obtener la credencial de Google.");
-      return;
-    }
-
-    setGoogleError(null);
-
-    googleLogin.mutate(
-      { id_token: response.credential },
-      {
-        onSuccess: () => {
-          navigate(redirectTo, { replace: true });
-        },
-        onError: (err: Error) => {
-          if (isApiResponseError(err)) {
-            setGoogleError("Error al iniciar sesión con Google. Verifique su cuenta e intente nuevamente.");
-          } else {
-            setGoogleError((err as Error)?.message ?? "Error al iniciar sesión con Google.");
-          }
+      googleLogin.mutate(
+        { id_token: credential },
+        {
+          onSuccess: () => {
+            navigate(redirectTo, { replace: true });
+          },
+          onError: (err: Error) => {
+            if (isApiResponseError(err)) {
+              setGoogleError("Error al iniciar sesión con Google. Verifique su cuenta e intente nuevamente.");
+            } else {
+              setGoogleError((err as Error)?.message ?? "Error al iniciar sesión con Google.");
+            }
+          },
         }
-      }
-    );
-  };
+      );
+    },
+    [googleLogin, navigate, redirectTo]
+  );
 
-  const handleGoogleLoginClick = () => {
-    if (!googleReady || !(window as any).google?.accounts?.id) {
-      setGoogleError("Google login aún no está listo. Espere e intente de nuevo.");
-      return;
-    }
-
-    setGoogleError(null);
-    (window as any).google.accounts.id.prompt();
-  };
+  const handleGoogleError = useCallback((message: string) => {
+    setGoogleError(message);
+  }, []);
 
   if (session) {
     return <Navigate to="/" replace />;
@@ -210,9 +146,11 @@ export function LoginPage() {
               </div>
             </div>
 
-            <GoogleButton
-              onClick={handleGoogleLoginClick}
-              disabled={!googleReady || googleLogin.isPending}
+            <GoogleSignIn
+              clientId={clientId || ""}
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              disabled={googleLogin.isPending}
             />
           </form>
 

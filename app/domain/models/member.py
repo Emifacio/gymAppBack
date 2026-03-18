@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy import Boolean, Date, Enum, ForeignKey, Index, JSON, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.domain.enums import MemberRole, MembershipStatus, SubscriptionStatus, enum_values
+from app.domain.enums import AuthProvider, MemberRole, MembershipStatus, SubscriptionStatus, enum_values
 from app.infrastructure.database.base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
@@ -45,6 +45,12 @@ class Member(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     profile_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    auth_provider: Mapped[AuthProvider] = mapped_column(
+        Enum(AuthProvider, name="auth_provider", values_callable=enum_values),
+        default=AuthProvider.LOCAL,
+        nullable=False,
+    )
+    google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
 
     membership_plan: Mapped["MembershipPlan | None"] = relationship(back_populates="members")
     instructor_profile: Mapped["Instructor | None"] = relationship(
@@ -79,3 +85,4 @@ Index("idx_members_email_lower", func.lower(Member.email))
 Index("idx_members_role_created_at", Member.role, Member.created_at)
 Index("idx_members_membership_status_created_at", Member.membership_status, Member.created_at)
 Index("idx_members_membership_plan_id", Member.membership_plan_id)
+Index("idx_members_google_sub", Member.google_sub, unique=True)

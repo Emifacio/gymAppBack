@@ -1,20 +1,23 @@
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { useCallback, useMemo, useState } from "react";
 
 import { isApiResponseError } from "@gym/api-client";
 
 import { Button } from "@/components/ui/Button";
-import { GoogleButton } from "@/components/ui/GoogleButton";
+import { GoogleSignIn } from "@/components/ui/GoogleSignIn";
 import { useAuth } from "@/hooks/use-auth";
-import { useRegisterMutation } from "@/hooks/use-workouts";
+import { useGoogleLoginMutation, useRegisterMutation } from "@/hooks/use-workouts";
 import { getFormValue } from "@/lib/forms";
-import { useMemo, useState } from "react";
 
 export function RegisterPage() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const register = useRegisterMutation();
-  
+  const googleLogin = useGoogleLoginMutation();
+
   const [email, setEmail] = useState("");
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   const emailError = useMemo(() => {
     if (email === "") {
@@ -23,6 +26,33 @@ export function RegisterPage() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email) ? null : "El formato del correo electrónico no es válido";
   }, [email]);
+
+  const handleGoogleSuccess = useCallback(
+    (credential: string) => {
+      setGoogleError(null);
+
+      googleLogin.mutate(
+        { id_token: credential },
+        {
+          onSuccess: () => {
+            navigate("/", { replace: true });
+          },
+          onError: (err: Error) => {
+            if (isApiResponseError(err)) {
+              setGoogleError("Error al registrarse con Google. Verifique su cuenta e intente nuevamente.");
+            } else {
+              setGoogleError((err as Error)?.message ?? "Error al registrarse con Google.");
+            }
+          },
+        }
+      );
+    },
+    [googleLogin, navigate]
+  );
+
+  const handleGoogleError = useCallback((message: string) => {
+    setGoogleError(message);
+  }, []);
 
   if (session) {
     return <Navigate to="/" replace />;
@@ -122,6 +152,12 @@ export function RegisterPage() {
             </div>
           ) : null}
 
+          {googleError ? (
+            <div className="rounded-2xl border border-[rgba(255,122,89,0.2)] bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--accent)] md:col-span-2">
+              {googleError}
+            </div>
+          ) : null}
+
           <div className="md:col-span-2">
             <Button className="w-full" disabled={register.isPending || !!emailError} loading={register.isPending} type="submit" variant="primary">
               {register.isPending ? "Creando cuenta..." : "Crear cuenta"}
@@ -138,7 +174,12 @@ export function RegisterPage() {
           </div>
 
           <div className="md:col-span-2">
-            <GoogleButton onClick={() => alert("Próximamente: Integración con Google")} />
+            <GoogleSignIn
+              clientId={clientId || ""}
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              disabled={googleLogin.isPending}
+            />
           </div>
         </form>
 
