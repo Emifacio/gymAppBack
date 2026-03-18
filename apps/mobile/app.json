@@ -9,24 +9,14 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.gymapp.gymplatform"
+      "bundleIdentifier": "com.emifacio.gymplatform"
     },
     "android": {
-      "package": "com.gymapp.gymplatform",
+      "package": "com.emifacio.gymplatform",
       "adaptiveIcon": {
         "backgroundColor": "#0B1220"
       }
     },
-    "plugins": [
-      "expo-secure-store",
-      [
-        "expo-auth-session",
-        {
-          "redirectUriOptions": {
-            "custom": "gym-platform://oauth2redirect"
-          }
-        }
-      ]
-    ]
+    "plugins": ["expo-secure-store"]
   }
 }
