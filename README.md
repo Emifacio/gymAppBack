@@ -261,12 +261,14 @@ The app uses Google Identity Services with a popup/token flow (not redirect flow
 
 #### Required Environment Variables
 
-**Frontend (`apps/web/.env`):**
+**Frontend (`apps/web/.env.local`):**
 
 ```bash
 VITE_API_URL=https://your-backend-url.com
 VITE_GOOGLE_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
 ```
+
+> **Note:** `.env.local` is gitignored and loaded at runtime. Use `.env.example` as a template only.
 
 **Backend (`.env`):**
 
