@@ -1,6 +1,7 @@
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useCallback, useState } from "react";
 
+import { Button } from "@/components/ui/Button";
 import { isApiResponseError } from "@gym/api-client";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -129,13 +130,14 @@ export function LoginPage() {
               </div>
             ) : null}
 
-            <button
-              className="w-full rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1f3453] disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={login.isPending}
+            <Button
+              className="w-full"
+              loading={login.isPending}
               type="submit"
+              variant="primary"
             >
               {login.isPending ? "Iniciando sesión..." : "Iniciar sesión"}
-            </button>
+            </Button>
 
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">

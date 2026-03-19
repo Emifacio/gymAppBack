@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
+import { SkeletonWorkoutCard } from "@/components/ui/skeletons";
 import { apiClient } from "@/api/client";
 import { WorkoutCard } from "@/components/workout-card";
 import { StatCard } from "@/components/stat-card";
@@ -343,7 +344,17 @@ export function WorkoutsPage() {
 
       <div id="tour-workouts" className="space-y-8">
         {workoutsQuery.isLoading ? (
-          <div className="text-center py-8 text-[var(--muted)]">Cargando clases...</div>
+          <>
+            <div className="space-y-4">
+              <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200" />
+              <div className="h-4 w-64 animate-pulse rounded bg-slate-200" />
+            </div>
+            <div className="grid gap-6">
+              <SkeletonWorkoutCard />
+              <SkeletonWorkoutCard />
+              <SkeletonWorkoutCard />
+            </div>
+          </>
         ) : showEmptyState ? (
           <EmptyState
             eyebrow="Disponibilidad"

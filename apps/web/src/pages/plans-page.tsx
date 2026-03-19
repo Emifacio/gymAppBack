@@ -1,5 +1,8 @@
 import { Navigate } from "react-router-dom";
+import { useState } from "react";
 
+import { Button } from "@/components/ui/Button";
+import { SkeletonPlanCard } from "@/components/ui/skeletons";
 import { useAuth } from "@/hooks/use-auth";
 import {
   useCreatePlan,
@@ -21,12 +24,14 @@ export function PlansPage() {
   const createPlan = useCreatePlan();
   const updatePlan = useUpdatePlan();
   const deactivatePlan = useDeactivatePlan();
+  const [activePlanId, setActivePlanId] = useState<string | null>(null);
 
   if (!session || !canManagePlans(session.member)) {
     return <Navigate to="/" replace />;
   }
 
   const plans = plansQuery.data ?? [];
+  const isCreating = createPlan.isPending;
 
   return (
     <div className="space-y-8">
@@ -105,18 +110,24 @@ export function PlansPage() {
               <input defaultChecked name="active" type="checkbox" />
               El plan está activo
             </label>
-            <button
-              className="w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-              disabled={createPlan.isPending}
+            <Button
+              className="w-full"
+              loading={isCreating}
               type="submit"
+              variant="primary"
             >
-              {createPlan.isPending ? "Creando plan..." : "Crear plan"}
-            </button>
+              {isCreating ? "Creando plan..." : "Crear plan"}
+            </Button>
           </form>
         </div>
 
         <div className="space-y-4">
-          {plans.map((plan) => (
+          {plansQuery.isLoading ? (
+            <>
+              <SkeletonPlanCard />
+              <SkeletonPlanCard />
+            </>
+          ) : plans.map((plan) => (
             <article key={plan.id} className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -140,6 +151,7 @@ export function PlansPage() {
                 onSubmit={(event) => {
                   event.preventDefault();
                   const formData = new FormData(event.currentTarget);
+                  setActivePlanId(plan.id);
 
                   updatePlan.mutate({
                     planId: plan.id,
@@ -151,6 +163,8 @@ export function PlansPage() {
                       allows_free_pass: formData.get("allows_free_pass") === "on",
                       active: formData.get("active") === "on"
                     }
+                  }, {
+                    onSettled: () => setActivePlanId(null)
                   });
                 }}
               >
@@ -193,23 +207,28 @@ export function PlansPage() {
                   </label>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button
-                    className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-                    disabled={updatePlan.isPending}
+                  <Button
+                    loading={activePlanId === plan.id}
                     type="submit"
+                    variant="primary"
                   >
-                    {updatePlan.isPending ? "Guardando..." : "Guardar cambios"}
-                  </button>
-                  <button
-                    className="rounded-full border border-rose-200 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={deactivatePlan.isPending || !plan.active}
+                    {activePlanId === plan.id ? "Guardando..." : "Guardar cambios"}
+                  </Button>
+                  <Button
+                    className="border border-rose-200 text-rose-700 hover:bg-rose-50"
+                    disabled={!plan.active || activePlanId === plan.id}
+                    loading={activePlanId === plan.id && deactivatePlan.isPending}
                     onClick={() => {
-                      deactivatePlan.mutate({ planId: plan.id });
+                      setActivePlanId(plan.id);
+                      deactivatePlan.mutate({ planId: plan.id }, {
+                        onSettled: () => setActivePlanId(null)
+                      });
                     }}
                     type="button"
+                    variant="secondary"
                   >
-                    Deactivate
-                  </button>
+                    Desactivar
+                  </Button>
                 </div>
               </form>
             </article>

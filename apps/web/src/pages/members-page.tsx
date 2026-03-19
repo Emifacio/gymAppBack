@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/Button";
+import { SkeletonMemberRow } from "@/components/ui/skeletons";
 import { useAuth } from "@/hooks/use-auth";
 import { useCreateMember, useMembers } from "@/hooks/use-workouts";
 import { canManageOperations } from "@/lib/roles";
@@ -148,9 +149,12 @@ export function MembersPage() {
 
           <div className="mt-8 space-y-3">
             {membersQuery.isLoading ? (
-              <div className="rounded-2xl border border-dashed border-[var(--ink-300)] px-4 py-10 text-center text-sm font-medium text-[var(--ink-500)]">
-                Obteniendo datos de los miembros...
-              </div>
+              <>
+                <SkeletonMemberRow />
+                <SkeletonMemberRow />
+                <SkeletonMemberRow />
+                <SkeletonMemberRow />
+              </>
             ) : members.length > 0 ? (
               members.map((member) => (
                 <Link
