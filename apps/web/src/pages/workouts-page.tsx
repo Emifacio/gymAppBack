@@ -27,8 +27,7 @@ const workoutCreateSchema = z.object({
   capacity: z.number().int().min(1, "La capacidad debe ser al menos 1"),
   class_time: z
     .string()
-    .regex(/^\d{2}:\d{2}$/, "Formato de hora inválido")
-    .transform((value) => value),
+    .regex(/^\d{2}:\d{2}$/, "Formato de hora inválido"),
   description: z.string().max(500, "Descripción demasiado larga").optional().nullable()
 });
 
@@ -54,13 +53,14 @@ export function WorkoutsPage() {
     enabled: canManage
   });
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [submissionMessage, setSubmissionMessage] = useState<string | null>(null);
+  const [pendingDate, setPendingDate] = useState<string>("");
+  const [submissionMessage, setSubmissionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting }
+    formState: { errors }
   } = useForm<WorkoutCreateFormValues>({
     resolver: zodResolver(workoutCreateSchema),
     defaultValues: {
@@ -76,49 +76,51 @@ export function WorkoutsPage() {
   const subscription = subscriptionQuery.data;
   const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
 
-  const onSubmit = async (values: WorkoutCreateFormValues) => {
-    if (selectedDates.length === 0) {
-      setSubmissionMessage("Por favor, selecciona al menos una fecha para la clase.");
-      return;
+  const isFormDisabled = createWorkout.isPending;
+
+  const addDate = () => {
+    if (pendingDate && !selectedDates.includes(pendingDate)) {
+      setSelectedDates((prev) => [...prev, pendingDate].sort());
+      setPendingDate("");
     }
-
-    setSubmissionMessage(null);
-
-    const payloads: WorkoutCreatePayload[] = selectedDates.map((date) => ({
-      name: values.name,
-      location: values.location,
-      instructor_id: values.instructor_id?.trim() || null,
-      duration_minutes: values.duration_minutes,
-      capacity: values.capacity,
-      scheduled_at: `${date}T${values.class_time}:00`,
-      description: values.description ?? "",
-      status: "scheduled"
-    }));
-
-    const results = await Promise.allSettled<Workout>(payloads.map((payload) => createWorkout.mutateAsync(payload)));
-
-    const successCount = results.filter((r): r is PromiseFulfilledResult<Workout> => r.status === "fulfilled").length;
-    const failedResults = results.filter((r): r is PromiseRejectedResult => r.status === "rejected");
-
-    if (successCount > 0) {
-      reset();
-      setSelectedDates([]);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    if (failedResults.length > 0) {
-      const firstError: unknown = failedResults[0]!.reason;
-      const errorReason = firstError instanceof Error ? firstError.message : String(firstError);
-      setSubmissionMessage(
-        `Se crearon ${successCount} de ${payloads.length} entrenamientos; ${failedResults.length} fallaron. Error: ${errorReason}`
-      );
-      return;
-    }
-
-    setSubmissionMessage(`¡${successCount} entrenamiento(s) creado(s) con éxito!`);
   };
 
-  const isFormDisabled = isSubmitting || createWorkout.isPending;
+  const removeDate = (date: string) => {
+    setSelectedDates((prev) => prev.filter((d) => d !== date));
+  };
+
+  const onSubmit = async (values: WorkoutCreateFormValues) => {
+    setSubmissionMessage(null);
+
+    if (selectedDates.length === 0) {
+      setSubmissionMessage({ type: "error", text: "Selecciona al menos una fecha para crear la clase." });
+      return;
+    }
+
+    const dates = selectedDates.map((date) => `${date}T${values.class_time}:00`);
+
+    const payload: WorkoutCreatePayload = {
+      name: values.name.trim(),
+      location: values.location.trim(),
+      capacity: values.capacity,
+      duration_minutes: values.duration_minutes,
+      instructor_id: values.instructor_id?.trim() || null,
+      description: values.description?.trim() || null,
+      dates
+    };
+
+    try {
+      await createWorkout.mutateAsync(payload);
+      reset();
+      setSelectedDates([]);
+      setPendingDate("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setSubmissionMessage({ type: "success", text: "¡Entrenamientos creados con éxito!" });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error al crear los entrenamientos.";
+      setSubmissionMessage({ type: "error", text: message });
+    }
+  };
 
   return (
     <div className="space-y-[var(--section-gap)]">
@@ -194,8 +196,12 @@ export function WorkoutsPage() {
 
           <form className="grid gap-[var(--stack-gap)] sm:grid-cols-2 lg:grid-cols-3" onSubmit={handleSubmit(onSubmit)}>
             {submissionMessage ? (
-              <div className="sm:col-span-2 lg:col-span-3 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
-                {submissionMessage}
+              <div className={`sm:col-span-2 lg:col-span-3 rounded-xl border p-4 text-sm ${
+                submissionMessage.type === "success" 
+                  ? "border-green-200 bg-green-50 text-green-800" 
+                  : "border-red-200 bg-red-50 text-red-800"
+              }`}>
+                {submissionMessage.text}
               </div>
             ) : null}
 
@@ -268,13 +274,18 @@ export function WorkoutsPage() {
                     <input
                       className="flex-1 rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
                       type="date"
-                      onChange={(e) => {
-                        if (e.target.value && !selectedDates.includes(e.target.value)) {
-                          setSelectedDates((prevDates) => [...new Set([...prevDates, e.target.value])].sort());
-                        }
-                        e.target.value = "";
-                      }}
+                      value={pendingDate}
+                      onChange={(e) => setPendingDate(e.target.value)}
                     />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={addDate}
+                      disabled={!pendingDate || selectedDates.includes(pendingDate)}
+                      className="px-3"
+                    >
+                      +
+                    </Button>
                   </div>
 
                   <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-xl border border-dashed border-[var(--surface-outline)]">
@@ -286,14 +297,17 @@ export function WorkoutsPage() {
                         {date}
                         <button
                           type="button"
-                          className="hover:text-red-200"
-                          onClick={() => setSelectedDates((dates) => dates.filter((d) => d !== date))}
+                          className="hover:text-red-200 ml-1"
+                          onClick={() => removeDate(date)}
                         >
                           ×
                         </button>
                       </span>
                     ))}
                   </div>
+                  {selectedDates.length === 0 && (
+                    <p className="text-xs text-[var(--ink-400)]">Selecciona al menos una fecha</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

@@ -471,7 +471,12 @@ export interface components {
              * Scheduled At
              * Format: date-time
              */
-            scheduled_at: string;
+            scheduled_at?: string | null;
+            /**
+             * Dates - bulk creation
+             * Format: date-time
+             */
+            dates?: string[] | null;
             /**
              * Duration Minutes
              * @default 60
@@ -482,7 +487,7 @@ export interface components {
             /** Location */
             location: string;
             /** @default scheduled */
-            status: components["schemas"]["ClassStatus"];
+            status?: components["schemas"]["ClassStatus"];
         };
         /** ClassRead */
         ClassRead: {
