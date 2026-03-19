@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 from app.domain.enums import BookingType
 from app.domain.enums import ClassStatus
@@ -25,7 +25,11 @@ class InstructorSummary(BaseModel):
 
 
 class ClassCreate(BaseModel):
-    name: str = Field(min_length=2, max_length=120, validation_alias="title")
+    name: str = Field(
+        min_length=2,
+        max_length=120,
+        validation_alias=AliasChoices("name", "title")
+    )
     description: str | None = None
     instructor_id: UUID | None = None
     scheduled_at: Optional[datetime] = None
