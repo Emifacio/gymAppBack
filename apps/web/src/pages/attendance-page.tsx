@@ -18,7 +18,7 @@ export function AttendancePage() {
   const workoutsQuery = useWorkouts();
   const membersQuery = useMembers();
   const [selectedClassId, setSelectedClassId] = useState("");
-  const attendanceQuery = useClassAttendance(selectedClassId);
+  const attendanceQuery = useClassAttendance(selectedClassId, Boolean(selectedClassId));
   const markAttendance = useMarkAttendance();
   const [formState, setFormState] = useState({
     class_id: "",

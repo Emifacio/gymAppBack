@@ -238,7 +238,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
   function useClassAttendance(classId: string, enabled = true) {
     return useQuery({
       ...getClassAttendanceQueryOptions(client, classId),
-      enabled,
+      enabled: enabled && Boolean(classId),
       retry: 0
     });
   }
