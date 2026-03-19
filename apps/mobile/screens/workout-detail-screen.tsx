@@ -1,9 +1,9 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Alert, Pressable, StyleSheet, Text, View, Linking } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ScreenShell } from "../components/screen-shell";
 import { useAuth } from "../hooks/use-auth";
-import { useCreateBooking, useWorkout, useShareToStrava } from "../hooks/use-workouts";
+import { useCreateBooking, useWorkout } from "../hooks/use-workouts";
 import { formatWorkoutSchedule } from "../app/format";
 import type { RootStackParamList } from "../navigation/types";
 
@@ -13,7 +13,6 @@ export function WorkoutDetailScreen({ route, navigation }: WorkoutDetailScreenPr
   const { session } = useAuth();
   const workoutQuery = useWorkout(route.params.workoutId);
   const bookingMutation = useCreateBooking();
-  const shareToStravaMutation = useShareToStrava();
 
   const workout = workoutQuery.data;
   const isPast = workout ? new Date(workout.scheduled_at) < new Date() : false;
@@ -92,34 +91,7 @@ export function WorkoutDetailScreen({ route, navigation }: WorkoutDetailScreenPr
         <Text style={styles.primaryButtonText}>
           {bookingMutation.isPending ? "Reservando..." : isPast ? "Clase concluida" : "Reservar clase"}
         </Text>
-      </Pressable>      {isPast && (
-        <Pressable
-          onPress={() => {
-            shareToStravaMutation.mutate({ bookingId: workout.id }, {
-              onSuccess: (data) => {
-                if (data.external_url) {
-                  void Linking.openURL(data.external_url);
-                } else {
-                  Alert.alert("Éxito", "Tu actividad ha sido compartida en Strava.");
-                }
-              },
-              onError: (error) => {
-                Alert.alert("Error", error.message || "No se pudo compartir la actividad en Strava. Verifica tu conexión en Ajustes.");
-              }
-            });
-          }}
-          disabled={shareToStravaMutation.isPending}
-          style={({ pressed }) => [
-            styles.stravaButton, 
-            pressed && styles.buttonPressed,
-            shareToStravaMutation.isPending && styles.disabledButton
-          ]}
-        >
-          <Text style={styles.stravaButtonText}>
-            {shareToStravaMutation.isPending ? "Compartiendo..." : "Compartir en Strava"}
-          </Text>
-        </Pressable>
-      )}
+      </Pressable>
 
 
       {bookingMutation.data ? (
@@ -244,20 +216,5 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 1
-  },
-  stravaButton: {
-    alignItems: "center",
-    backgroundColor: "#FC4C02",
-    borderRadius: 999,
-    paddingVertical: 16,
-    marginTop: 12
-  },
-  stravaButtonText: {
-    color: "white",
-    fontSize: 15,
-    fontWeight: "700"
-  },
-  disabledButton: {
-    opacity: 0.5
   }
 });

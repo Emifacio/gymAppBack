@@ -1,63 +1,12 @@
-import { useEffect, useState, useCallback } from "react";
-import { StyleSheet, Text, View, Pressable, Alert, Linking } from "react-native";
+import { useCallback } from "react";
+import { StyleSheet, Text, View, Pressable, Alert } from "react-native";
 
 import { ScreenShell } from "../components/screen-shell";
 import { useAuth } from "../hooks/use-auth";
-import { useStravaAuthorize, useStravaCallback } from "../hooks/use-workouts";
 import { Ionicons } from "@expo/vector-icons";
 
 export function SettingsScreen() {
   const { logout, session } = useAuth();
-  const stravaAuthorize = useStravaAuthorize();
-  const stravaCallback = useStravaCallback();
-  const [isConnecting, setIsConnecting] = useState(false);
-
-  const completeConnection = useCallback((code: string) => {
-    setIsConnecting(true);
-    stravaCallback.mutate({ code }, {
-      onSuccess: () => {
-        setIsConnecting(false);
-        Alert.alert("Éxito", "Tu cuenta de Strava ha sido conectada correctamente.");
-      },
-      onError: (error) => {
-        setIsConnecting(false);
-        Alert.alert("Error", error.message || "No se pudo conectar con Strava.");
-      }
-    });
-  }, [stravaCallback]);
-
-  useEffect(() => {
-    const handleDeepLink = (event: { url: string }) => {
-      const url = event.url;
-      const codeMatch = url.match(/[?&]code=([^&#]*)/);
-      if (codeMatch && codeMatch[1]) {
-        completeConnection(codeMatch[1]);
-      }
-    };
-
-    const subscription = Linking.addEventListener("url", handleDeepLink);
-
-    void Linking.getInitialURL().then((url) => {
-      if (url) {
-        const codeMatch = url.match(/[?&]code=([^&#]*)/);
-        if (codeMatch && codeMatch[1]) {
-          completeConnection(codeMatch[1]);
-        }
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [completeConnection]);
-
-  const handleStravaConnect = async () => {
-    if (stravaAuthorize.data?.url) {
-      await Linking.openURL(stravaAuthorize.data.url);
-    } else {
-      Alert.alert("Error", "No se pudo obtener la URL de conexión de Strava.");
-    }
-  };
 
   return (
     <ScreenShell>
@@ -88,28 +37,6 @@ export function SettingsScreen() {
               <Text style={styles.subLabel}>{session?.member.role?.toUpperCase()}</Text>
             </View>
           </View>
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Integraciones</Text>
-        <View style={styles.card}>
-          <Pressable
-            onPress={handleStravaConnect}
-            disabled={stravaAuthorize.isLoading || isConnecting}
-            style={({ pressed }) => [styles.row, pressed && styles.buttonPressed]}
-          >
-            <View style={[styles.iconContainer, { backgroundColor: '#FFF0E6' }]}>
-              <Ionicons name="flash-outline" size={20} color="#FC4C02" />
-            </View>
-            <View style={styles.textContainer}>
-              <Text style={styles.label}>Strava</Text>
-              <Text style={styles.subLabel}>
-                {isConnecting ? "Conectando..." : "Sincroniza tus estadísticas de running"}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward-outline" size={20} color="#5F6F86" />
-          </Pressable>
         </View>
       </View>
 
