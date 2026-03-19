@@ -1,5 +1,4 @@
-import { useCallback } from "react";
-import { StyleSheet, Text, View, Pressable, Alert } from "react-native";
+import { StyleSheet, Text, View, Pressable } from "react-native";
 
 import { ScreenShell } from "../components/screen-shell";
 import { useAuth } from "../hooks/use-auth";
