@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, TextInput, View, ScrollView } from "react-native";
 import { isApiResponseError } from "@gym/api-client";
 import { ScreenShell } from "../components/screen-shell";
@@ -8,6 +8,12 @@ import type { RootStackParamList } from "../navigation/types";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Register">;
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidEmail(email: string): boolean {
+  return EMAIL_REGEX.test(email);
+}
+
 export function RegisterScreen({ navigation }: Props) {
   const register = useRegisterMutation();
   const [email, setEmail] = useState("");
@@ -15,20 +21,7 @@ export function RegisterScreen({ navigation }: Props) {
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   
-  const [emailError, setEmailError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (email === "") {
-      setEmailError(null);
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setEmailError("Email inválido");
-    } else {
-      setEmailError(null);
-    }
-  }, [email]);
+  const emailError = email.length > 0 && !isValidEmail(email);
 
   const handleRegister = () => {
     if (emailError || !email || !fullName || !password) return;
@@ -75,7 +68,7 @@ export function RegisterScreen({ navigation }: Props) {
               style={[styles.input, emailError ? styles.inputError : null]}
               value={email}
             />
-            {emailError ? <Text style={styles.errorHint}>{emailError}</Text> : null}
+            {emailError ? <Text style={styles.errorHint}>Email inválido</Text> : null}
             {email && !emailError ? <Text style={styles.successHint}>Email válido</Text> : null}
           </View>
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { StyleSheet, Text, View, Pressable, Alert, Linking } from "react-native";
 
 import { ScreenShell } from "../components/screen-shell";
@@ -12,34 +12,7 @@ export function SettingsScreen() {
   const stravaCallback = useStravaCallback();
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Handle OAuth Redirect
-  useEffect(() => {
-    const handleDeepLink = (event: { url: string }) => {
-      const url = event.url;
-      const codeMatch = url.match(/[?&]code=([^&#]*)/);
-      if (codeMatch && codeMatch[1]) {
-        completeConnection(codeMatch[1]);
-      }
-    };
-
-    const subscription = Linking.addEventListener("url", handleDeepLink);
-
-    // Check if app was opened from a link
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        const codeMatch = url.match(/[?&]code=([^&#]*)/);
-        if (codeMatch && codeMatch[1]) {
-          completeConnection(codeMatch[1]);
-        }
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
-  const completeConnection = (code: string) => {
+  const completeConnection = useCallback((code: string) => {
     setIsConnecting(true);
     stravaCallback.mutate({ code }, {
       onSuccess: () => {
@@ -51,7 +24,32 @@ export function SettingsScreen() {
         Alert.alert("Error", error.message || "No se pudo conectar con Strava.");
       }
     });
-  };
+  }, [stravaCallback]);
+
+  useEffect(() => {
+    const handleDeepLink = (event: { url: string }) => {
+      const url = event.url;
+      const codeMatch = url.match(/[?&]code=([^&#]*)/);
+      if (codeMatch && codeMatch[1]) {
+        completeConnection(codeMatch[1]);
+      }
+    };
+
+    const subscription = Linking.addEventListener("url", handleDeepLink);
+
+    void Linking.getInitialURL().then((url) => {
+      if (url) {
+        const codeMatch = url.match(/[?&]code=([^&#]*)/);
+        if (codeMatch && codeMatch[1]) {
+          completeConnection(codeMatch[1]);
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [completeConnection]);
 
   const handleStravaConnect = async () => {
     if (stravaAuthorize.data?.url) {

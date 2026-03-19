@@ -1,64 +1,104 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
+import type { AuthSessionResult, AuthSessionRedirectUriOptions } from "expo-auth-session";
 
 import { isApiResponseError } from "@gym/api-client";
 
 import { ScreenShell } from "../components/screen-shell";
 import { useLoginMutation, useGoogleLoginMutation } from "../hooks/use-workouts";
+import type { RootStackParamList } from "../navigation/types";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import {
+  getGoogleClientId,
+  getGoogleAndroidClientId,
+  getGoogleIosClientId
+} from "../app/env";
 
 WebBrowser.maybeCompleteAuthSession();
 
-export function LoginScreen({ navigation }: any) {
+type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "Login">;
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isValidEmail(email: string): boolean {
+  return EMAIL_REGEX.test(email);
+}
+
+interface GoogleAuthConfig {
+  clientId: string;
+  androidClientId?: string;
+  iosClientId?: string;
+  scopes: string[];
+}
+
+function buildGoogleAuthConfig(): GoogleAuthConfig {
+  const clientId = getGoogleClientId();
+  const androidClientId = getGoogleAndroidClientId();
+  const iosClientId = getGoogleIosClientId();
+  const config: GoogleAuthConfig = {
+    clientId,
+    scopes: ["openid", "email", "profile"]
+  };
+  if (androidClientId !== undefined) {
+    config.androidClientId = androidClientId;
+  }
+  if (iosClientId !== undefined) {
+    config.iosClientId = iosClientId;
+  }
+  return config;
+}
+
+function buildRedirectUriOptions(): Partial<AuthSessionRedirectUriOptions> {
+  return {};
+}
+
+export function LoginScreen({ navigation }: { navigation: LoginScreenNavigationProp }) {
   const login = useLoginMutation();
   const googleLogin = useGoogleLoginMutation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [emailError, setEmailError] = useState<boolean>(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
 
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    scopes: ["openid", "email", "profile"]
-  });
+  const googleAuthConfig = buildGoogleAuthConfig();
+  const googleRedirectOptions = buildRedirectUriOptions();
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest(googleAuthConfig, googleRedirectOptions);
 
-  useEffect(() => {
-    if (
-      response?.type === "success" &&
-      response.params &&
-      typeof response.params.id_token === "string"
-    ) {
+  const processGoogleResponse = useCallback((authResponse: AuthSessionResult | null) => {
+    if (!authResponse) return;
+
+    if (authResponse.type === "success" && authResponse.params && typeof authResponse.params.id_token === "string") {
       setGoogleError(null);
-
-      void googleLogin
-        .mutateAsync({ id_token: response.params.id_token })
-        .catch((err) => {
-          if (isApiResponseError(err)) {
-            setGoogleError("Error al iniciar sesión con Google. Verifique su cuenta e intente nuevamente.");
-          } else {
-            setGoogleError((err as Error)?.message ?? "Error al iniciar sesión con Google.");
-          }
-        });
-
-      return;
-    }
-
-    if (response?.type === "error") {
+      googleLogin.mutateAsync({ id_token: authResponse.params.id_token }).catch((err: unknown) => {
+        if (isApiResponseError(err)) {
+          setGoogleError("Error al iniciar sesión con Google. Verifique su cuenta e intente nuevamente.");
+        } else {
+          const error = err as Error;
+          setGoogleError(error?.message ?? "Error al iniciar sesión con Google.");
+        }
+      });
+    } else if (authResponse.type === "error") {
       setGoogleError("No se pudo autenticar con Google. Intente de nuevo.");
     }
-  }, [response, googleLogin]);
+  }, [googleLogin]);
 
   useEffect(() => {
-    if (email === "") {
-        setEmailError(false);
-        return;
+    if (response) {
+      queueMicrotask(() => processGoogleResponse(response));
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    setEmailError(!emailRegex.test(email));
-  }, [email]);
+  }, [response, processGoogleResponse]);
+
+  const emailError = email.length > 0 && !isValidEmail(email);
+
+  const handlePromptGoogle = () => {
+    setGoogleError(null);
+    if (!request) {
+      setGoogleError("Configuración de Google login no disponible");
+      return;
+    }
+    void promptAsync();
+  };
 
   return (
     <ScreenShell>
@@ -124,14 +164,7 @@ export function LoginScreen({ navigation }: any) {
         </View>
 
         <Pressable
-          onPress={() => {
-            setGoogleError(null);
-            if (!request) {
-              setGoogleError("Configuración de Google login no disponible");
-              return;
-            }
-            void promptAsync();
-          }}
+          onPress={handlePromptGoogle}
           style={({ pressed }) => [styles.googleButton, pressed && styles.buttonPressed]}
           disabled={googleLogin.isPending || !request}
         >
@@ -140,7 +173,7 @@ export function LoginScreen({ navigation }: any) {
 
         <Pressable
           onPress={() => {
-            (navigation as any)?.navigate("Register");
+            navigation.navigate("Register");
           }}
           style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
         >

@@ -7,6 +7,7 @@ import {
   DEFAULT_API_BASE_URL,
   type SessionStorageAdapter
 } from "@gym/api-client";
+import { getApiUrl } from "./env";
 
 const secureStoreAdapter: SessionStorageAdapter = {
   getItem: (key) => SecureStore.getItemAsync(key),
@@ -19,7 +20,7 @@ export const sessionManager = createSessionManager({
 });
 
 export const apiClient = createApiClient({
-  baseUrl: process.env.EXPO_PUBLIC_API_URL ?? DEFAULT_API_BASE_URL,
+  baseUrl: getApiUrl() || DEFAULT_API_BASE_URL,
   sessionManager
 });
 

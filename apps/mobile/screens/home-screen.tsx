@@ -55,7 +55,7 @@ export function HomeScreen() {
             
             <Pressable
               onPress={() => {
-                navigation.navigate("Members" as any);
+                navigation.navigate("Members");
               }}
               style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed, { marginTop: 8 }]}
             >

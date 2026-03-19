@@ -7,5 +7,5 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["App.tsx", "app", "components", "hooks", "navigation", "screens"]
+  "include": ["App.tsx", "app", "components", "hooks", "navigation", "screens", "app/env.d.ts"]
 }

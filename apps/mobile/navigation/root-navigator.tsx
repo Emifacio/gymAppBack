@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { ActivityIndicator, Text, View } from "react-native";
@@ -12,6 +13,8 @@ import { MembersScreen } from "../screens/members-screen";
 import { SettingsScreen } from "../screens/settings-screen";
 import { RegisterScreen } from "../screens/register-screen";
 import type { MainTabParamList, RootStackParamList } from "./types";
+
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tabs = createBottomTabNavigator<MainTabParamList>();
@@ -34,7 +37,7 @@ function MainTabs() {
           paddingTop: 10
         },
         tabBarIcon: ({ color, size }) => {
-          let iconName: any = "sparkles-outline";
+          let iconName: IoniconName = "sparkles-outline";
           if (route.name === "Dashboard") iconName = "sparkles-outline";
           else if (route.name === "Classes") iconName = "barbell-outline";
           else if (route.name === "Members") iconName = "people-outline";

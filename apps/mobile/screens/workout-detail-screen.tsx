@@ -9,7 +9,7 @@ import type { RootStackParamList } from "../navigation/types";
 
 type WorkoutDetailScreenProps = NativeStackScreenProps<RootStackParamList, "WorkoutDetail">;
 
-export function WorkoutDetailScreen({ route }: WorkoutDetailScreenProps) {
+export function WorkoutDetailScreen({ route, navigation }: WorkoutDetailScreenProps) {
   const { session } = useAuth();
   const workoutQuery = useWorkout(route.params.workoutId);
   const bookingMutation = useCreateBooking();
@@ -73,7 +73,10 @@ export function WorkoutDetailScreen({ route }: WorkoutDetailScreenProps) {
                 { text: "Cerrar", style: "cancel" },
                 { 
                   text: "Ver clases", 
-                  onPress: () => (route as any).navigation?.navigate("Workouts") || Alert.alert("Redirigiendo a clases...") 
+                  onPress: () => {
+                    Alert.alert("Redirigiendo a clases...");
+                    navigation.goBack();
+                  }
                 }
               ]
             );
@@ -95,7 +98,7 @@ export function WorkoutDetailScreen({ route }: WorkoutDetailScreenProps) {
             shareToStravaMutation.mutate({ bookingId: workout.id }, {
               onSuccess: (data) => {
                 if (data.external_url) {
-                  Linking.openURL(data.external_url);
+                  void Linking.openURL(data.external_url);
                 } else {
                   Alert.alert("Éxito", "Tu actividad ha sido compartida en Strava.");
                 }

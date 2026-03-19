@@ -11,8 +11,7 @@ import {
   Alert,
   TouchableOpacity,
   Platform,
-  Dimensions,
-  Animated
+  Dimensions
 } from "react-native";
 import { ScreenShell } from "../components/screen-shell";
 import { 
@@ -24,8 +23,22 @@ import {
 import { useAuth } from "../hooks/use-auth";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
+import type { components } from "@gym/api-client";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+type MemberRead = components["schemas"]["MemberRead"];
+type MembershipPlanRead = components["schemas"]["MembershipPlanRead"];
+type MembershipStatus = components["schemas"]["MembershipStatus"];
+
+interface MemberWithPlanName extends MemberRead {
+  plan_name?: string | undefined;
+}
+
+interface PlanWithMeta extends MembershipPlanRead {
+  price: string;
+  duration_days: number;
+}
 
 export function MembersScreen() {
   const queryClient = useQueryClient();
@@ -33,7 +46,7 @@ export function MembersScreen() {
   const isAdmin = session?.member.role === "admin";
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [selectedMember, setSelectedMember] = useState<MemberWithPlanName | null>(null);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -44,8 +57,7 @@ export function MembersScreen() {
   const updateMemberMutation = useUpdateMember();
   const assignPlanMutation = useAssignPlan();
 
-  const members = membersQuery.data ?? [];
-  const plans = plansQuery.data ?? [];
+  const plans = (plansQuery.data ?? []) as unknown as PlanWithMeta[];
 
   // Search Debounce Logic
   useEffect(() => {
@@ -65,17 +77,18 @@ export function MembersScreen() {
 
   // Filtered List
   const filteredMembers = useMemo(() => {
+    const members = (membersQuery.data ?? []) as MemberWithPlanName[];
     const query = debouncedSearch.toLowerCase().trim();
     if (!query) return members;
     return members.filter(m => 
       m.full_name.toLowerCase().includes(query) || 
       m.email.toLowerCase().includes(query)
     );
-  }, [members, debouncedSearch]);
+  }, [membersQuery.data, debouncedSearch]);
 
-  const handleToggleStatus = async (member: any) => {
+  const handleToggleStatus = async (member: MemberWithPlanName) => {
     if (!isAdmin) return;
-    const newStatus = member.membership_status === "active" ? "suspended" : "active";
+    const newStatus: MembershipStatus = member.membership_status === "active" ? "suspended" : "active";
     try {
       await updateMemberMutation.mutateAsync({
         memberId: member.id,
@@ -84,8 +97,9 @@ export function MembersScreen() {
       setIsActionModalOpen(false);
       setSelectedMember(null);
       setToast(`✅ ${member.full_name} ${newStatus === 'active' ? 'activado' : 'suspendido'}`);
-    } catch (error: any) {
-      Alert.alert("Error", error?.message || "No se pudo cambiar el estado.");
+    } catch (err) {
+      const error = err as Error;
+      Alert.alert("Error", error?.message ?? "No se pudo cambiar el estado.");
     }
   };
 
@@ -95,11 +109,11 @@ export function MembersScreen() {
     const plan = plans.find(p => p.id === planId);
     
     // Optimistic Update
-    const previousMembers = queryClient.getQueryData(['gym', 'members', 'list', {}]);
-    queryClient.setQueryData(['gym', 'members', 'list', {}], (old: any) => {
-      if (!old) return old;
-      return old.map((m: any) => 
-        m.id === selectedMember.id ? { ...m, plan_name: plan?.name, membership_status: 'active' } : m
+    const previousMembers = queryClient.getQueryData<MemberWithPlanName[]>(['gym', 'members', 'list', {}]);
+    queryClient.setQueryData<MemberWithPlanName[]>(['gym', 'members', 'list', {}], (old) => {
+      if (!old || !selectedMember) return old;
+      return old.map(m => 
+        m.id === selectedMember.id ? { ...m, plan_name: plan?.name ?? undefined, membership_status: 'active' } : m
       );
     });
 
@@ -111,14 +125,15 @@ export function MembersScreen() {
       setIsPlanModalOpen(false);
       setSelectedMember(null);
       setToast(`✅ Plan ${plan?.name} asignado con éxito`);
-    } catch (error: any) {
+    } catch (err) {
       // Rollback
       queryClient.setQueryData(['gym', 'members', 'list', {}], previousMembers);
-      Alert.alert("Error", error?.message || "No se pudo asignar el plan.");
+      const error = err as Error;
+      Alert.alert("Error", error?.message ?? "No se pudo asignar el plan.");
     }
   };
 
-  const renderMemberCard = ({ item }: { item: any }) => (
+  const renderMemberCard = ({ item }: { item: MemberWithPlanName }) => (
     <View style={styles.memberCard}>
       <TouchableOpacity 
         activeOpacity={isAdmin ? 0.7 : 1}
@@ -257,7 +272,7 @@ export function MembersScreen() {
 
               <TouchableOpacity 
                 style={styles.actionButton}
-                onPress={() => handleToggleStatus(selectedMember)}
+                onPress={() => { if (selectedMember) void handleToggleStatus(selectedMember); }}
               >
                 <View style={[
                   styles.actionIcon, 
@@ -300,8 +315,8 @@ export function MembersScreen() {
             <Text style={styles.sheetSubtitle}>Para: {selectedMember?.full_name}</Text>
             
             <View style={styles.planList}>
-              {plans.map((plan: any) => {
-                const isPremium = plan.name.toLowerCase().includes('premium') || plan.name.toLowerCase().includes('unlimited');
+              {plans.map((plan) => {
+                const isPremium = plan.name.toLowerCase().includes("premium") || plan.name.toLowerCase().includes("unlimited");
                 return (
                   <TouchableOpacity
                     key={plan.id}
