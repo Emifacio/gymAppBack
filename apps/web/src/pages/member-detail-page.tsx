@@ -7,7 +7,6 @@ import {
   useAssignSubscription,
   useCancelSubscription,
   useMember,
-  useMemberActivities,
   useMemberAttendance,
   useMemberBookings,
   useMemberSubscription,
@@ -15,7 +14,7 @@ import {
   useUpdateMember
 } from "@/hooks/use-workouts";
 import { useAuth } from "@/hooks/use-auth";
-import { formatCredits, formatDateTime, formatDistanceMeters } from "@/lib/format";
+import { formatCredits, formatDateTime } from "@/lib/format";
 import { canManageOperations, isAdmin } from "@/lib/roles";
 
 type MemberRole = Member["role"];
@@ -27,7 +26,6 @@ export function MemberDetailPage() {
   const memberQuery = useMember(memberId);
   const bookingsQuery = useMemberBookings(memberId);
   const attendanceQuery = useMemberAttendance(memberId);
-  const activitiesQuery = useMemberActivities(memberId);
   const subscriptionQuery = useMemberSubscription(memberId);
   const plansQuery = usePlans({ active: true, limit: 100 });
   const updateMember = useUpdateMember();
@@ -395,31 +393,6 @@ export function MemberDetailPage() {
                {!attendanceQuery.isLoading && (attendanceQuery.data ?? []).length === 0 ? (
                  <p className="text-sm text-slate-500">Sin registros de asistencia aún.</p>
                ) : null}
-            </div>
-          </section>
-
-          <section className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Feed de actividad</h2>
-            <div className="mt-4 space-y-3">
-              {(activitiesQuery.data ?? []).map((activity) => (
-                <div key={activity.id} className="rounded-2xl border border-slate-200 px-4 py-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-slate-900">{activity.name}</p>
-                      <p className="text-sm text-slate-500">
-                        {formatDateTime(activity.started_at)} · {formatDistanceMeters(activity.distance_meters)}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-sky-100 px-3 py-1 text-sm font-medium text-sky-800">
-                      {activity.provider}
-                    </span>
-                  </div>
-                </div>
-              ))}
-              {activitiesQuery.isLoading ? <p className="text-sm text-slate-500">Loading activities...</p> : null}
-              {!activitiesQuery.isLoading && (activitiesQuery.data ?? []).length === 0 ? (
-                <p className="text-sm text-slate-500">No synced activities yet.</p>
-              ) : null}
             </div>
           </section>
         </div>

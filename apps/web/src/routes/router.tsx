@@ -6,7 +6,6 @@ import { DashboardLayout } from "@/layouts/dashboard-layout";
 import { AttendancePage } from "@/pages/attendance-page";
 import { BookingsPage } from "@/pages/bookings-page";
 import { DashboardPage } from "@/pages/dashboard-page";
-import { IntegrationsPage } from "@/pages/integrations-page";
 import { LoginPage } from "@/pages/login-page";
 import { MemberDetailPage } from "@/pages/member-detail-page";
 import { MembersPage } from "@/pages/members-page";
@@ -75,10 +74,6 @@ export const router = createBrowserRouter([
           {
             path: "/attendance",
             element: <AttendancePage />
-          },
-          {
-            path: "/integrations",
-            element: <IntegrationsPage />
           }
         ]
       }

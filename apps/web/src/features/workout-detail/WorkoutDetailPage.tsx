@@ -2,9 +2,7 @@ import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { BookingEligibilityModal } from "@/components/booking-eligibility-modal";
-import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/use-auth";
-import { useShareToStrava } from "@/hooks/use-workouts";
 import { canManageOperations } from "@/lib/roles";
 import { isApiResponseError } from "@gym/api-client";
 import { WorkoutInfoPanel } from "./components/WorkoutInfoPanel";
@@ -37,7 +35,6 @@ export function WorkoutDetailPage() {
 
   const canManage = canManageOperations(session?.member);
   const { classMembersQuery, classAttendanceQuery, assignMemberMutation, updateWorkoutMutation, deleteWorkoutMutation } = useWorkoutAdmin(workoutId, canManage);
-  const shareToStrava = useShareToStrava();
 
   const isPast = useMemo(() => (workout ? new Date(workout.scheduled_at) < new Date() : false), [workout]);
   const isLoading = workoutQuery.isPending || isCheckingEligibility || bookingMutation.isPending;
@@ -85,43 +82,6 @@ export function WorkoutDetailPage() {
         onCloseModal={handleCloseEligibilityModal}
         onRedirect={() => navigate("/workouts")}
       />
-
-      {isPast && workout?.member_booking_status === "confirmed" && (
-        <div className="xl:col-span-2 glass-panel rounded-[2.25rem] p-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#FC4C02]">Integración Strava</p>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Comparte tu esfuerzo. Envía esta sesión a tu cuenta de Strava para registrar tus estadísticas de entrenamiento.
-          </p>
-          <Button
-            className="mt-4 w-full bg-[#FC4C02] text-white hover:bg-[#E34402]"
-            disabled={shareToStrava.isPending}
-            loading={shareToStrava.isPending}
-            onClick={() => {
-              if (!workout) return;
-              shareToStrava.mutate({ bookingId: workout.id }, {
-                onSuccess: (data) => {
-                  if (data.external_url) {
-                    window.open(data.external_url, "_blank");
-                  }
-                }
-              });
-            }}
-            variant="primary"
-          >
-            {shareToStrava.isPending ? "Compartiendo..." : "Compartir en Strava"}
-          </Button>
-          {shareToStrava.isSuccess && (
-            <p className="mt-3 text-sm text-emerald-600 font-medium">¡Actividad compartida correctamente!</p>
-          )}
-          {shareToStrava.error && (
-            <p className="mt-3 text-sm text-rose-600 font-medium">
-              {shareToStrava.error instanceof Error
-                ? shareToStrava.error.message
-                : "No se pudo compartir la actividad."}
-            </p>
-          )}
-        </div>
-      )}
 
       {canManage ? (
         <AdminPanel

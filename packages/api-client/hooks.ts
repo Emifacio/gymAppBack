@@ -4,9 +4,6 @@ import { toAuthSession, type AuthSession, type SessionManager } from "./auth";
 import {
   isApiResponseError,
   unwrapResult,
-  type ActivityRecord,
-  type ActivitySyncPayload,
-  type ActivitySyncResult,
   type AttendancePayload,
   type AttendanceRecord,
   type BookingAction,
@@ -15,8 +12,6 @@ import {
   type ClassAssignmentPayload,
   type ClassMember,
   type GymApiClient,
-  type IntegrationAccount,
-  type IntegrationConnectPayload,
   type LoginPayload,
   type GoogleLoginPayload,
   type Member,
@@ -51,7 +46,6 @@ export const gymKeys = {
   memberAttendance: (memberId: string) => [...gymKeys.all, "member-attendance", memberId] as const,
   classAttendance: (classId: string) => [...gymKeys.all, "class-attendance", classId] as const,
   classMembers: (classId: string) => [...gymKeys.all, "class-members", classId] as const,
-  memberActivities: (memberId: string) => [...gymKeys.all, "member-activities", memberId] as const,
   plans: () => [...gymKeys.all, "plans"] as const,
   planList: (filters: { active?: boolean | null; offset?: number; limit?: number } = {}) =>
     [...gymKeys.plans(), "list", filters] as const,
@@ -174,16 +168,6 @@ export function getClassMembersQueryOptions(client: GymApiClient, classId: strin
   });
 }
 
-export function getMemberActivitiesQueryOptions(client: GymApiClient, memberId: string) {
-  return queryOptions({
-    queryKey: gymKeys.memberActivities(memberId),
-    queryFn: () =>
-      unwrapResult<ActivityRecord[]>(
-        client.GET("/members/{member_id}/activities", { params: { path: { member_id: memberId } } })
-      )
-  });
-}
-
 export function getPlansQueryOptions(
   client: GymApiClient,
   filters: { active?: boolean | null; offset?: number; limit?: number } = {}
@@ -265,10 +249,6 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
       enabled,
       retry: 0
     });
-  }
-
-  function useMemberActivities(memberId: string) {
-    return useQuery(getMemberActivitiesQueryOptions(client, memberId));
   }
 
   function usePlans(filters: { active?: boolean | null; offset?: number; limit?: number } = {}) {
@@ -530,77 +510,6 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     });
   }
 
-  function useConnectStrava(
-    options: Omit<UseMutationOptions<IntegrationAccount, Error, IntegrationConnectPayload>, "mutationFn"> = {}
-  ) {
-    return useMutation({
-      mutationFn: (payload: IntegrationConnectPayload) =>
-        unwrapResult<IntegrationAccount>(client.POST("/integrations/strava/connect", { body: payload })),
-      ...options
-    });
-  }
-
-  function useSyncActivities(
-    options: Omit<UseMutationOptions<ActivitySyncResult, Error, { memberId?: string }>, "mutationFn"> = {}
-  ) {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-      mutationFn: ({ memberId }) =>
-        unwrapResult<ActivitySyncResult>(
-          client.POST("/activities/sync", { body: { member_id: memberId ?? null } as ActivitySyncPayload })
-        ),
-      ...options,
-      onSuccess: async (result, variables, onMutateResult, context) => {
-        if (variables.memberId) {
-          await queryClient.invalidateQueries({ queryKey: gymKeys.memberActivities(variables.memberId) });
-        }
-        await options.onSuccess?.(result, variables, onMutateResult, context);
-      }
-    });
-  }
-
-  function useStravaAuthorize() {
-    return useQuery({
-      queryKey: ["strava", "authorize"],
-      queryFn: () => unwrapResult<{ url: string }>((client as any).GET("/integrations/strava/authorize")),
-      staleTime: Infinity,
-      gcTime: Infinity
-    });
-  }
-
-  function useStravaCallback(
-    options: Omit<UseMutationOptions<IntegrationAccount, Error, { code: string }>, "mutationFn"> = {}
-  ) {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-      mutationFn: ({ code }) =>
-        unwrapResult<IntegrationAccount>(
-          (client as any).GET("/integrations/strava/callback", { params: { query: { code } } })
-        ),
-      ...options,
-      onSuccess: async (result, variables, onMutateResult, context) => {
-        await queryClient.invalidateQueries({ queryKey: gymKeys.memberActivities(result.member_id) });
-        await options.onSuccess?.(result, variables, onMutateResult, context);
-      }
-    });
-  }
-
-  function useShareToStrava(
-    options: Omit<UseMutationOptions<{ activity_id: string; status: string; external_url?: string }, Error, { bookingId: string }>, "mutationFn"> = {}
-  ) {
-    return useMutation({
-      mutationFn: ({ bookingId }) =>
-        unwrapResult<{ activity_id: string; status: string; external_url?: string }>(
-          (client as any).POST("/activities/{booking_id}/share", {
-            params: { path: { booking_id: bookingId } }
-          })
-        ),
-      ...options
-    });
-  }
-
   function useCreatePlan(
     options: Omit<UseMutationOptions<Plan, Error, PlanCreatePayload>, "mutationFn"> = {}
   ) {
@@ -806,7 +715,6 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     useMemberAttendance,
     useClassAttendance,
     useClassMembers,
-    useMemberActivities,
     usePlans,
     useLogin,
     useGoogleLogin,
@@ -819,11 +727,6 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     useUpdateWorkout,
     useDeleteWorkout,
     useMarkAttendance,
-    useConnectStrava,
-    useSyncActivities,
-    useStravaAuthorize,
-    useStravaCallback,
-    useShareToStrava,
     useCreatePlan,
     useUpdatePlan,
     useDeactivatePlan,

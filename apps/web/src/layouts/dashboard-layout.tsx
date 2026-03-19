@@ -1,4 +1,4 @@
-import { LayoutDashboard, Calendar, BookCheck, Puzzle, CreditCard, Users, History, LogOut, Sparkles, User } from "lucide-react";
+import { LayoutDashboard, Calendar, BookCheck, CreditCard, Users, History, LogOut, Sparkles, User } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
 import { Avatar } from "@/components/ui/Avatar";
@@ -35,7 +35,6 @@ export function DashboardLayout() {
     { label: "Reservas", to: "/bookings", icon: BookCheck },
     ...(canManageOperations(session?.member) ? [{ label: "Miembros", to: "/members", icon: Users }] : []),
     ...(canManagePlans(session?.member) ? [{ label: "Planes", to: "/plans", icon: CreditCard }] : []),
-    { label: "Integraciones", to: "/integrations", icon: Puzzle },
     ...(canManageOperations(session?.member) ? [{ label: "Asistencia", to: "/attendance", icon: History }] : [])
   ];
 
