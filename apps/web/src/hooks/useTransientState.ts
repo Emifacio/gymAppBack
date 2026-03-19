@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { MotionTokens } from "@/components/ui/motion-tokens";
 
 type TransientState = "idle" | "loading" | "success" | "error";
 
@@ -8,7 +9,7 @@ interface UseTransientStateOptions {
 }
 
 export function useTransientState(options: UseTransientStateOptions = {}) {
-  const { duration = 1500, onReset } = options;
+  const { duration = MotionTokens.feedback.successDuration, onReset } = options;
   const [state, setState] = useState<TransientState>("idle");
   const [message, setMessage] = useState<string>("");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,9 +50,9 @@ export function useTransientState(options: UseTransientStateOptions = {}) {
       timerRef.current = setTimeout(() => {
         setState("idle");
         setMessage("");
-      }, duration * 2);
+      }, MotionTokens.feedback.errorDuration);
     },
-    [clearTimer, duration]
+    [clearTimer]
   );
 
   const triggerLoading = useCallback(() => {

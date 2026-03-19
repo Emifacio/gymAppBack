@@ -3,6 +3,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { InlineFeedback } from "@/components/ui/InlineFeedback";
+import { MotionTokens, SuccessTokens } from "@/components/ui/motion-tokens";
 import { SkeletonPlanCard } from "@/components/ui/skeletons";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -37,7 +38,7 @@ export function PlansPage() {
   const [highlightedPlanId, setHighlightedPlanId] = useState<string | null>(null);
   const [newlyCreatedPlanId, setNewlyCreatedPlanId] = useState<string | null>(null);
   const [deactivatedPlanId, setDeactivatedPlanId] = useState<string | null>(null);
-  const createFeedback = useTransientState({ duration: 3000 });
+  const createFeedback = useTransientState({ duration: MotionTokens.feedback.errorDuration });
 
   if (!session || !canManagePlans(session.member)) {
     return <Navigate to="/" replace />;
@@ -58,7 +59,7 @@ export function PlansPage() {
 
   const highlightRow = (planId: string) => {
     setHighlightedPlanId(planId);
-    setTimeout(() => setHighlightedPlanId(null), 2000);
+    setTimeout(() => setHighlightedPlanId(null), MotionTokens.highlight.emphasizedReset);
   };
 
   const handleCreatePlan = (event: React.FormEvent<HTMLFormElement>) => {
@@ -81,7 +82,7 @@ export function PlansPage() {
         setTimeout(() => {
           setNewlyCreatedPlanId(null);
           setHighlightedPlanId(null);
-        }, 1500);
+        }, MotionTokens.highlight.newItemReset);
         event.currentTarget.reset();
       },
       onError: (error) => {
@@ -112,7 +113,7 @@ export function PlansPage() {
         onSuccess: () => {
           setRowState(planId, { isSaving: false, isSuccess: true });
           highlightRow(planId);
-          setTimeout(() => setRowState(planId, { isSuccess: false }), 1500);
+          setTimeout(() => setRowState(planId, { isSuccess: false }), MotionTokens.highlight.rowReset);
         },
         onError: () => {
           setRowState(planId, { isSaving: false });
@@ -132,7 +133,7 @@ export function PlansPage() {
         setTimeout(() => {
           setRowState(planId, { isSuccess: false });
           setDeactivatedPlanId(null);
-        }, 1500);
+        }, MotionTokens.highlight.rowReset);
       },
       onError: () => {
         setRowState(planId, { isDeactivating: false });
@@ -235,17 +236,17 @@ export function PlansPage() {
             return (
             <article
               key={plan.id}
-              className={`rounded-3xl border bg-white/90 p-6 shadow-sm transition-all duration-500 ${
+              className={`rounded-3xl border bg-white/90 p-6 shadow-sm transition-all duration-${MotionTokens.transition.slow} ${
                 highlightedPlanId === plan.id
                   ? isNewlyCreated
-                    ? "border-emerald-500 shadow-emerald-200 ring-4 ring-emerald-400/20 scale-[1.01] animate-in fade-in slide-in-from-bottom-2"
-                    : "border-emerald-400 shadow-emerald-100"
+                    ? `${SuccessTokens.border.emphasized} ${SuccessTokens.shadow.emphasized} ${SuccessTokens.ring.emphasized} scale-[1.01] animate-in fade-in slide-in-from-bottom-2`
+                    : `${SuccessTokens.border.standard} ${SuccessTokens.shadow.standard}`
                   : "border-slate-200"
-              } ${rowState.isSuccess && !isNewlyCreated ? "ring-2 ring-emerald-400/50" : ""}`}
+              } ${rowState.isSuccess && !isNewlyCreated ? SuccessTokens.ring.standard : ""}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className={`text-sm font-semibold uppercase tracking-[0.25em] transition-all duration-700 ${
+                  <p className={`text-sm font-semibold uppercase tracking-[0.25em] transition-all duration-${MotionTokens.transition.emphasized} ${
                     deactivatedPlanId === plan.id
                       ? "text-slate-400 scale-95"
                       : plan.active

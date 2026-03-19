@@ -3,6 +3,7 @@ import { Link, Navigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/Button";
 import { InlineFeedback } from "@/components/ui/InlineFeedback";
+import { MotionTokens, SuccessTokens } from "@/components/ui/motion-tokens";
 import { SkeletonMemberRow } from "@/components/ui/skeletons";
 import { useAuth } from "@/hooks/use-auth";
 import { useCreateMember, useMembers } from "@/hooks/use-workouts";
@@ -27,7 +28,7 @@ export function MembersPage() {
     limit: filters.limit
   });
   const createMember = useCreateMember();
-  const feedback = useTransientState({ duration: 3000 });
+  const feedback = useTransientState({ duration: MotionTokens.feedback.errorDuration });
   const [directoryHighlight, setDirectoryHighlight] = useState(false);
   const [formState, setFormState] = useState({
     email: "",
@@ -90,7 +91,7 @@ export function MembersPage() {
       });
 
       setDirectoryHighlight(true);
-      setTimeout(() => setDirectoryHighlight(false), 800);
+      setTimeout(() => setDirectoryHighlight(false), MotionTokens.highlight.containerReset);
       feedback.triggerSuccess("Miembro creado correctamente.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudo crear el miembro.";
@@ -156,7 +157,7 @@ export function MembersPage() {
             </div>
           </div>
 
-          <div className={`mt-8 space-y-3 rounded-2xl p-2 -m-2 transition-all duration-500 ${directoryHighlight ? "ring-2 ring-emerald-400/50 bg-emerald-50/30" : ""}`}>
+          <div className={`mt-8 space-y-3 rounded-2xl p-2 -m-2 transition-all duration-${MotionTokens.transition.slow} ${directoryHighlight ? `${SuccessTokens.ring.standard} ${SuccessTokens.background.tint}` : ""}`}>
             {membersQuery.isLoading ? (
               <>
                 <SkeletonMemberRow />

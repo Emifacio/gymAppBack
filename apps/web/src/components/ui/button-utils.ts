@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import type { ButtonSize, ButtonVariant } from "./button-types";
+import { ButtonMotionTokens } from "./motion-tokens";
 
 interface ButtonClassNameOptions {
   className?: string | undefined;
@@ -7,8 +8,7 @@ interface ButtonClassNameOptions {
   variant?: ButtonVariant;
 }
 
-const base =
-  "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+const base = `inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-${ButtonMotionTokens.colorTransition} ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50`;
 
 const sizeClasses: Record<ButtonSize, string> = {
   sm: "h-8 px-3 text-xs",

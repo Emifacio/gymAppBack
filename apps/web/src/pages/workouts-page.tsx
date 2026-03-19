@@ -19,6 +19,7 @@ import { getMembersQueryOptions } from "@gym/api-client";
 import { formatCredits, formatDateTime } from "@/lib/format";
 import { canManageOperations } from "@/lib/roles";
 import { useTransientState } from "@/hooks/useTransientState";
+import { MotionTokens, SuccessTokens } from "@/components/ui/motion-tokens";
 import type { Workout } from "@/types/gym";
 import type { WorkoutCreatePayload } from "@gym/api-client";
 
@@ -58,7 +59,7 @@ export function WorkoutsPage() {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [pendingDate, setPendingDate] = useState<string>("");
   const [listHighlight, setListHighlight] = useState(false);
-  const feedback = useTransientState({ duration: 3000 });
+  const feedback = useTransientState();
 
   const {
     register,
@@ -118,7 +119,7 @@ export function WorkoutsPage() {
       setSelectedDates([]);
       setPendingDate("");
       setListHighlight(true);
-      setTimeout(() => setListHighlight(false), 800);
+      setTimeout(() => setListHighlight(false), MotionTokens.highlight.containerReset);
       window.scrollTo({ top: 0, behavior: "smooth" });
       feedback.triggerSuccess("Entrenamientos creados con éxito.");
     } catch (error) {
@@ -353,7 +354,7 @@ export function WorkoutsPage() {
       <div
         id="tour-workouts"
         className={`space-y-8 rounded-3xl p-6 transition-all duration-500 ${
-          listHighlight ? "ring-2 ring-emerald-400/50 bg-emerald-50/30" : ""
+          listHighlight ? `${SuccessTokens.ring.standard} ${SuccessTokens.background.tint}` : ""
         }`}
       >
         {workoutsQuery.isLoading ? (

@@ -24,16 +24,13 @@ import { useAuth } from "../hooks/use-auth";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import type { components } from "@gym/api-client";
+import { mapMembersToListItems } from "../src/lib/members-mapper";
+import type { MemberListItem } from "../src/lib/members-mapper";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-type MemberRead = components["schemas"]["MemberRead"];
-type MembershipPlanRead = components["schemas"]["MembershipPlanRead"];
 type MembershipStatus = components["schemas"]["MembershipStatus"];
-
-interface MemberWithPlanName extends MemberRead {
-  plan_name?: string | undefined;
-}
+type MembershipPlanRead = components["schemas"]["MembershipPlanRead"];
 
 interface PlanWithMeta extends MembershipPlanRead {
   price: string;
@@ -46,7 +43,7 @@ export function MembersScreen() {
   const isAdmin = session?.member.role === "admin";
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [selectedMember, setSelectedMember] = useState<MemberWithPlanName | null>(null);
+  const [selectedMember, setSelectedMember] = useState<MemberListItem | null>(null);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -77,7 +74,7 @@ export function MembersScreen() {
 
   // Filtered List
   const filteredMembers = useMemo(() => {
-    const members = (membersQuery.data ?? []) as MemberWithPlanName[];
+    const members = mapMembersToListItems(membersQuery.data ?? []);
     const query = debouncedSearch.toLowerCase().trim();
     if (!query) return members;
     return members.filter(m => 
@@ -86,7 +83,7 @@ export function MembersScreen() {
     );
   }, [membersQuery.data, debouncedSearch]);
 
-  const handleToggleStatus = async (member: MemberWithPlanName) => {
+  const handleToggleStatus = async (member: MemberListItem) => {
     if (!isAdmin) return;
     const newStatus: MembershipStatus = member.membership_status === "active" ? "suspended" : "active";
     try {
@@ -109,11 +106,13 @@ export function MembersScreen() {
     const plan = plans.find(p => p.id === planId);
     
     // Optimistic Update
-    const previousMembers = queryClient.getQueryData<MemberWithPlanName[]>(['gym', 'members', 'list', {}]);
-    queryClient.setQueryData<MemberWithPlanName[]>(['gym', 'members', 'list', {}], (old) => {
+    const previousMembers = queryClient.getQueryData<MemberListItem[]>(['gym', 'members', 'list', {}]);
+    queryClient.setQueryData<MemberListItem[]>(['gym', 'members', 'list', {}], (old) => {
       if (!old || !selectedMember) return old;
       return old.map(m => 
-        m.id === selectedMember.id ? { ...m, plan_name: plan?.name ?? undefined, membership_status: 'active' } : m
+        m.id === selectedMember.id 
+          ? { ...m, plan_id: plan?.id ?? null, plan_name: plan?.name ?? null, membership_status: 'active' } 
+          : m
       );
     });
 
@@ -133,7 +132,7 @@ export function MembersScreen() {
     }
   };
 
-  const renderMemberCard = ({ item }: { item: MemberWithPlanName }) => (
+  const renderMemberCard = ({ item }: { item: MemberListItem }) => (
     <View style={styles.memberCard}>
       <TouchableOpacity 
         activeOpacity={isAdmin ? 0.7 : 1}
