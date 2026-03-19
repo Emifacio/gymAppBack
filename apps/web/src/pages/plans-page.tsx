@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { InlineFeedback } from "@/components/ui/InlineFeedback";
@@ -33,18 +33,12 @@ export function PlansPage() {
   const createPlan = useCreatePlan();
   const updatePlan = useUpdatePlan();
   const deactivatePlan = useDeactivatePlan();
-  
+
   const [rowStates, setRowStates] = useState<Record<string, RowState>>({});
   const [highlightedPlanId, setHighlightedPlanId] = useState<string | null>(null);
   const [newlyCreatedPlanId, setNewlyCreatedPlanId] = useState<string | null>(null);
   const [deactivatedPlanId, setDeactivatedPlanId] = useState<string | null>(null);
   const createFeedback = useTransientState({ duration: MotionTokens.feedback.errorDuration });
-
-  if (!session || !canManagePlans(session.member)) {
-    return <Navigate to="/" replace />;
-  }
-
-  const plans = plansQuery.data ?? [];
 
   const getRowState = (planId: string): RowState => {
     return rowStates[planId] ?? { isSaving: false, isDeactivating: false, isSuccess: false };
@@ -53,16 +47,16 @@ export function PlansPage() {
   const setRowState = (planId: string, updates: Partial<RowState>) => {
     setRowStates((prev) => ({
       ...prev,
-      [planId]: { ...getRowState(planId), ...updates }
+      [planId]: { ...(prev[planId] ?? { isSaving: false, isDeactivating: false, isSuccess: false }), ...updates }
     }));
   };
 
-  const highlightRow = (planId: string) => {
+  const highlightRow = useCallback((planId: string) => {
     setHighlightedPlanId(planId);
     setTimeout(() => setHighlightedPlanId(null), MotionTokens.highlight.emphasizedReset);
-  };
+  }, []);
 
-  const handleCreatePlan = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleCreatePlan = useCallback((event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     createFeedback.triggerLoading();
@@ -90,13 +84,12 @@ export function PlansPage() {
         createFeedback.triggerError(message);
       }
     });
-  };
+  }, [createPlan, createFeedback]);
 
-  const handleUpdatePlan = (planId: string) => {
-    setRowState(planId, { isSaving: true });
-    
+  const handleUpdatePlan = useCallback((planId: string) => {
     return (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      setRowState(planId, { isSaving: true });
       const formData = new FormData(event.currentTarget);
 
       updatePlan.mutate({
@@ -120,9 +113,9 @@ export function PlansPage() {
         }
       });
     };
-  };
+  }, [updatePlan, highlightRow]);
 
-  const handleDeactivatePlan = (planId: string) => {
+  const handleDeactivatePlan = useCallback((planId: string) => {
     setRowState(planId, { isDeactivating: true });
 
     deactivatePlan.mutate({ planId }, {
@@ -139,7 +132,13 @@ export function PlansPage() {
         setRowState(planId, { isDeactivating: false });
       }
     });
-  };
+  }, [deactivatePlan, highlightRow]);
+
+  if (!session || !canManagePlans(session.member)) {
+    return <Navigate to="/" replace />;
+  }
+
+  const plans = plansQuery.data ?? [];
 
   return (
     <div className="space-y-8">
