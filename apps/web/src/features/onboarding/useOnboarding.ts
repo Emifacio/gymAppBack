@@ -70,7 +70,7 @@ export function useOnboarding({ devMode = false }: UseOnboardingOptions = {}) {
 
     console.log("[Onboarding] Initializing controller");
 
-    const controller = new OnboardingController(steps, (path) => navigate(path), {
+    const controller = new OnboardingController(steps, (path) => { void navigate(path); }, {
       userId: memberId ?? null,
       onComplete: () => {
         console.log("[Onboarding] Tour completed");

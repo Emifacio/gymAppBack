@@ -1,5 +1,5 @@
 import { driver, type Driver } from "driver.js";
-import type { OnboardingStepDefinition, OnboardingControllerOptions, OnboardingTransitionResult, OnboardingWaitOptions } from "./onboarding.types";
+import type { OnboardingStepDefinition, OnboardingControllerOptions, OnboardingWaitOptions } from "./onboarding.types";
 import { completeTour } from "./onboarding.store";
 
 const DEFAULT_TIMEOUT_MS = 8000;
@@ -174,9 +174,9 @@ export class OnboardingController {
 
     this.driverInstance?.destroy();
 
-    const popoverConfig: Record<string, string> = {
-      title: step.popover.title ?? "",
-      description: String(step.popover.description ?? ""),
+    const popoverConfig: Record<string, string | undefined> = {
+      title: step.popover.title,
+      description: typeof step.popover.description === "string" ? step.popover.description : "",
     };
     if (step.popover.side) popoverConfig.side = step.popover.side;
     if (step.popover.align) popoverConfig.align = step.popover.align;
@@ -241,7 +241,7 @@ export class OnboardingController {
     void this.showStep(this.currentStepIndex);
   }
 
-  private async complete(): Promise<void> {
+  private complete(): void {
     if (this.isDestroyed) return;
 
     console.log("[Onboarding] Completing tour");
@@ -255,7 +255,7 @@ export class OnboardingController {
     this.isDestroyed = true;
   }
 
-  private async close(): Promise<void> {
+  private close(): void {
     if (this.isDestroyed) return;
 
     console.log("[Onboarding] Closing tour early");
@@ -268,7 +268,7 @@ export class OnboardingController {
     this.isDestroyed = true;
   }
 
-  private async abort(reason: string): Promise<void> {
+  private abort(reason: string): void {
     if (this.isDestroyed) return;
 
     console.log("[Onboarding] Aborting tour:", reason);

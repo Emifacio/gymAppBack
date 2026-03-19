@@ -66,7 +66,7 @@ export function ProfilePage() {
     setMessage({ type: "success", text: "Onboarding reiniciado. Vuelve al Dashboard para verlo." });
   };
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 

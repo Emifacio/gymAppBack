@@ -17,7 +17,7 @@ export function RegisterPage() {
 
   const [email, setEmail] = useState("");
   const [googleError, setGoogleError] = useState<string | null>(null);
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const clientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? "";
 
   const emailError = useMemo(() => {
     if (email === "") {
@@ -35,13 +35,13 @@ export function RegisterPage() {
         { id_token: credential },
         {
           onSuccess: () => {
-            navigate("/", { replace: true });
+            void navigate("/", { replace: true });
           },
           onError: (err: Error) => {
             if (isApiResponseError(err)) {
               setGoogleError("Error al registrarse con Google. Verifique su cuenta e intente nuevamente.");
             } else {
-              setGoogleError((err as Error)?.message ?? "Error al registrarse con Google.");
+              setGoogleError(err.message ?? "Error al registrarse con Google.");
             }
           },
         }
@@ -175,7 +175,7 @@ export function RegisterPage() {
 
           <div className="md:col-span-2">
             <GoogleSignIn
-              clientId={clientId || ""}
+              clientId={clientId}
               onSuccess={handleGoogleSuccess}
               onError={handleGoogleError}
               disabled={googleLogin.isPending}

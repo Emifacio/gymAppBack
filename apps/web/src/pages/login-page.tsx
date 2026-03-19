@@ -17,7 +17,7 @@ export function LoginPage() {
   const googleLogin = useGoogleLoginMutation();
 
   const [googleError, setGoogleError] = useState<string | null>(null);
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const clientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? "";
 
   const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/";
 
@@ -29,13 +29,13 @@ export function LoginPage() {
         { id_token: credential },
         {
           onSuccess: () => {
-            navigate(redirectTo, { replace: true });
+            void navigate(redirectTo, { replace: true });
           },
           onError: (err: Error) => {
             if (isApiResponseError(err)) {
               setGoogleError("Error al iniciar sesión con Google. Verifique su cuenta e intente nuevamente.");
             } else {
-              setGoogleError((err as Error)?.message ?? "Error al iniciar sesión con Google.");
+              setGoogleError(err.message ?? "Error al iniciar sesión con Google.");
             }
           },
         }
@@ -149,7 +149,7 @@ export function LoginPage() {
             </div>
 
             <GoogleSignIn
-              clientId={clientId || ""}
+              clientId={clientId}
               onSuccess={handleGoogleSuccess}
               onError={handleGoogleError}
               disabled={googleLogin.isPending}

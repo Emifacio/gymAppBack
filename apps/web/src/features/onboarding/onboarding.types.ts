@@ -1,5 +1,3 @@
-import type { Driver } from "driver.js";
-
 export interface OnboardingPopoverConfig {
   title?: string;
   description?: string | HTMLElement;

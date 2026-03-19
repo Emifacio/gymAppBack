@@ -1,5 +1,5 @@
 import { Check, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { MotionTokens, SuccessTokens } from "./motion-tokens";
 
 type FeedbackType = "success" | "error" | "idle";
@@ -12,22 +12,20 @@ interface InlineFeedbackProps {
 }
 
 export function InlineFeedback({ message, type, onDismiss, duration = MotionTokens.feedback.errorDuration }: InlineFeedbackProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (message && type !== "idle") {
-      setIsVisible(true);
-      if (type === "success" && onDismiss) {
-        const timer = setTimeout(() => {
-          setIsVisible(false);
-          setTimeout(onDismiss, MotionTokens.feedback.inlineFadeOut);
-        }, duration);
-        return () => clearTimeout(timer);
-      }
-    } else {
-      setIsVisible(false);
+    if (type === "success" && onDismiss) {
+      timerRef.current = setTimeout(() => {
+        onDismiss();
+      }, duration);
+      return () => {
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+        }
+      };
     }
-  }, [message, type, duration, onDismiss]);
+  }, [type, onDismiss, duration]);
 
   if (!message || type === "idle") return null;
 
@@ -40,7 +38,7 @@ export function InlineFeedback({ message, type, onDismiss, duration = MotionToke
     <div
       className={`
         transition-all duration-${MotionTokens.transition.normal} ease-out
-        ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}
+        opacity-100 translate-y-0
         ${containerClass}
         p-4
       `}
