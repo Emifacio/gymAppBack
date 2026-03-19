@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
+import { InlineFeedback } from "@/components/ui/InlineFeedback";
 import { SkeletonWorkoutCard } from "@/components/ui/skeletons";
 import { apiClient } from "@/api/client";
 import { WorkoutCard } from "@/components/workout-card";
@@ -17,6 +18,7 @@ import { useCreateWorkout, useMySubscriptionStatus, useWorkouts } from "@/hooks/
 import { getMembersQueryOptions } from "@gym/api-client";
 import { formatCredits, formatDateTime } from "@/lib/format";
 import { canManageOperations } from "@/lib/roles";
+import { useTransientState } from "@/hooks/useTransientState";
 import type { Workout } from "@/types/gym";
 import type { WorkoutCreatePayload } from "@gym/api-client";
 
@@ -55,7 +57,8 @@ export function WorkoutsPage() {
   });
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [pendingDate, setPendingDate] = useState<string>("");
-  const [submissionMessage, setSubmissionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [listHighlight, setListHighlight] = useState(false);
+  const feedback = useTransientState({ duration: 3000 });
 
   const {
     register,
@@ -77,8 +80,6 @@ export function WorkoutsPage() {
   const subscription = subscriptionQuery.data;
   const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
 
-  const isFormDisabled = createWorkout.isPending;
-
   const addDate = () => {
     if (pendingDate && !selectedDates.includes(pendingDate)) {
       setSelectedDates((prev) => [...prev, pendingDate].sort());
@@ -91,12 +92,12 @@ export function WorkoutsPage() {
   };
 
   const onSubmit = async (values: WorkoutCreateFormValues) => {
-    setSubmissionMessage(null);
-
     if (selectedDates.length === 0) {
-      setSubmissionMessage({ type: "error", text: "Selecciona al menos una fecha para crear la clase." });
+      feedback.triggerError("Selecciona al menos una fecha para crear la clase.");
       return;
     }
+
+    feedback.triggerLoading();
 
     const dates = selectedDates.map((date) => `${date}T${values.class_time}:00`);
 
@@ -107,7 +108,8 @@ export function WorkoutsPage() {
       duration_minutes: values.duration_minutes,
       instructor_id: values.instructor_id?.trim() || null,
       description: values.description?.trim() || null,
-      dates
+      dates,
+      status: "scheduled"
     };
 
     try {
@@ -115,11 +117,13 @@ export function WorkoutsPage() {
       reset();
       setSelectedDates([]);
       setPendingDate("");
+      setListHighlight(true);
+      setTimeout(() => setListHighlight(false), 800);
       window.scrollTo({ top: 0, behavior: "smooth" });
-      setSubmissionMessage({ type: "success", text: "¡Entrenamientos creados con éxito!" });
+      feedback.triggerSuccess("Entrenamientos creados con éxito.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error al crear los entrenamientos.";
-      setSubmissionMessage({ type: "error", text: message });
+      feedback.triggerError(message);
     }
   };
 
@@ -196,14 +200,11 @@ export function WorkoutsPage() {
           </div>
 
           <form className="grid gap-[var(--stack-gap)] sm:grid-cols-2 lg:grid-cols-3" onSubmit={handleSubmit(onSubmit)}>
-            {submissionMessage ? (
-              <div className={`sm:col-span-2 lg:col-span-3 rounded-xl border p-4 text-sm ${
-                submissionMessage.type === "success" 
-                  ? "border-green-200 bg-green-50 text-green-800" 
-                  : "border-red-200 bg-red-50 text-red-800"
-              }`}>
-                {submissionMessage.text}
-              </div>
+            {(feedback.isSuccess || feedback.isError) ? (
+              <InlineFeedback
+                message={feedback.message}
+                type={feedback.isSuccess ? "success" : "error"}
+              />
             ) : null}
 
             <div className="sm:col-span-2 lg:col-span-3 rounded-xl border border-[var(--surface-outline)] bg-white p-4">
@@ -332,8 +333,15 @@ export function WorkoutsPage() {
                 </div>
 
                 <div className="sm:col-span-2 lg:col-span-3">
-                  <Button className="w-full h-12" loading={isFormDisabled} disabled={isFormDisabled} type="submit" variant="primary">
-                    {isFormDisabled ? "Programando..." : "Crear entrenamiento"}
+                  <Button
+                    className="w-full h-12"
+                    loading={feedback.isLoading}
+                    success={feedback.isSuccess}
+                    disabled={feedback.isLoading}
+                    type="submit"
+                    variant="primary"
+                  >
+                    {feedback.isLoading ? "Programando..." : feedback.isSuccess ? "Creado" : "Crear entrenamiento"}
                   </Button>
                 </div>
               </div>
@@ -342,7 +350,12 @@ export function WorkoutsPage() {
         </section>
       ) : null}
 
-      <div id="tour-workouts" className="space-y-8">
+      <div
+        id="tour-workouts"
+        className={`space-y-8 rounded-3xl p-6 transition-all duration-500 ${
+          listHighlight ? "ring-2 ring-emerald-400/50 bg-emerald-50/30" : ""
+        }`}
+      >
         {workoutsQuery.isLoading ? (
           <>
             <div className="space-y-4">

@@ -2,10 +2,12 @@ import { useState, type FormEvent } from "react";
 import { Link, Navigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/Button";
+import { InlineFeedback } from "@/components/ui/InlineFeedback";
 import { SkeletonMemberRow } from "@/components/ui/skeletons";
 import { useAuth } from "@/hooks/use-auth";
 import { useCreateMember, useMembers } from "@/hooks/use-workouts";
 import { canManageOperations } from "@/lib/roles";
+import { useTransientState } from "@/hooks/useTransientState";
 
 type MemberRole = "member" | "instructor" | "admin";
 type MembershipStatus = "active" | "inactive" | "cancelled";
@@ -25,7 +27,8 @@ export function MembersPage() {
     limit: filters.limit
   });
   const createMember = useCreateMember();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const feedback = useTransientState({ duration: 3000 });
+  const [directoryHighlight, setDirectoryHighlight] = useState(false);
   const [formState, setFormState] = useState({
     email: "",
     password: "",
@@ -50,7 +53,8 @@ export function MembersPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setErrorMessage(null);
+
+    feedback.triggerLoading();
 
     try {
       await createMember.mutateAsync({
@@ -84,8 +88,13 @@ export function MembersPage() {
         instructor_bio: "",
         instructor_specialties: ""
       });
+
+      setDirectoryHighlight(true);
+      setTimeout(() => setDirectoryHighlight(false), 800);
+      feedback.triggerSuccess("Miembro creado correctamente.");
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "No se pudo crear el miembro.");
+      const message = error instanceof Error ? error.message : "No se pudo crear el miembro.";
+      feedback.triggerError(message);
     }
   }
 
@@ -147,7 +156,7 @@ export function MembersPage() {
             </div>
           </div>
 
-          <div className="mt-8 space-y-3">
+          <div className={`mt-8 space-y-3 rounded-2xl p-2 -m-2 transition-all duration-500 ${directoryHighlight ? "ring-2 ring-emerald-400/50 bg-emerald-50/30" : ""}`}>
             {membersQuery.isLoading ? (
               <>
                 <SkeletonMemberRow />
@@ -270,14 +279,22 @@ export function MembersPage() {
               </div>
             </div>
 
-            {errorMessage ? (
-              <p className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-600">
-                {errorMessage}
-              </p>
+            {(feedback.isSuccess || feedback.isError) ? (
+              <InlineFeedback
+                message={feedback.message}
+                type={feedback.isSuccess ? "success" : "error"}
+              />
             ) : null}
 
-            <Button className="w-full h-12" disabled={createMember.isPending} loading={createMember.isPending} type="submit" variant="primary">
-              {createMember.isPending ? "Creando cuenta..." : "Crear miembro"}
+            <Button
+              className="w-full h-12"
+              disabled={feedback.isLoading}
+              loading={feedback.isLoading}
+              success={feedback.isSuccess}
+              type="submit"
+              variant="primary"
+            >
+              {feedback.isLoading ? "Creando cuenta..." : feedback.isSuccess ? "Creado" : "Crear miembro"}
             </Button>
           </form>
         </section>

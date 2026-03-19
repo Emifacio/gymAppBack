@@ -2,6 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { InlineFeedback } from "@/components/ui/InlineFeedback";
 import { SkeletonPlanCard } from "@/components/ui/skeletons";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -12,10 +13,17 @@ import {
 } from "@/hooks/use-workouts";
 import { formatPlanPeriod } from "@/lib/format";
 import { canManagePlans } from "@/lib/roles";
+import { useTransientState } from "@/hooks/useTransientState";
 
 function getFormValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value : "";
+}
+
+interface RowState {
+  isSaving: boolean;
+  isDeactivating: boolean;
+  isSuccess: boolean;
 }
 
 export function PlansPage() {
@@ -24,14 +32,113 @@ export function PlansPage() {
   const createPlan = useCreatePlan();
   const updatePlan = useUpdatePlan();
   const deactivatePlan = useDeactivatePlan();
-  const [activePlanId, setActivePlanId] = useState<string | null>(null);
+  
+  const [rowStates, setRowStates] = useState<Record<string, RowState>>({});
+  const [highlightedPlanId, setHighlightedPlanId] = useState<string | null>(null);
+  const [newlyCreatedPlanId, setNewlyCreatedPlanId] = useState<string | null>(null);
+  const [deactivatedPlanId, setDeactivatedPlanId] = useState<string | null>(null);
+  const createFeedback = useTransientState({ duration: 3000 });
 
   if (!session || !canManagePlans(session.member)) {
     return <Navigate to="/" replace />;
   }
 
   const plans = plansQuery.data ?? [];
-  const isCreating = createPlan.isPending;
+
+  const getRowState = (planId: string): RowState => {
+    return rowStates[planId] ?? { isSaving: false, isDeactivating: false, isSuccess: false };
+  };
+
+  const setRowState = (planId: string, updates: Partial<RowState>) => {
+    setRowStates((prev) => ({
+      ...prev,
+      [planId]: { ...getRowState(planId), ...updates }
+    }));
+  };
+
+  const highlightRow = (planId: string) => {
+    setHighlightedPlanId(planId);
+    setTimeout(() => setHighlightedPlanId(null), 2000);
+  };
+
+  const handleCreatePlan = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    createFeedback.triggerLoading();
+
+    createPlan.mutate({
+      name: getFormValue(formData, "name"),
+      description: getFormValue(formData, "description") || null,
+      credits_per_period: Number(formData.get("credits_per_period") ?? 0),
+      period_type: getFormValue(formData, "period_type") as "weekly" | "monthly",
+      allows_free_pass: formData.get("allows_free_pass") === "on",
+      active: formData.get("active") === "on"
+    }, {
+      onSuccess: (data) => {
+        createFeedback.triggerSuccess("Plan creado correctamente.");
+        setNewlyCreatedPlanId(data.id);
+        setHighlightedPlanId(data.id);
+        setTimeout(() => {
+          setNewlyCreatedPlanId(null);
+          setHighlightedPlanId(null);
+        }, 1500);
+        event.currentTarget.reset();
+      },
+      onError: (error) => {
+        const message = error instanceof Error ? error.message : "Error al crear el plan.";
+        createFeedback.triggerError(message);
+      }
+    });
+  };
+
+  const handleUpdatePlan = (planId: string) => {
+    setRowState(planId, { isSaving: true });
+    
+    return (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const formData = new FormData(event.currentTarget);
+
+      updatePlan.mutate({
+        planId,
+        payload: {
+          name: getFormValue(formData, "name"),
+          description: getFormValue(formData, "description") || null,
+          credits_per_period: Number(formData.get("credits_per_period") ?? 0),
+          period_type: getFormValue(formData, "period_type") as "weekly" | "monthly",
+          allows_free_pass: formData.get("allows_free_pass") === "on",
+          active: formData.get("active") === "on"
+        }
+      }, {
+        onSuccess: () => {
+          setRowState(planId, { isSaving: false, isSuccess: true });
+          highlightRow(planId);
+          setTimeout(() => setRowState(planId, { isSuccess: false }), 1500);
+        },
+        onError: () => {
+          setRowState(planId, { isSaving: false });
+        }
+      });
+    };
+  };
+
+  const handleDeactivatePlan = (planId: string) => {
+    setRowState(planId, { isDeactivating: true });
+
+    deactivatePlan.mutate({ planId }, {
+      onSuccess: () => {
+        setRowState(planId, { isDeactivating: false, isSuccess: true });
+        setDeactivatedPlanId(planId);
+        highlightRow(planId);
+        setTimeout(() => {
+          setRowState(planId, { isSuccess: false });
+          setDeactivatedPlanId(null);
+        }, 1500);
+      },
+      onError: () => {
+        setRowState(planId, { isDeactivating: false });
+      }
+    });
+  };
 
   return (
     <div className="space-y-8">
@@ -57,22 +164,15 @@ export function PlansPage() {
 
           <form
             className="mt-6 space-y-4"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const formData = new FormData(event.currentTarget);
-
-              createPlan.mutate({
-                name: getFormValue(formData, "name"),
-                description: getFormValue(formData, "description") || null,
-                credits_per_period: Number(formData.get("credits_per_period") ?? 0),
-                period_type: getFormValue(formData, "period_type") as "weekly" | "monthly",
-                allows_free_pass: formData.get("allows_free_pass") === "on",
-                active: formData.get("active") === "on"
-              });
-
-              event.currentTarget.reset();
-            }}
+            onSubmit={handleCreatePlan}
           >
+            {(createFeedback.isSuccess || createFeedback.isError) ? (
+              <InlineFeedback
+                message={createFeedback.message}
+                type={createFeedback.isSuccess ? "success" : "error"}
+              />
+            ) : null}
+
             <input
               className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
               name="name"
@@ -112,11 +212,13 @@ export function PlansPage() {
             </label>
             <Button
               className="w-full"
-              loading={isCreating}
+              loading={createFeedback.isLoading}
+              success={createFeedback.isSuccess}
+              disabled={createFeedback.isLoading}
               type="submit"
               variant="primary"
             >
-              {isCreating ? "Creando plan..." : "Crear plan"}
+              {createFeedback.isLoading ? "Creando..." : createFeedback.isSuccess ? "Creado" : "Crear plan"}
             </Button>
           </form>
         </div>
@@ -127,12 +229,30 @@ export function PlansPage() {
               <SkeletonPlanCard />
               <SkeletonPlanCard />
             </>
-          ) : plans.map((plan) => (
-            <article key={plan.id} className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm">
+          ) : plans.map((plan) => {
+            const rowState = getRowState(plan.id);
+            const isNewlyCreated = newlyCreatedPlanId === plan.id;
+            return (
+            <article
+              key={plan.id}
+              className={`rounded-3xl border bg-white/90 p-6 shadow-sm transition-all duration-500 ${
+                highlightedPlanId === plan.id
+                  ? isNewlyCreated
+                    ? "border-emerald-500 shadow-emerald-200 ring-4 ring-emerald-400/20 scale-[1.01] animate-in fade-in slide-in-from-bottom-2"
+                    : "border-emerald-400 shadow-emerald-100"
+                  : "border-slate-200"
+              } ${rowState.isSuccess && !isNewlyCreated ? "ring-2 ring-emerald-400/50" : ""}`}
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-700">
-                    {plan.active ? "Plan activo" : "Plan inactivo"}
+                  <p className={`text-sm font-semibold uppercase tracking-[0.25em] transition-all duration-700 ${
+                    deactivatedPlanId === plan.id
+                      ? "text-slate-400 scale-95"
+                      : plan.active
+                        ? "text-amber-700"
+                        : "text-slate-500"
+                  }`}>
+                    {deactivatedPlanId === plan.id ? "Desactivando..." : plan.active ? "Plan activo" : "Plan inactivo"}
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold text-slate-900">{plan.name}</h2>
                   <p className="mt-2 text-sm text-slate-500">
@@ -148,25 +268,7 @@ export function PlansPage() {
 
               <form
                 className="mt-6 grid gap-4"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  const formData = new FormData(event.currentTarget);
-                  setActivePlanId(plan.id);
-
-                  updatePlan.mutate({
-                    planId: plan.id,
-                    payload: {
-                      name: getFormValue(formData, "name"),
-                      description: getFormValue(formData, "description") || null,
-                      credits_per_period: Number(formData.get("credits_per_period") ?? 0),
-                      period_type: getFormValue(formData, "period_type") as "weekly" | "monthly",
-                      allows_free_pass: formData.get("allows_free_pass") === "on",
-                      active: formData.get("active") === "on"
-                    }
-                  }, {
-                    onSettled: () => setActivePlanId(null)
-                  });
-                }}
+                onSubmit={handleUpdatePlan(plan.id)}
               >
                 <input
                   className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
@@ -208,31 +310,29 @@ export function PlansPage() {
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <Button
-                    loading={activePlanId === plan.id}
+                    loading={rowState.isSaving}
+                    success={rowState.isSuccess && !rowState.isSaving}
+                    disabled={rowState.isSaving}
                     type="submit"
                     variant="primary"
                   >
-                    {activePlanId === plan.id ? "Guardando..." : "Guardar cambios"}
+                    {rowState.isSaving ? "Guardando..." : rowState.isSuccess ? "Guardado" : "Guardar cambios"}
                   </Button>
                   <Button
                     className="border border-rose-200 text-rose-700 hover:bg-rose-50"
-                    disabled={!plan.active || activePlanId === plan.id}
-                    loading={activePlanId === plan.id && deactivatePlan.isPending}
-                    onClick={() => {
-                      setActivePlanId(plan.id);
-                      deactivatePlan.mutate({ planId: plan.id }, {
-                        onSettled: () => setActivePlanId(null)
-                      });
-                    }}
+                    disabled={!plan.active || rowState.isSaving || rowState.isDeactivating}
+                    loading={rowState.isDeactivating}
+                    onClick={() => handleDeactivatePlan(plan.id)}
                     type="button"
                     variant="secondary"
                   >
-                    Desactivar
+                    {rowState.isDeactivating ? "Desactivando..." : "Desactivar"}
                   </Button>
                 </div>
               </form>
             </article>
-          ))}
+          );
+          })}
 
           {!plans.length && !plansQuery.isLoading ? (
             <div className="rounded-3xl border border-dashed border-slate-300 bg-white/70 px-5 py-6 text-sm text-slate-500">

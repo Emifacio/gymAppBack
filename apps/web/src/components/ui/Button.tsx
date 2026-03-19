@@ -1,6 +1,5 @@
+import { Check, LoaderCircle } from "lucide-react";
 import type { ButtonHTMLAttributes } from "react";
-
-import { LoaderCircle } from "lucide-react";
 
 import { buttonClassName } from "@/components/ui/button-utils";
 import type { ButtonSize, ButtonVariant } from "@/components/ui/button-types";
@@ -8,6 +7,7 @@ import type { ButtonSize, ButtonVariant } from "@/components/ui/button-types";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
+  success?: boolean;
   size?: ButtonSize;
   variant?: ButtonVariant;
 }
@@ -17,6 +17,7 @@ export function Button({
   className,
   disabled,
   loading = false,
+  success = false,
   size = "md",
   type = "button",
   variant = "primary",
@@ -32,7 +33,11 @@ export function Button({
       type={type}
       {...props}
     >
-      {loading ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" /> : null}
+      {loading ? (
+        <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+      ) : success ? (
+        <Check aria-hidden="true" className="size-4" strokeWidth={2.5} />
+      ) : null}
       {children}
     </button>
   );
