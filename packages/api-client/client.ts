@@ -143,6 +143,9 @@ export type IntegrationAccount = components["schemas"]["IntegrationAccountRead"]
 export type ActivityRecord = components["schemas"]["ActivityRead"];
 export type ActivitySyncPayload = components["schemas"]["ActivitySyncRequest"];
 export type ActivitySyncResult = components["schemas"]["TaskEnqueueResponse"];
+export interface AvatarUploadResponse {
+  url: string;
+}
 export type HealthStatus = paths["/health"]["get"]["responses"][200]["content"]["application/json"];
 
 export interface CreateApiClientOptions {

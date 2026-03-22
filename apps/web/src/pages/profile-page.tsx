@@ -4,7 +4,7 @@ import { Camera, Trash2, User, Mail, Phone, Rocket, ShieldCheck } from "lucide-r
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/use-auth";
-import { useUpdateMember } from "@/hooks/use-workouts";
+import { useUpdateMember, useUploadAvatar } from "@/hooks/use-workouts";
 import { getAvatarData } from "@/lib/avatar";
 import { resetTour } from "@/features/onboarding/onboarding.store";
 import { getApiErrorMessage } from "@/api/client";
@@ -67,12 +67,16 @@ export function ProfilePage() {
     setMessage({ type: "success", text: "Onboarding reiniciado. Vuelve al Dashboard para verlo." });
   };
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadAvatar = useUploadAvatar();
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // 1. Validation
     if (!file.type.startsWith("image/")) {
-      setAvatarMessage({ type: "error", text: "Por favor selecciona una imagen." });
+      setAvatarMessage({ type: "error", text: "Por favor selecciona una imagen (PNG, JPG o WebP)." });
       return;
     }
 
@@ -83,33 +87,31 @@ export function ProfilePage() {
 
     setAvatarMessage(null);
 
+    // 2. Local Preview
+    const previewUrl = URL.createObjectURL(file);
+    setLocalPreview(previewUrl);
+
     try {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result as string;
-        
-        try {
-          await updateMember.mutateAsync({
-            memberId: member.id,
-            payload: { profile_image_url: base64 }
-          });
-          setAvatarMessage({ type: "success", text: "Foto de perfil actualizada." });
-        } catch (err) {
-          console.error(err);
-          setAvatarMessage({ type: "error", text: getApiErrorMessage(err) });
-        }
-      };
-      reader.onerror = () => {
-        setAvatarMessage({ type: "error", text: "Error al procesar la imagen." });
-      };
-      reader.readAsDataURL(file);
+      // 3. Upload File
+      const { url: uploadedUrl } = await uploadAvatar.mutateAsync(file);
+      
+      // 4. Update Profile with returned URL
+      await updateMember.mutateAsync({
+        memberId: member.id,
+        payload: { profile_image_url: uploadedUrl }
+      });
+      
+      setAvatarMessage({ type: "success", text: "Foto de perfil actualizada exitosamente." });
+      setLocalPreview(null); // Clear preview once saved
     } catch (err) {
       console.error(err);
-      setAvatarMessage({ type: "error", text: getApiErrorMessage(err) });
-    }
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      setAvatarMessage({ type: "error", text: getApiErrorMessage(err) || "Error al subir la imagen." });
+      setLocalPreview(null);
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -147,7 +149,16 @@ export function ProfilePage() {
         <div className="lg:col-span-1 space-y-8">
           <div className="apple-card p-8 shadow-xl text-center flex flex-col items-center">
             <div className="relative group">
-              <Avatar member={member} size="xl" className="shadow-2xl border-4 border-[var(--bg-surface)] ring-1 ring-[var(--border-base)]" />
+              <Avatar 
+                member={localPreview ? { ...member, profile_image_url: localPreview } : member} 
+                size="xl" 
+                className="shadow-2xl border-4 border-[var(--bg-surface)] ring-1 ring-[var(--border-base)]" 
+              />
+              {(uploadAvatar.isPending || updateMember.isPending) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full animate-pulse">
+                  <Rocket className="h-8 w-8 text-white animate-bounce" />
+                </div>
+              )}
               <button 
                 onClick={() => fileInputRef.current?.click()}
                 className="absolute bottom-0 right-0 p-2.5 bg-[var(--accent)] text-white rounded-xl shadow-lg hover:scale-110 active:scale-95 transition-transform border-4 border-[var(--bg-surface)]"

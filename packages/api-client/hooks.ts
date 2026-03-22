@@ -11,6 +11,7 @@ import {
   type BookingPayload,
   type ClassAssignmentPayload,
   type ClassMember,
+  type AvatarUploadResponse,
   type GymApiClient,
   type LoginPayload,
   type GoogleLoginPayload,
@@ -704,6 +705,25 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     });
   }
 
+  function useUploadAvatar(
+    options: Omit<UseMutationOptions<AvatarUploadResponse, Error, File>, "mutationFn"> = {}
+  ) {
+    return useMutation({
+      mutationFn: async (file: File) => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        return unwrapResult<AvatarUploadResponse>(
+          (client as any).POST("/members/me/avatar", {
+            body: formData,
+            bodySerializer: (body: any) => body // Let fetch handle FormData
+          })
+        );
+      },
+      ...options
+    });
+  }
+
   return {
     useWorkouts,
     useWorkout,
@@ -733,6 +753,7 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     useAssignSubscription,
     useAssignPlan,
     useCancelSubscription,
-    useAssignMemberToClass
+    useAssignMemberToClass,
+    useUploadAvatar
   };
 }

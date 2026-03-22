@@ -117,5 +117,9 @@ class MemberRead(BaseModel):
     active_subscription: MemberSubscriptionRead | None = None
     instructor_profile: InstructorProfileRead | None = None
     profile_metadata: dict[str, Any] = Field(default_factory=dict)
-    created_at: datetime
     updated_at: datetime
+    created_at: datetime
+
+
+class AvatarUploadResponse(BaseModel):
+    url: str

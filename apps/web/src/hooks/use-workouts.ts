@@ -28,3 +28,4 @@ export const useDeactivatePlan = apiHooks.useDeactivatePlan;
 export const useAssignSubscription = apiHooks.useAssignSubscription;
 export const useCancelSubscription = apiHooks.useCancelSubscription;
 export const useAssignMemberToClass = apiHooks.useAssignMemberToClass;
+export const useUploadAvatar = apiHooks.useUploadAvatar;

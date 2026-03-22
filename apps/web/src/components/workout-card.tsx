@@ -12,14 +12,14 @@ interface WorkoutCardProps {
   id?: string | undefined;
 }
 
-export function WorkoutCard({ workout, actionLabel = "View session", id }: WorkoutCardProps) {
+export function WorkoutCard({ workout, actionLabel = "Ver Clase", id }: WorkoutCardProps) {
   const availabilityLabel =
     typeof workout.available_spots === "number"
       ? `${workout.available_spots} de ${workout.capacity} libres`
       : `${workout.capacity} lugares totales`;
 
-  const occupancyRate = typeof workout.available_spots === "number" 
-    ? (workout.capacity - workout.available_spots) / workout.capacity 
+  const occupancyRate = typeof workout.available_spots === "number"
+    ? (workout.capacity - workout.available_spots) / workout.capacity
     : 0;
 
   const barColor = occupancyRate >= 0.9 ? "bg-[var(--danger)]" : occupancyRate >= 0.7 ? "bg-[var(--warning)]" : "bg-[var(--success)]";
@@ -31,8 +31,8 @@ export function WorkoutCard({ workout, actionLabel = "View session", id }: Worko
   const statusLabel = workout.status === "cancelled"
     ? "Cancelada"
     : workout.status === "completed" || isPast
-    ? "Concluída"
-    : "Programada";
+      ? "Concluída"
+      : "Programada";
 
   const statusClass = workout.status === "cancelled" || workout.status === "completed" || isPast
     ? "bg-[var(--success-soft)] text-[var(--success)]"
@@ -55,9 +55,9 @@ export function WorkoutCard({ workout, actionLabel = "View session", id }: Worko
             </span>
           ) : null}
         </div>
-        
+
         <h3 className="section-title text-[var(--font-size-xl)] text-[var(--text-primary)] leading-tight">{workout.name}</h3>
-        
+
         <div className="flex flex-wrap gap-x-8 gap-y-4 text-sm font-medium text-[var(--text-muted)]">
           <div className="flex items-center gap-2.5">
             <Clock className="h-4.5 w-4.5 shrink-0 opacity-70" />
@@ -67,15 +67,15 @@ export function WorkoutCard({ workout, actionLabel = "View session", id }: Worko
             <MapPin className="h-4.5 w-4.5 shrink-0 opacity-70" />
             <span className="text-[var(--text-secondary)]">{workout.location}</span>
           </div>
-          
+
           <div className="flex flex-col gap-2 w-full max-w-[240px] pt-1">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
               <span>Capacidad / Ocupación</span>
               <span>{Math.round(occupancyRate * 100)}%</span>
             </div>
             <div className="h-2 w-full bg-[var(--bg-surface-secondary)] rounded-full overflow-hidden shadow-inner">
-              <div 
-                className={`h-full ${barColor} transition-all duration-700 shadow-sm`} 
+              <div
+                className={`h-full ${barColor} transition-all duration-700 shadow-sm`}
                 style={{ width: `${occupancyRate * 100}%` }}
               />
             </div>

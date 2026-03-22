@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 
 from app.api.dependencies import (
     enforce_member_access,
@@ -16,7 +16,13 @@ from app.domain.enums import MemberRole, MembershipStatus
 from app.domain.models.member import Member
 from app.schemas.activity_schema import ActivityRead
 from app.schemas.booking_schema import MemberBookingsResponse
-from app.schemas.member_schema import MemberCreate, MemberListRead, MemberRead, MemberUpdate
+from app.schemas.member_schema import (
+    AvatarUploadResponse,
+    MemberCreate,
+    MemberListRead,
+    MemberRead,
+    MemberUpdate,
+)
 from app.schemas.subscription_schema import (
     MemberSubscriptionRead,
     MemberSubscriptionStatusRead,
@@ -25,6 +31,7 @@ from app.schemas.subscription_schema import (
 from app.services.activity_service import ActivityService
 from app.services.booking_service import BookingService
 from app.services.member_service import MemberService
+from app.services.storage_service import storage_service
 from app.services.subscription_service import SubscriptionService
 
 router = APIRouter(prefix="/members", tags=["members"])
@@ -66,6 +73,15 @@ async def get_my_subscription(
     service: SubscriptionService = Depends(get_subscription_service),
 ) -> MemberSubscriptionStatusRead:
     return await service.get_member_subscription_status(current_user.id)
+
+
+@router.post("/me/avatar", response_model=AvatarUploadResponse)
+async def upload_my_avatar(
+    file: UploadFile = File(...),
+    current_user: Member = Depends(get_current_user),
+) -> AvatarUploadResponse:
+    url = await storage_service.upload_avatar(file)
+    return AvatarUploadResponse(url=url)
 
 
 @router.get("/{member_id}", response_model=MemberRead)
