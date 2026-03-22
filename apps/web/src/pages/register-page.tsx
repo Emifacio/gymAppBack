@@ -8,6 +8,7 @@ import { GoogleSignIn } from "@/components/ui/GoogleSignIn";
 import { useAuth } from "@/hooks/use-auth";
 import { useGoogleLoginMutation, useRegisterMutation } from "@/hooks/use-workouts";
 import { getFormValue } from "@/lib/forms";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export function RegisterPage() {
   const navigate = useNavigate();
@@ -59,13 +60,16 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
-      <section className="glass-panel w-full max-w-2xl rounded-[2.5rem] p-8 md:p-10">
+    <div className="flex min-h-screen items-center justify-center px-4 py-12 transition-colors duration-300">
+      <div className="fixed top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
+
+      <section className="glass-panel w-full max-w-2xl rounded-[2.5rem] p-8 md:p-10 bg-[var(--bg-surface)] border border-[var(--border-base)] shadow-xl">
         <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Registro</p>
-        <h1 className="section-title mt-4 text-4xl font-semibold">Crear una nueva cuenta de miembro</h1>
-        <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-          El primer usuario registrado se convierte en administrador en el backend, por lo que esta pantalla también es útil para
-          configurar entornos locales.
+        <h1 className="section-title mt-4 text-4xl font-semibold text-[var(--text-primary)]">Crear una nueva cuenta</h1>
+        <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
+          Inscripcción rápida para comenzar a entrenar.
         </p>
 
         <form
@@ -90,9 +94,9 @@ export function RegisterPage() {
           }}
         >
           <label className="block">
-            <span className="mb-2 block text-sm font-medium">Nombre completo</span>
+            <span className="mb-2 block text-sm font-medium text-[var(--text-primary)]">Nombre completo</span>
             <input
-              className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 outline-none transition focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 outline-none transition focus:border-[var(--accent)]"
               minLength={2}
               name="full_name"
               required
@@ -101,10 +105,10 @@ export function RegisterPage() {
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-medium">Correo electrónico</span>
+            <span className="mb-2 block text-sm font-medium text-[var(--text-primary)]">Correo electrónico</span>
             <input
-              className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-[var(--accent)] ${
-                emailError ? "border-red-400" : "border-[rgba(19,34,56,0.08)]"
+              className={`w-full rounded-2xl border bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 outline-none transition focus:border-[var(--accent)] ${
+                emailError ? "border-[var(--danger)]" : "border-[var(--border-base)]"
               }`}
               name="email"
               onChange={(e) => setEmail(e.target.value)}
@@ -114,29 +118,29 @@ export function RegisterPage() {
               value={email}
             />
             {emailError ? (
-              <span className="mt-1 block text-xs font-medium text-red-500 animate-in fade-in slide-in-from-top-1">
+              <span className="mt-1 block text-xs font-medium text-[var(--danger)] animate-in fade-in slide-in-from-top-1">
                 {emailError}
               </span>
             ) : email && !emailError ? (
-              <span className="mt-1 block text-xs font-medium text-green-500 animate-in fade-in slide-in-from-top-1">
+              <span className="mt-1 block text-xs font-medium text-[var(--success)] animate-in fade-in slide-in-from-top-1">
                 Formato válido
               </span>
             ) : null}
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-medium">Teléfono</span>
+            <span className="mb-2 block text-sm font-medium text-[var(--text-primary)]">Teléfono</span>
             <input
-              className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 outline-none transition focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 outline-none transition focus:border-[var(--accent)]"
               name="phone"
               type="tel"
             />
           </label>
 
           <label className="block">
-            <span className="mb-2 block text-sm font-medium">Contraseña</span>
+            <span className="mb-2 block text-sm font-medium text-[var(--text-primary)]">Contraseña</span>
             <input
-              className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 outline-none transition focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 outline-none transition focus:border-[var(--accent)]"
               minLength={8}
               name="password"
               required
@@ -145,7 +149,7 @@ export function RegisterPage() {
           </label>
 
           {register.error ? (
-            <div className="rounded-2xl border border-[rgba(255,122,89,0.2)] bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--accent)] md:col-span-2">
+            <div className="rounded-2xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)] md:col-span-2">
               {isApiResponseError(register.error)
                 ? "Error al registrarse. Verifica las reglas de validación del backend o si el correo ya existe."
                 : register.error.message}
@@ -153,7 +157,7 @@ export function RegisterPage() {
           ) : null}
 
           {googleError ? (
-            <div className="rounded-2xl border border-[rgba(255,122,89,0.2)] bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--accent)] md:col-span-2">
+            <div className="rounded-2xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)] md:col-span-2">
               {googleError}
             </div>
           ) : null}
@@ -166,10 +170,10 @@ export function RegisterPage() {
 
           <div className="relative my-2 md:col-span-2">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[rgba(19,34,56,0.08)]"></div>
+              <div className="w-full border-t border-[var(--border-base)]"></div>
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[#f8fafd] px-4 text-[var(--muted)] font-medium tracking-widest">O</span>
+              <span className="bg-[var(--bg-surface)] px-4 text-[var(--text-muted)] font-medium tracking-widest">O</span>
             </div>
           </div>
 
@@ -183,7 +187,7 @@ export function RegisterPage() {
           </div>
         </form>
 
-        <p className="mt-5 text-sm text-[var(--muted)]">
+        <p className="mt-5 text-sm text-[var(--text-secondary)]">
           ¿Ya tienes una cuenta?{" "}
           <Link className="font-semibold text-[var(--accent)]" to="/login">
             Volver al inicio de sesión

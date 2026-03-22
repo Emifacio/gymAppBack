@@ -20,29 +20,29 @@ export const MotionTokens = {
 
 export const SuccessTokens = {
   ring: {
-    standard: "ring-2 ring-emerald-400/50",
-    emphasized: "ring-4 ring-emerald-400/20",
+    standard: "ring-2 ring-[var(--success)]/50",
+    emphasized: "ring-4 ring-[var(--success)]/20",
   },
   background: {
-    tint: "bg-emerald-50/30",
+    tint: "bg-[var(--success-soft)]/30",
   },
   border: {
-    standard: "border-emerald-400",
-    emphasized: "border-emerald-500",
+    standard: "border-[var(--success)]",
+    emphasized: "border-[var(--success)]",
   },
   shadow: {
-    standard: "shadow-emerald-100",
-    emphasized: "shadow-emerald-200",
+    standard: "shadow-[var(--success-soft)]",
+    emphasized: "shadow-[var(--success-soft)]",
   },
   inline: {
-    container: "border-emerald-200 bg-emerald-50",
-    icon: "text-emerald-600",
-    text: "text-emerald-800",
+    container: "border-[var(--success-soft)] bg-[var(--success-soft)] rounded-xl border",
+    icon: "text-[var(--success)]",
+    text: "text-[var(--success)]",
   },
   error: {
-    container: "border-red-200 bg-red-50",
-    icon: "text-red-600",
-    text: "text-red-800",
+    container: "border-[var(--danger-soft)] bg-[var(--danger-soft)] rounded-xl border",
+    icon: "text-[var(--danger)]",
+    text: "text-[var(--danger)]",
   },
 } as const;
 

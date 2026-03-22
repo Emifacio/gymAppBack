@@ -1,133 +1,179 @@
-import { LayoutDashboard, Calendar, BookCheck, CreditCard, Users, History, LogOut, Sparkles, User } from "lucide-react";
-import { NavLink, Outlet } from "react-router-dom";
-
-import { Avatar } from "@/components/ui/Avatar";
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
+  CreditCard,
+  History,
+  LogOut,
+  Menu,
+  X,
+  User
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { canManageOperations, canManagePlans } from "@/lib/roles";
+import { Avatar } from "@/components/ui/Avatar";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
-function linkClassName(isActive: boolean) {
-  return isActive
-    ? "flex items-center gap-3 rounded-xl bg-[var(--accent-soft)] px-4 py-3 text-sm font-semibold text-[var(--primary)]"
-    : "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[var(--ink-700)] transition-all hover:bg-[var(--ink-100)] hover:text-[var(--ink-900)]";
-}
-
-function RoleBadge({ role }: { role: string | undefined }) {
-  if (!role) return null;
-  const styles = {
-    admin: "bg-purple-100 text-purple-700 border-purple-200",
-    instructor: "bg-blue-100 text-blue-700 border-blue-200",
-    member: "bg-gray-100 text-gray-700 border-gray-200",
-  }[role] || "bg-gray-100 text-gray-700 border-gray-200";
-
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${styles} uppercase tracking-wider`}>
-      {role}
-    </span>
-  );
-}
+const navigation = [
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Horario", href: "/workouts", icon: Calendar },
+  { name: "Mis Reservas", href: "/bookings", icon: History, role: "member" },
+  { name: "Miembros", href: "/members", icon: Users, role: "admin" },
+  { name: "Planes", href: "/plans", icon: CreditCard, role: "admin" },
+  { name: "Asistencia", href: "/attendance", icon: History, role: "admin" }
+];
 
 export function DashboardLayout() {
-  const { logout, session } = useAuth();
-  const navigation = [
-    { label: "Panel", to: "/", icon: LayoutDashboard },
-    { label: "Mi Perfil", to: "/profile", icon: User },
-    { label: "Clases", to: "/workouts", icon: Calendar },
-    { label: "Reservas", to: "/bookings", icon: BookCheck },
-    ...(canManageOperations(session?.member) ? [{ label: "Miembros", to: "/members", icon: Users }] : []),
-    ...(canManagePlans(session?.member) ? [{ label: "Planes", to: "/plans", icon: CreditCard }] : []),
-    ...(canManageOperations(session?.member) ? [{ label: "Asistencia", to: "/attendance", icon: History }] : [])
-  ];
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { session, logout } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await logout();
+    navigate("/login");
+  };
+
+  const filteredNavigation = navigation.filter((item) => {
+    if (!item.role) return true;
+    if (item.role === "admin") return session?.member?.role === "admin";
+    if (item.role === "member") return session?.member?.role === "member";
+    return true;
+  });
+
+  const linkClassName = (href: string) => {
+    const isActive = location.pathname === href;
+    return `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${
+      isActive
+        ? "bg-[var(--accent-soft)] text-[var(--accent)] shadow-sm"
+        : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface-secondary)] hover:text-[var(--text-primary)]"
+    }`;
+  };
 
   return (
-    <div className="flex min-h-screen bg-[var(--bg-main)]">
-      {/* Mobile Header (Hidden on LG) */}
-      <header className="fixed top-0 left-0 right-0 z-40 flex h-16 items-center justify-between border-b border-[var(--surface-outline)] bg-[var(--bg-sidebar)/80] px-4 backdrop-blur-md lg:hidden">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--primary)] text-white">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <span className="text-lg font-bold tracking-tight text-[var(--ink-900)]">Gimnasio</span>
-        </div>
-          <div className="flex items-center gap-3">
-            <button
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-[#FF3B30] hover:bg-red-100 transition-colors"
-              onClick={() => {
-                void logout();
-              }}
-              type="button"
-              title="Cerrar sesión"
-            >
-              <LogOut className="h-5 w-5" />
-            </button>
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] font-bold text-[var(--ink-900)] line-clamp-1">{session?.member.full_name}</span>
-              <RoleBadge role={session?.member.role} />
-            </div>
-            <Avatar member={session?.member} size="sm" />
-          </div>
-      </header>
-
-      {/* Sidebar navigation (Hidden on Mobile, Visible on Desktop) */}
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-[var(--surface-outline)] bg-[var(--bg-sidebar)] px-6 py-8 lg:flex flex-col">
-        <div className="flex items-center gap-2 px-2 mb-10">
-          <Avatar member={session?.member} size="lg" />
-          <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tight text-[var(--ink-900)] truncate w-32">{session?.member.full_name}</span>
-            <div className="mt-0.5">
-              <RoleBadge role={session?.member.role} />
-            </div>
-          </div>
+    <div className="flex min-h-screen bg-[var(--bg-base)] transition-colors duration-500">
+      {/* Sidebar Desktop */}
+      <aside className="fixed inset-y-0 left-0 hidden w-72 flex-col border-r border-[var(--border-base)] bg-[var(--bg-surface)] lg:flex shadow-sm">
+        <div className="flex h-20 items-center px-8">
+          <Link to="/" className="text-2xl font-bold tracking-tighter text-[var(--text-primary)] transition-opacity hover:opacity-80">
+            GYM<span className="text-[var(--accent)]">APP</span>
+          </Link>
         </div>
 
-        <nav className="flex-1 space-y-1">
-          {navigation.map((item) => (
-            <NavLink key={item.to} className={({ isActive }) => linkClassName(isActive)} to={item.to}>
+        <nav className="flex-1 space-y-1 px-4 py-4">
+          {filteredNavigation.map((item) => (
+            <Link key={item.name} to={item.href} className={linkClassName(item.href)}>
               <item.icon className="h-5 w-5" />
-              {item.label}
-            </NavLink>
+              {item.name}
+            </Link>
           ))}
         </nav>
 
-
-        <div className="mt-auto border-t border-[var(--surface-outline)] pt-6">
-          <button
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[#FF3B30] transition-colors hover:bg-red-50"
-            onClick={() => {
-              void logout();
-            }}
-            type="button"
+        <div className="border-t border-[var(--border-base)] p-4 space-y-2">
+          <Link
+            to="/profile"
+            className="flex items-center gap-3 rounded-xl p-3 text-sm font-medium text-[var(--text-secondary)] transition-all hover:bg-[var(--bg-surface-secondary)] hover:text-[var(--text-primary)] group"
           >
-            <LogOut className="h-5 w-5" />
+            <Avatar member={session?.member} size="sm" className="group-hover:scale-105 transition-transform" />
+            <div className="flex flex-col truncate">
+              <span className="truncate font-semibold text-[var(--text-primary)]">{session?.member?.full_name}</span>
+              <span className="truncate text-xs opacity-70">Ver perfil</span>
+            </div>
+          </Link>
+          
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 rounded-xl p-3 text-sm font-medium text-[var(--danger)] transition-all hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] group"
+          >
+            <LogOut className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
             Cerrar sesión
           </button>
         </div>
       </aside>
 
-      {/* Main content area */}
-      <main className="flex-1 lg:ml-64">
-        <div className="mx-auto max-w-6xl px-[var(--container-px)] pb-32 pt-24 lg:py-10">
-          <Outlet />
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col lg:pl-72">
+        {/* Top Header */}
+        <header className="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-[var(--border-base)] bg-[var(--bg-surface)]/80 px-6 backdrop-blur-xl lg:px-10">
+          <div className="flex items-center gap-4">
+            <button
+              className="rounded-xl p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-surface-secondary)] lg:hidden"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+            <h2 className="hidden text-sm font-medium text-[var(--text-muted)] lg:block">
+              {filteredNavigation.find(n => n.href === location.pathname)?.name || "Gym App"}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <Link to="/profile" className="flex items-center justify-center h-10 w-10 rounded-xl bg-[var(--bg-surface-secondary)] border border-[var(--border-base)] hover:bg-[var(--accent-soft)] transition-all group">
+              <User className="h-5 w-5 text-[var(--text-secondary)] group-hover:text-[var(--accent)]" />
+            </Link>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 px-6 py-8 lg:px-10 lg:py-12">
+          <div className="mx-auto max-w-6xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+
+      {/* Sidebar Mobile Overlay */}
+      {isSidebarOpen && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsSidebarOpen(false)} />
+          <aside className="relative flex w-80 flex-col bg-[var(--bg-surface)] shadow-2xl animate-in slide-in-from-left duration-300">
+            <div className="flex h-20 items-center justify-between px-8 border-b border-[var(--border-base)]">
+              <span className="text-xl font-bold text-[var(--text-primary)]">MENU</span>
+              <button
+                className="rounded-xl p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-surface-secondary)]"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <nav className="flex-1 space-y-2 p-6">
+              {filteredNavigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={linkClassName(item.href)}
+                  onClick={() => setIsSidebarOpen(false)}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+            <div className="border-t border-[var(--border-base)] p-6 space-y-4">
+              <Link
+                to="/profile"
+                className="flex items-center gap-4 rounded-2xl bg-[var(--bg-surface-secondary)] p-4"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <Avatar member={session?.member} size="md" />
+                <div className="flex flex-col">
+                  <span className="font-bold text-[var(--text-primary)]">{session?.member?.full_name}</span>
+                  <span className="text-xs text-[var(--text-muted)]">Mi Perfil</span>
+                </div>
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[var(--danger-soft)] py-4 text-sm font-bold text-[var(--danger)]"
+              >
+                <LogOut className="h-5 w-5" />
+                Cerrar Sesión
+              </button>
+            </div>
+          </aside>
         </div>
-      </main>
-
-      {/* Bottom Navigation (Mobile Only) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex h-20 items-center justify-around border-t border-[var(--surface-outline)] bg-[var(--bg-sidebar)/90] px-2 pb-6 backdrop-blur-lg lg:hidden">
-        {navigation.slice(0, canManageOperations(session?.member) ? 6 : 4).map((item) => (
-          <NavLink
-            key={item.to}
-            className={({ isActive }) => 
-              `flex flex-col items-center gap-1 px-1 py-1 transition-colors ${
-                isActive ? "text-[var(--primary)]" : "text-[var(--ink-500)]"
-              }`
-            }
-            to={item.to}
-          >
-            <item.icon className="h-5 w-5" />
-            <span className="text-[8px] font-bold uppercase tracking-wider text-center">{item.label}</span>
-          </NavLink>
-        ))}
-      </nav>
-
+      )}
     </div>
   );
 }

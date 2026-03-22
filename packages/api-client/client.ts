@@ -159,13 +159,24 @@ function isApiErrorPayload(value: unknown): value is ApiErrorPayload {
 
 function extractApiErrorMessage(
   status: number,
-  payload?: ApiErrorPayload | string | unknown
+  payload?: ApiErrorPayload | string | any
 ): string {
   if (typeof payload === "string" && payload.trim()) {
     return payload;
   }
 
   if (isApiErrorPayload(payload)) {
+    // Format validation errors (422) specifically for better visibility
+    if (status === 422 && Array.isArray(payload.detail)) {
+      const details = payload.detail
+        .map((err: any) => {
+          const loc = Array.isArray(err.loc) ? err.loc.join(".") : "unknown";
+          return `${loc}: ${err.msg}`;
+        })
+        .join(", ");
+      return `Validation failed: ${details}`;
+    }
+
     if (typeof payload.message === "string" && payload.message.trim()) {
       return payload.message;
     }

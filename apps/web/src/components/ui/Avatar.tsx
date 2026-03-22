@@ -27,7 +27,7 @@ export function Avatar({ member, size = "md", className = "", showInitialsFallba
 
   return (
     <div
-      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--ink-100)] ${sizeClasses[size]} ${className}`}
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[var(--bg-surface-secondary)] ${sizeClasses[size]} ${className}`}
     >
       {showImage && (
         <img
@@ -38,7 +38,7 @@ export function Avatar({ member, size = "md", className = "", showInitialsFallba
         />
       )}
       {showInitials && (
-        <span className="font-bold text-[var(--ink-700)]">
+        <span className="font-bold text-[var(--text-secondary)]">
           {avatarData.initials}
         </span>
       )}

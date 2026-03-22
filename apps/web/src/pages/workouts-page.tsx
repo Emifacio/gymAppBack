@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Calendar as CalendarIcon, Clock, MapPin, Sparkles, PlusCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
@@ -19,7 +20,7 @@ import { getMembersQueryOptions } from "@gym/api-client";
 import { formatCredits, formatDateTime } from "@/lib/format";
 import { canManageOperations } from "@/lib/roles";
 import { useTransientState } from "@/hooks/useTransientState";
-import { MotionTokens, SuccessTokens } from "@/components/ui/motion-tokens";
+import { MotionTokens } from "@/components/ui/motion-tokens";
 import type { Workout } from "@/types/gym";
 import type { WorkoutCreatePayload } from "@gym/api-client";
 
@@ -129,53 +130,51 @@ export function WorkoutsPage() {
   };
 
   return (
-    <div className="space-y-[var(--section-gap)]">
-      <header>
-        <h1 className="section-title text-[var(--font-size-4xl)]">Horario</h1>
-        <p className="mt-2 text-sm font-medium text-[var(--ink-500)] lg:text-base">
-          Explora próximas clases, gestiona tus reservas y haz un seguimiento de tu progreso.
-        </p>
+    <div className="space-y-[var(--section-gap)] transition-colors duration-300">
+      <header className="flex flex-col gap-6 sm:flex-row sm:items-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent-soft)]">
+          <CalendarIcon className="h-8 w-8" />
+        </div>
+        <div>
+          <h1 className="section-title text-[var(--font-size-2xl)] text-[var(--text-primary)] leading-tight">Agenda de Clases</h1>
+          <p className="mt-1 text-sm font-medium text-[var(--text-secondary)] lg:text-base opacity-80">
+            Reserva tus sesiones, revisa la disponibilidad y gestiona tus créditos.
+          </p>
+        </div>
       </header>
 
       <section className="grid gap-[var(--stack-gap)] sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
-          detail={
-            subscription?.active_plan
-              ? subscription.plan_name ?? "Asignado"
-              : "Sin plan activo"
-          }
-          label="Plan activo"
-          value={subscription?.active_plan ? "Asignado" : "Ninguno"}
+          detail={subscription?.plan_name ?? ""}
+          label="Suscripción"
+          value={subscription?.active_plan ? "Activa" : "Bloqueada"}
+          loading={subscriptionQuery.isLoading}
         />
         <StatCard
-          detail={
-            subscription?.active_plan
-              ? subscription.allows_free_pass
-              ? "Capacidad ilimitada"
-              : `${formatCredits(subscription.active_credits)} restantes`
-            : "Reservas bloqueadas"
-          }
-          label="Créditos"
-          value={subscription?.active_plan ? String(subscription.active_credits) : "0"}
+          detail={subscription?.allows_free_pass ? "Sin límites" : "Consumo por clase"}
+          label="Créditos Disponibles"
+          value={subscription?.active_plan ? (subscription.allows_free_pass ? "∞" : String(subscription.active_credits)) : "0"}
+          loading={subscriptionQuery.isLoading}
         />
         <StatCard
-          detail={formatDateTime(subscription?.period_end)}
-          label="Renovación"
-          value="Fin del periodo"
+          detail={subscription?.period_end ? `Hasta ${formatDateTime(subscription.period_end)}` : "-"}
+          label="Vigencia"
+          value="Ciclo actual"
+          loading={subscriptionQuery.isLoading}
         />
       </section>
 
-      <section className="apple-card">
-        <div className="mb-6">
-          <h2 className="section-title text-[var(--font-size-xl)] text-[var(--ink-900)]">Refinar Horario</h2>
-          <p className="mt-1 text-sm font-medium text-[var(--ink-500)]">Filtrar por estado de clase y disponibilidad.</p>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Estado</span>
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <section className="apple-card flex-1 shadow-md hover:shadow-lg transition-shadow">
+          <div className="flex items-center gap-3 mb-6">
+            <h2 className="section-title text-[var(--font-size-xl)] text-[var(--text-primary)]">Próximos Entrenamientos</h2>
+            <div className="h-px flex-1 bg-[var(--border-base)] opacity-50" />
+          </div>
+          
+          <div className="mb-8 p-4 rounded-2xl bg-[var(--bg-surface-secondary)]/50 border border-[var(--border-base)] flex items-center gap-4">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] ml-2 whitespace-nowrap">Ver:</span>
             <select
-              className="w-full rounded-xl border border-[var(--surface-outline)] bg-[var(--bg-main)] px-4 py-3 text-sm font-medium outline-none transition focus:border-[var(--primary)]"
+              className="flex-1 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none cursor-pointer"
               value={filters.status}
               onChange={(event) =>
                 setFilters((current) => ({
@@ -184,210 +183,159 @@ export function WorkoutsPage() {
                 }))
               }
             >
-              <option value="">Todos los estados</option>
-              <option value="scheduled">Programado</option>
-              <option value="cancelled">Cancelado</option>
-              <option value="completed">Completado</option>
+              <option value="">Todas las clases</option>
+              <option value="scheduled">Programadas</option>
+              <option value="cancelled">Canceladas</option>
+              <option value="completed">Finalizadas</option>
             </select>
           </div>
-        </div>
-      </section>
 
-      {canManage ? (
-        <section className="apple-card bg-[var(--bg-main)]/50">
-          <div className="mb-8">
-            <h2 className="section-title text-[var(--font-size-2xl)]">Crear Entrenamiento</h2>
-            <p className="mt-1 text-sm font-medium text-[var(--ink-500)] lg:text-base">Programa una nueva sesión de entrenamiento para la comunidad.</p>
-          </div>
-
-          <form className="grid gap-[var(--stack-gap)] sm:grid-cols-2 lg:grid-cols-3" onSubmit={handleSubmit(onSubmit)}>
-            {(feedback.isSuccess || feedback.isError) ? (
-              <InlineFeedback
-                message={feedback.message}
-                type={feedback.isSuccess ? "success" : "error"}
+          <div className={`space-y-6 transition-opacity duration-300 ${workoutsQuery.isFetching ? "opacity-50" : "opacity-100"}`}>
+            {workoutsQuery.isLoading ? (
+              <div className="space-y-6">
+                <SkeletonWorkoutCard />
+                <SkeletonWorkoutCard />
+                <SkeletonWorkoutCard />
+              </div>
+            ) : showEmptyState ? (
+              <EmptyState
+                eyebrow="Gimnasio"
+                title="Sin clases disponibles"
+                description="No se encontraron sesiones con los filtros actuales."
               />
-            ) : null}
-
-            <div className="sm:col-span-2 lg:col-span-3 rounded-xl border border-[var(--surface-outline)] bg-white p-4">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <div>
-                  <input
-                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
-                    placeholder="Nombre del entrenamiento"
-                    {...register("name")}
-                    defaultValue={searchParams.get("name") ?? ""}
-                  />
-                  {errors.name ? <p className="mt-1 text-xs text-red-500">{errors.name.message}</p> : null}
+            ) : (
+              <>
+                <WeeklySchedule classes={workouts} />
+                <div className="grid gap-6 mt-8">
+                  {workouts.map((workout) => (
+                    <WorkoutCard key={workout.id} workout={workout} />
+                  ))}
                 </div>
+              </>
+            )}
+          </div>
+        </section>
 
-                <div>
+        {canManage && (
+          <section className="apple-card w-full lg:w-96 shadow-xl sticky top-28 border border-[var(--accent-soft)]/20">
+            <div className="flex items-center gap-2 mb-6 text-[var(--accent)]">
+              <PlusCircle className="h-5 w-5" />
+              <h2 className="section-title text-[var(--font-size-lg)] text-[var(--text-primary)]">Nueva Sesión</h2>
+            </div>
+
+            <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+              {feedback.message && (
+                <InlineFeedback
+                  message={feedback.message}
+                  type={feedback.isSuccess ? "success" : "error"}
+                />
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Título</label>
+                <input
+                  className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm"
+                  placeholder="Ej: Cross Training"
+                  {...register("name")}
+                />
+                {errors.name && <p className="text-[10px] text-[var(--danger)] font-bold px-1">{errors.name.message}</p>}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Ubicación</label>
+                <input
+                  className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm"
+                  placeholder="Sala Principal"
+                  {...register("location")}
+                />
+                {errors.location && <p className="text-[10px] text-[var(--danger)] font-bold px-1">{errors.location.message}</p>}
+              </div>
+
+              <div className="grid gap-4 grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Cupos</label>
                   <input
-                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
-                    placeholder="Ubicación"
-                    {...register("location")}
-                    defaultValue={searchParams.get("location") ?? ""}
-                  />
-                  {errors.location ? <p className="mt-1 text-xs text-red-500">{errors.location.message}</p> : null}
-                </div>
-
-                <div>
-                  <select
-                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
-                    {...register("instructor_id")}
-                    defaultValue={searchParams.get("instructor_id") ?? ""}
-                  >
-                    <option value="">Seleccionar Instructor</option>
-                    {instructors.map((instructor) => (
-                      <option key={instructor.id} value={instructor.instructor_profile?.id ?? ""}>
-                        {instructor.full_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <input
-                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
+                    className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm"
                     type="number"
-                    min={15}
-                    placeholder="Duración (m)"
-                    {...register("duration_minutes", { valueAsNumber: true })}
-                    defaultValue={Number(searchParams.get("duration_minutes") ?? "60")}
-                  />
-                  {errors.duration_minutes ? (
-                    <p className="mt-1 text-xs text-red-500">{errors.duration_minutes.message}</p>
-                  ) : null}
-                </div>
-
-                <div>
-                  <input
-                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
-                    type="number"
-                    min={1}
-                    placeholder="Capacidad"
                     {...register("capacity", { valueAsNumber: true })}
-                    defaultValue={Number(searchParams.get("capacity") ?? "12")}
                   />
-                  {errors.capacity ? <p className="mt-1 text-xs text-red-500">{errors.capacity.message}</p> : null}
                 </div>
-
-                <div className="space-y-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Fechas</span>
-                  <div className="flex gap-2">
-                    <input
-                      className="flex-1 rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
-                      type="date"
-                      value={pendingDate}
-                      onChange={(e) => setPendingDate(e.target.value)}
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={addDate}
-                      disabled={!pendingDate || selectedDates.includes(pendingDate)}
-                      className="px-3"
-                    >
-                      +
-                    </Button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-xl border border-dashed border-[var(--surface-outline)]">
-                    {selectedDates.length === 0 ? (
-                      <span className="text-xs text-[var(--ink-400)]">No hay fechas seleccionadas</span>
-                    ) : null}
-                    {selectedDates.map((date) => (
-                      <span key={date} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[var(--primary)] text-white text-xs font-bold">
-                        {date}
-                        <button
-                          type="button"
-                          className="hover:text-red-200 ml-1"
-                          onClick={() => removeDate(date)}
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  {selectedDates.length === 0 && (
-                    <p className="text-xs text-[var(--ink-400)]">Selecciona al menos una fecha</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Hora (para todas las fechas)</span>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Minutos</label>
                   <input
-                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
-                    type="time"
-                    {...register("class_time")}
+                    className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm"
+                    type="number"
+                    {...register("duration_minutes", { valueAsNumber: true })}
                   />
-                  {errors.class_time ? <p className="mt-1 text-xs text-red-500">{errors.class_time.message}</p> : null}
-                </div>
-
-                <div className="sm:col-span-2 lg:col-span-3">
-                  <textarea
-                    className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium"
-                    placeholder="Descripción"
-                    {...register("description")}
-                    defaultValue={searchParams.get("description") ?? ""}
-                  />
-                  {errors.description ? <p className="mt-1 text-xs text-red-500">{errors.description.message}</p> : null}
-                </div>
-
-                <div className="sm:col-span-2 lg:col-span-3">
-                  <Button
-                    className="w-full h-12"
-                    loading={feedback.isLoading}
-                    success={feedback.isSuccess}
-                    disabled={feedback.isLoading}
-                    type="submit"
-                    variant="primary"
-                  >
-                    {feedback.isLoading ? "Programando..." : feedback.isSuccess ? "Creado" : "Crear entrenamiento"}
-                  </Button>
                 </div>
               </div>
-            </div>
-          </form>
-        </section>
-      ) : null}
 
-      <div
-        id="tour-workouts"
-        className={`space-y-8 rounded-3xl p-6 transition-all duration-500 ${
-          listHighlight ? `${SuccessTokens.ring.standard} ${SuccessTokens.background.tint}` : ""
-        }`}
-      >
-        {workoutsQuery.isLoading ? (
-          <>
-            <div className="space-y-4">
-              <div className="h-8 w-48 animate-pulse rounded-lg bg-slate-200" />
-              <div className="h-4 w-64 animate-pulse rounded bg-slate-200" />
-            </div>
-            <div className="grid gap-6">
-              <SkeletonWorkoutCard />
-              <SkeletonWorkoutCard />
-              <SkeletonWorkoutCard />
-            </div>
-          </>
-        ) : showEmptyState ? (
-          <EmptyState
-            eyebrow="Disponibilidad"
-            title="No hay clases programadas"
-            description="Vuelve más tarde o contacta a los administradores para el próximo bloque de entrenamiento."
-          />
-        ) : (
-          <>
-            <WeeklySchedule classes={workouts} />
-            
-            <div className="grid gap-6">
-              {workouts.map((workout) => (
-                <WorkoutCard key={workout.id} workout={workout} />
-              ))}
-            </div>
-          </>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Instructor</label>
+                <select
+                  className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm appearance-none"
+                  {...register("instructor_id")}
+                >
+                  <option value="">Seleccionar...</option>
+                  {instructors.map((instructor) => (
+                    <option key={instructor.id} value={instructor.instructor_profile?.id ?? ""}>
+                      {instructor.full_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5 pt-2 border-t border-[var(--border-base)]">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Programar Fecha</label>
+                <div className="flex gap-2">
+                  <input
+                    className="flex-1 rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none focus:border-[var(--accent)] shadow-sm"
+                    type="date"
+                    value={pendingDate}
+                    onChange={(e) => setPendingDate(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={addDate}
+                    className="px-4 font-bold"
+                  >
+                    +
+                  </Button>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 mt-3 p-3 rounded-2xl bg-[var(--bg-surface-secondary)]/30 border border-dashed border-[var(--border-base)] min-h-[44px]">
+                  {selectedDates.map((date) => (
+                    <span key={date} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--accent)] text-white text-[10px] font-black uppercase shadow-sm">
+                      {date}
+                      <button onClick={() => removeDate(date)} className="hover:opacity-60">×</button>
+                    </span>
+                  ))}
+                  {selectedDates.length === 0 && <span className="text-[10px] text-[var(--text-muted)] italic font-bold">Sin fechas...</span>}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Hora de Inicio</label>
+                <input
+                  className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none focus:border-[var(--accent)] shadow-sm"
+                  type="time"
+                  {...register("class_time")}
+                />
+              </div>
+
+              <Button
+                className="w-full h-14 text-base font-bold shadow-lg shadow-[var(--accent-soft)] mt-4 rounded-2xl"
+                loading={feedback.isLoading}
+                type="submit"
+                variant="primary"
+              >
+                Crear Entrenamiento Now
+              </Button>
+            </form>
+          </section>
         )}
       </div>
     </div>
   );
 }
-

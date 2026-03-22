@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useLoginMutation, useGoogleLoginMutation } from "@/hooks/use-workouts";
 import { getFormValue } from "@/lib/forms";
 import { GoogleSignIn } from "@/components/ui/GoogleSignIn";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -53,7 +54,11 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+    <div className="flex min-h-screen items-center justify-center px-4 py-12 transition-colors duration-300">
+      <div className="fixed top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
+      
       <div className="grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="hidden rounded-[2.5rem] p-10 lg:flex flex-col justify-center bg-[#132238] shadow-2xl transition-all duration-700 animate-in fade-in slide-in-from-left-8">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
@@ -67,10 +72,10 @@ export function LoginPage() {
           </p>
         </section>
 
-        <section className="glass-panel rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-center">
+        <section className="glass-panel rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-center bg-[var(--bg-surface)] border border-[var(--border-base)] shadow-xl">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Iniciar sesión</p>
-          <h2 className="section-title mt-4 text-4xl font-semibold">Bienvenido de nuevo</h2>
-          <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+          <h2 className="section-title mt-4 text-4xl font-semibold text-[var(--text-primary)]">Bienvenido de nuevo</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
             Iniciá sesión para acceder a tu perfil y clases.
           </p>
 
@@ -94,9 +99,9 @@ export function LoginPage() {
             }}
           >
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Correo electrónico</span>
+              <span className="mb-2 block text-sm font-medium text-[var(--text-primary)]">Correo electrónico</span>
               <input
-                className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 outline-none transition focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 outline-none transition focus:border-[var(--accent)]"
                 name="email"
                 placeholder="hoyentreno@gym.ok"
                 required
@@ -105,9 +110,9 @@ export function LoginPage() {
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Contraseña</span>
+              <span className="mb-2 block text-sm font-medium text-[var(--text-primary)]">Contraseña</span>
               <input
-                className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3 outline-none transition focus:border-[var(--accent)]"
+                className="w-full rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 outline-none transition focus:border-[var(--accent)]"
                 minLength={8}
                 name="password"
                 placeholder="********"
@@ -117,7 +122,7 @@ export function LoginPage() {
             </label>
 
             {login.error ? (
-              <div className="rounded-2xl border border-[rgba(255,122,89,0.2)] bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--accent)]">
+              <div className="rounded-2xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)]">
                 {isApiResponseError(login.error)
                   ? "Error al iniciar sesión. Por favor, verifica tus credenciales."
                   : login.error.message}
@@ -125,7 +130,7 @@ export function LoginPage() {
             ) : null}
 
             {googleError ? (
-              <div className="rounded-2xl border border-[rgba(255,122,89,0.2)] bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--accent)]">
+              <div className="rounded-2xl border border-[var(--danger-soft)] bg-[var(--danger-soft)] px-4 py-3 text-sm text-[var(--danger)]">
                 {googleError}
               </div>
             ) : null}
@@ -141,10 +146,10 @@ export function LoginPage() {
 
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[rgba(19,34,56,0.08)]"></div>
+                <div className="w-full border-t border-[var(--border-base)]"></div>
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[#f8fafd] px-4 text-[var(--muted)] font-medium tracking-widest">O</span>
+                <span className="bg-[var(--bg-surface)] px-4 text-[var(--text-muted)] font-medium tracking-widest">O</span>
               </div>
             </div>
 
@@ -156,7 +161,7 @@ export function LoginPage() {
             />
           </form>
 
-          <p className="mt-5 text-sm text-[var(--muted)]">
+          <p className="mt-5 text-sm text-[var(--text-secondary)]">
             ¿Necesitas una cuenta?{" "}
             <Link className="font-semibold text-[var(--accent)]" to="/register">
               Crea una

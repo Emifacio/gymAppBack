@@ -4,15 +4,105 @@
 
 :root {
   color-scheme: light;
-  --background: var(--bg-main);
-  --surface: var(--bg-card);
-  --surface-outline: rgba(0, 0, 0, 0.05);
-  --ink: var(--ink-900);
-  --muted: var(--ink-500);
-  --accent: var(--primary);
-  --accent-soft: rgba(0, 122, 255, 0.1);
-  --highlight: var(--indigo);
-  --shadow: var(--shadow-md);
+  
+  /* Semantic Tokens - Light Mode */
+  --bg-base: var(--bg-main);
+  --bg-surface: var(--bg-card);
+  --bg-surface-secondary: #F2F2F7;
+  
+  --text-primary: #1C1C1E;
+  --text-secondary: #48484A;
+  --text-muted: #8E8E93;
+  --text-on-accent: #FFFFFF;
+  
+  --border-base: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.12);
+  
+  --accent: #007AFF;
+  --accent-hover: #0062CC;
+  --accent-soft: rgba(0, 122, 255, 0.06);
+  
+  --success: #34C759;
+  --success-soft: rgba(52, 199, 89, 0.08);
+  --warning: #FF9500;
+  --warning-soft: rgba(255, 149, 0, 0.08);
+  --danger: #FF3B30;
+  --danger-soft: rgba(255, 59, 48, 0.08);
+
+  /* Role Badges - Light (Subtle & Clean) */
+  --role-admin-bg: rgba(126, 34, 206, 0.06);
+  --role-admin-text: #7E22CE;
+  --role-admin-border: rgba(126, 34, 206, 0.1);
+  
+  --role-instructor-bg: rgba(29, 78, 216, 0.06);
+  --role-instructor-text: #1D4ED8;
+  --role-instructor-border: rgba(29, 78, 216, 0.1);
+  
+  --role-member-bg: rgba(55, 65, 81, 0.05);
+  --role-member-text: #374151;
+  --role-member-border: rgba(55, 65, 81, 0.1);
+  
+  --shadow-base: var(--shadow-sm);
+  --shadow-float: var(--shadow-md);
+  --shadow-modal: var(--shadow-lg);
+
+  /* Legacy variable mappings for backward compatibility */
+  --background: var(--bg-base);
+  --surface: var(--bg-surface);
+  --surface-outline: var(--border-base);
+  --ink: var(--text-primary);
+  --muted: var(--text-muted);
+  --shadow: var(--shadow-float);
+}
+
+.dark {
+  color-scheme: dark;
+  
+  /* Palette Adjustments for Dark Mode */
+  --bg-main: #000000;
+  --bg-card: #1C1C1E;
+  --bg-sidebar: #1C1C1E;
+  
+  /* Semantic Tokens - Dark Mode */
+  --bg-base: var(--bg-main);
+  --bg-surface: var(--bg-card);
+  --bg-surface-secondary: #2C2C2E;
+  
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(235, 235, 245, 0.8);
+  --text-muted: rgba(235, 235, 245, 0.6);
+  --text-on-accent: #FFFFFF;
+  
+  --border-base: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  
+  --accent: #0A84FF;
+  --accent-hover: #409CFF;
+  --accent-soft: rgba(10, 132, 255, 0.12);
+  
+  --success: #30D158;
+  --warning: #FF9F0A;
+  --danger: #FF453A;
+  
+  /* Role Badges - Dark */
+  --role-admin-bg: rgba(168, 85, 247, 0.12);
+  --role-admin-text: #C084FC;
+  --role-admin-border: rgba(168, 85, 247, 0.2);
+  
+  --role-instructor-bg: rgba(59, 130, 246, 0.12);
+  --role-instructor-text: #60A5FA;
+  --role-instructor-border: rgba(59, 130, 246, 0.2);
+  
+  --role-member-bg: rgba(156, 163, 175, 0.1);
+  --role-member-text: #D1D5DB;
+  --role-member-border: rgba(156, 163, 175, 0.2);
+  
+  --shadow-base: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-float: 0 12px 24px rgba(0, 0, 0, 0.5);
+  --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.6);
+  
+  --bg-gradient-1: rgba(10, 132, 255, 0.04);
+  --bg-gradient-2: rgba(88, 86, 214, 0.04);
 }
 
 * {
@@ -24,13 +114,13 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-  color: var(--ink);
-  background-color: var(--background);
+  color: var(--text-primary);
+  background-color: var(--bg-base);
   background-image: 
-    radial-gradient(at 0% 0%, rgba(0, 122, 255, 0.03) 0, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(88, 86, 214, 0.03) 0, transparent 50%);
+    radial-gradient(at 0% 0%, var(--bg-gradient-1, rgba(0, 122, 255, 0.02)) 0, transparent 50%),
+    radial-gradient(at 100% 0%, var(--bg-gradient-2, rgba(88, 86, 214, 0.02)) 0, transparent 50%);
   font-size: var(--font-size-base);
-  padding: var(--container-padding);
+  padding: 0;
 }
 
 #root {
@@ -47,17 +137,9 @@ a:hover {
   opacity: 0.8;
 }
 
-.glass-panel {
-  background: var(--surface);
-  border: 1px solid var(--surface-outline);
-  box-shadow: var(--shadow);
-  backdrop-filter: var(--surface-blur);
-  border-radius: var(--radius-panel);
-}
-
 .section-title {
   font-family: "Outfit", sans-serif;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   font-weight: 700;
 }
 

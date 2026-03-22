@@ -4,7 +4,7 @@
   --primary-hover: #0062CC;
   --indigo: #5856D6;
   
-  /* Neutrals */
+  /* Neutrals - Re-balanced for Light Mode */
   --ink-900: #1C1C1E;
   --ink-700: #3A3A3C;
   --ink-500: #8E8E93;
@@ -12,12 +12,12 @@
   --ink-100: #F2F2F7;
   
   /* Backgrounds */
-  --bg-main: #FAFAFA;
-  --bg-card: rgba(255, 255, 255, 0.75);
+  --bg-main: #F8F9FA;
+  --bg-card: #FFFFFF;
   --bg-sidebar: #FFFFFF;
   
-  /* Surfaces & Outlines */
-  --surface-outline: rgba(0, 0, 0, 0.05);
+  /* Surfaces & Outlines - Softer for Premium Feel */
+  --surface-outline: rgba(0, 0, 0, 0.04);
   --surface-blur: blur(20px);
   
   /* Spacing & Radius (8px Grid) */
@@ -29,10 +29,12 @@
   --radius-card: 20px;
   --radius-panel: 24px;
   
-  /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.12);
+  /* Robust Shadow System (Premium SaaS Style) */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.12);
 
   /* Responsive Spacing & Layout Tokens */
   --container-px: 1rem;
@@ -65,28 +67,29 @@
 
 /* Base Components Styles */
 .apple-card {
-  background: var(--bg-card);
-  border: 1px solid var(--surface-outline);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
 }
 
 @media (min-width: 1024px) {
   .apple-card {
-    padding: 2rem;
+    padding: 2.25rem;
   }
 }
 
 .apple-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .apple-button-primary {
-  background: var(--primary);
-  color: #FFFFFF;
+  background: var(--accent);
+  color: var(--text-on-accent);
   border-radius: var(--radius-button);
   font-weight: 600;
   padding: 10px 20px;
@@ -94,7 +97,7 @@
 }
 
 .apple-button-primary:hover {
-  background: var(--primary-hover);
+  background: var(--accent-hover);
 }
 
 .apple-button-primary:active {

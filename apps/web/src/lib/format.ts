@@ -1,4 +1,5 @@
-export function formatWorkoutSchedule(value: string) {
+export function formatWorkoutSchedule(value: string | null | undefined) {
+  if (!value) return "N/A";
   return new Intl.DateTimeFormat("en-US", {
     weekday: "short",
     month: "short",

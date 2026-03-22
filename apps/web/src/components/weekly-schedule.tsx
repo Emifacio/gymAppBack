@@ -54,28 +54,28 @@ export function WeeklySchedule({ classes }: WeeklyScheduleProps) {
   };
 
   return (
-    <div className="apple-card overflow-hidden my-8 p-0">
-      <div className="grid grid-cols-1 md:grid-cols-7 border-b border-[var(--surface-outline)] bg-[var(--bg-main)]/30">
+    <div className="apple-card overflow-hidden my-8 p-0 bg-[var(--bg-surface)] border border-[var(--border-base)] shadow-xl transition-colors duration-300">
+      <div className="grid grid-cols-1 md:grid-cols-7 border-b border-[var(--border-base)] bg-[var(--bg-surface-secondary)]/50">
         {orderedDayIndices.map((dayIndex) => (
           <div
             key={dayIndex}
-            className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-500)] text-center border-r border-[var(--surface-outline)] last:border-0 hidden md:block"
+            className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] text-center border-r border-[var(--border-base)] last:border-0 hidden md:block"
           >
             {DAYS[dayIndex]}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-[var(--surface-outline)]">
+      <div className="grid grid-cols-1 md:grid-cols-7 divide-y md:divide-y-0 md:divide-x divide-[var(--border-base)]">
         {orderedDayIndices.map((dayIndex) => {
           const dayClasses = groupedClasses[dayIndex] || [];
           return (
             <div key={dayIndex} className="p-3 min-h-[120px] space-y-3">
-              <div className="md:hidden font-bold text-xs uppercase text-[var(--primary)] mb-2">
+              <div className="md:hidden font-bold text-xs uppercase text-[var(--accent)] mb-2">
                 {DAYS[dayIndex]}
               </div>
               {dayClasses.length === 0 ? (
-                <div className="text-[10px] text-[var(--ink-400)] italic py-2 text-center">
+                <div className="text-[10px] text-[var(--text-muted)] italic py-2 text-center opacity-60">
                   Sin clases
                 </div>
               ) : (
@@ -83,16 +83,16 @@ export function WeeklySchedule({ classes }: WeeklyScheduleProps) {
                   <Link
                     key={c.id}
                     to={`/workouts/${c.id}`}
-                    className="block p-3 rounded-xl bg-[var(--bg-main)] border border-[var(--surface-outline)] hover:border-[var(--primary)] transition-all group"
+                    className="block p-3 rounded-xl bg-[var(--bg-surface-secondary)] border border-[var(--border-base)] hover:border-[var(--accent)] transition-all group shadow-sm hover:shadow-md"
                   >
-                    <div className="text-[10px] font-bold text-[var(--primary)]">
+                    <div className="text-[10px] font-bold text-[var(--accent)]">
                       {formatTime(c.scheduled_at)}
                     </div>
-                    <div className="text-xs font-bold text-[var(--ink-900)] line-clamp-1 group-hover:text-[var(--primary)]">
+                    <div className="text-xs font-bold text-[var(--text-primary)] line-clamp-1 group-hover:text-[var(--accent)] transition-colors">
                       {c.name}
                     </div>
-                    <div className="text-[10px] text-[var(--ink-500)] mt-1 truncate">
-                      {c.instructor ? `Prof: ${typeof c.instructor.id === 'string' ? c.instructor.id.slice(0, 8) : c.instructor.id}` : "Sin prof"}
+                    <div className="text-[10px] text-[var(--text-muted)] mt-1 truncate">
+                      {c.location}
                     </div>
                   </Link>
                 ))
@@ -104,6 +104,3 @@ export function WeeklySchedule({ classes }: WeeklyScheduleProps) {
     </div>
   );
 }
-
-
-

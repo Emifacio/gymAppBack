@@ -53,16 +53,16 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="space-y-[var(--section-gap)]">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
-          <Sparkles className="h-7 w-7" />
+    <div className="space-y-[var(--section-gap)] transition-colors duration-300">
+      <header className="flex flex-col gap-6 sm:flex-row sm:items-center">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent)] text-[var(--text-on-accent)] shadow-lg shadow-[var(--accent-soft)]">
+          <Sparkles className="h-8 w-8" />
         </div>
         <div>
-          <h2 className="section-title text-[var(--font-size-2xl)]">
+          <h2 className="section-title text-[var(--font-size-2xl)] text-[var(--text-primary)] leading-tight">
             Buenos días, {session?.member.full_name.split(' ')[0]}
           </h2>
-          <p className="mt-1 text-sm font-medium text-[var(--ink-500)] lg:text-base">
+          <p className="mt-1 text-sm font-medium text-[var(--text-secondary)] lg:text-base opacity-80">
             Tienes {confirmedBookings.length} clases programadas para esta semana.
           </p>
         </div>
@@ -73,8 +73,8 @@ export function DashboardPage() {
           id="tour-credits"
           detail={
             subscription?.active_plan
-              ? `Se renueva el ${formatDateTime(subscription.period_end)}.`
-              : "Asigna una suscripción para desbloquear reservas."
+              ? `Vence: ${formatDateTime(subscription.period_end)}`
+              : "Asigna una suscripción para reservar."
           }
           label={subscription?.plan_name ?? "Plan activo"}
           value={
@@ -84,16 +84,19 @@ export function DashboardPage() {
                 : formatCredits(subscription.active_credits)
               : "Sin plan activo"
           }
+          loading={subscriptionQuery.isLoading}
         />
         <StatCard
-          detail="Reservas confirmadas en tu feed."
+          detail="Reservas confirmadas"
           label="Mis reservas"
           value={String(confirmedBookings.length)}
+          loading={bookingsQuery.isLoading}
         />
         <StatCard
-          detail="Clases disponibles para reservar hoy."
+          detail="Clases disponibles hoy"
           label="Próximas clases"
           value={String(upcomingWorkouts.length)}
+          loading={workoutsQuery.isLoading}
         />
       </section>
 
@@ -101,7 +104,7 @@ export function DashboardPage() {
         <EmptyState
           eyebrow="Listo para crecer"
           title="Aún no hay entrenamientos programados"
-          description="El stack frontend está activo y conectado al contrato de FastAPI. Tan pronto como se creen clases en el backend, aparecerán aquí automáticamente con total seguridad de tipos."
+          description="Tan pronto como se creen clases en el backend, aparecerán aquí automáticamente."
         />
       ) : (
         <>
@@ -110,81 +113,81 @@ export function DashboardPage() {
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
                 Suscripción
               </p>
-              <h2 className="section-title mt-2 text-[var(--font-size-xl)]">Resumen de membresía</h2>
+              <h2 className="section-title mt-2 text-[var(--font-size-xl)] text-[var(--text-primary)]">Membresía</h2>
               {subscription?.active_plan ? (
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-                    <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Plan</p>
-                    <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{subscription.plan_name}</p>
+                  <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Plan</p>
+                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{subscription.plan_name}</p>
                   </div>
-                  <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-                    <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Créditos restantes</p>
-                    <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">
+                  <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Créditos</p>
+                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
                       {subscription.allows_free_pass
                         ? "Ilimitados"
                         : formatCredits(subscription.active_credits)}
                     </p>
                   </div>
-                  <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-                    <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Fin del periodo</p>
-                    <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{formatDateTime(subscription.period_end)}</p>
+                  <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Vencimiento</p>
+                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{formatDateTime(subscription.period_end)}</p>
                   </div>
-                  <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-                    <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Lista de espera</p>
-                    <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{activeWaitlist.length} entradas</p>
+                  <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Espera</p>
+                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{activeWaitlist.length} entradas</p>
                   </div>
                 </div>
               ) : (
-                <div className="mt-6 rounded-[1.25rem] bg-[var(--bg-main)] p-5 text-sm font-medium text-[var(--ink-500)]">
+                <div className="mt-6 rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-6 text-sm font-medium text-[var(--text-secondary)] shadow-sm">
                   {subscription?.error_code === "PLAN_EXPIRED"
-                    ? `Tu último plan expiró el ${formatDateTime(subscription.period_end)}.`
-                    : "Aún no se ha asignado una suscripción activa."}
+                    ? `Expiró el ${formatDateTime(subscription.period_end)}.`
+                    : "No hay suscripción activa."}
                 </div>
               )}
             </div>
 
             <div className="apple-card">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
-            Estado de reserva
-          </p>
-          <h2 className="section-title mt-2 text-[var(--font-size-xl)]">Vista general de reservas</h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Confirmadas</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{confirmedBookings.length} reservas</p>
-            </div>
-            <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4">
-              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Lista de espera</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">{activeWaitlist.length} pendientes</p>
-            </div>
-            <div className="rounded-[1.25rem] bg-[var(--bg-main)] p-4 sm:col-span-2">
-              <p className="text-xs font-bold text-[var(--ink-500)] uppercase">Próxima clase</p>
-              <p className="mt-1 text-sm font-semibold text-[var(--ink-900)]">
-                {upcomingWorkout ? formatRelativeSlot(upcomingWorkout.scheduled_at) : "Sin clases aún."}
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
+                Estado
               </p>
+              <h2 className="section-title mt-2 text-[var(--font-size-xl)] text-[var(--text-primary)]">Vista general</h2>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Confirmadas</p>
+                  <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{confirmedBookings.length} reservas</p>
+                </div>
+                <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Pendientes</p>
+                  <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{activeWaitlist.length} en espera</p>
+                </div>
+                <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 sm:col-span-2 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Próxima sesión</p>
+                  <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
+                    {upcomingWorkout ? formatRelativeSlot(upcomingWorkout.scheduled_at) : "Sin clases pronto."}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Próximamente</p>
-            <h2 className="section-title mt-1 text-3xl font-semibold">Sesiones de entrenamiento</h2>
-          </div>
-          <Link className={buttonClassName({ size: "sm", variant: "ghost" })} to="/workouts">
-            Ver todas
-          </Link>
-        </div>
+          <section className="space-y-6">
+            <div className="flex items-end justify-between px-2">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)] opacity-80">Próximamente</p>
+                <h2 className="section-title mt-1 text-3xl font-bold text-[var(--text-primary)]">Tu Agenda</h2>
+              </div>
+              <Link className={buttonClassName({ size: "sm", variant: "ghost" }) + " text-[var(--accent)] font-bold"} to="/workouts">
+                Explorar todas →
+              </Link>
+            </div>
 
-        <div className="grid gap-5">
-          {upcomingWorkouts.slice(0, 3).map((workout) => (
-            <WorkoutCard key={workout.id} workout={workout} />
-          ))}
-        </div>
-      </section>
-    </>
+            <div className="grid gap-6">
+              {upcomingWorkouts.slice(0, 3).map((workout) => (
+                <WorkoutCard key={workout.id} workout={workout} />
+              ))}
+            </div>
+          </section>
+        </>
       )}
     </div>
   );

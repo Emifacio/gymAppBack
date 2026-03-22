@@ -17,11 +17,11 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: "bg-[var(--primary)] text-white hover:opacity-90 active:scale-95 transition-all",
-  secondary: "bg-[var(--ink-100)] text-[var(--ink-900)] hover:bg-[var(--ink-300)] active:scale-95 transition-all",
-  danger: "bg-[#FF3B30] text-white hover:opacity-90 active:scale-95 transition-all",
-  outline: "border border-[var(--ink-300)] bg-transparent text-[var(--ink-900)] hover:bg-[var(--ink-100)] active:scale-95 transition-all",
-  ghost: "bg-transparent text-[var(--ink-700)] hover:bg-[var(--ink-100)] active:scale-95 transition-all"
+  primary: "bg-[var(--accent)] text-[var(--text-on-accent)] hover:bg-[var(--accent-hover)] active:scale-95 transition-all shadow-sm",
+  secondary: "bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] hover:opacity-80 active:scale-95 transition-all",
+  danger: "bg-[var(--danger)] text-[var(--text-on-accent)] hover:opacity-90 active:scale-95 transition-all shadow-sm",
+  outline: "border border-[var(--border-strong)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--bg-surface-secondary)] active:scale-95 transition-all",
+  ghost: "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-surface-secondary)] active:scale-95 transition-all"
 };
 
 export function buttonClassName({ className, size = "md", variant = "primary" }: ButtonClassNameOptions = {}) {

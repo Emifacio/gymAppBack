@@ -36,11 +36,30 @@ async def app_exception_handler(_: Request, exc: AppException) -> JSONResponse:
     )
 
 
-async def validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    # Log detailed errors for development and debugging
+    errors = exc.errors()
+    
+    try:
+        # Try to get body for logging context, truncate if too large
+        body = await request.body()
+        body_str = body.decode()
+        if len(body_str) > 1000:
+            body_str = body_str[:1000] + "... [truncated]"
+    except Exception:
+        body_str = "Unavailable"
+
+    logger.error(
+        "request_validation_error path=%s errors=%s body=%s",
+        request.url.path,
+        errors,
+        body_str
+    )
+    
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
-            "detail": exc.errors(),
+            "detail": errors,
             "message": "Validation failed",
             "code": "validation_error",
             "error_code": "validation_error",

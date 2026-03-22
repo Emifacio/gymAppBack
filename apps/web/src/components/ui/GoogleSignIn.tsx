@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTheme } from "@/providers/theme-provider";
 
 declare global {
   interface Window {
@@ -22,6 +23,7 @@ interface GoogleSignInProps {
 
 export function GoogleSignIn({ clientId, onSuccess, onError, disabled }: GoogleSignInProps) {
   const buttonRef = useRef<HTMLDivElement>(null);
+  const { theme, resolvedTheme } = useTheme();
   const isConfigured = clientId.length > 0;
 
   useEffect(() => {
@@ -51,8 +53,11 @@ export function GoogleSignIn({ clientId, onSuccess, onError, disabled }: GoogleS
       });
 
       if (buttonRef.current) {
+        // Clear previous button if any
+        buttonRef.current.innerHTML = "";
+        
         window.google.accounts.id.renderButton(buttonRef.current, {
-          theme: "outline",
+          theme: resolvedTheme === "dark" ? "filled_black" : "outline",
           size: "large",
           shape: "rectangular",
           text: "signin_with",
@@ -64,24 +69,23 @@ export function GoogleSignIn({ clientId, onSuccess, onError, disabled }: GoogleS
 
     if (window.google?.accounts?.id) {
       renderButton();
-      return;
+    } else {
+      script.onload = () => {
+        queueMicrotask(renderButton);
+      };
+
+      script.onerror = () => {
+        onError("No se pudo cargar Google Identity Service. Por favor intente nuevamente.");
+      };
+
+      document.head.appendChild(script);
     }
 
-    script.onload = () => {
-      queueMicrotask(renderButton);
-    };
-
-    script.onerror = () => {
-      onError("No se pudo cargar Google Identity Service. Por favor intente nuevamente.");
-    };
-
-    document.head.appendChild(script);
-
     return () => {
-      const existing = document.querySelector("script[data-google-identity]");
-      existing?.remove();
+      // We don't necessarily want to remove the script globally if other components use it,
+      // but cleaning up the button is good.
     };
-  }, [clientId, onSuccess, onError, disabled, isConfigured]);
+  }, [clientId, onSuccess, onError, disabled, isConfigured, resolvedTheme]);
 
   if (!isConfigured) {
     return (

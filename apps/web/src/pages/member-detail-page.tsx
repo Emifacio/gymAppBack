@@ -15,6 +15,7 @@ import {
 } from "@/hooks/use-workouts";
 import { useAuth } from "@/hooks/use-auth";
 import { formatCredits, formatDateTime } from "@/lib/format";
+import { SkeletonListRow } from "@/components/ui/skeletons";
 import { canManageOperations, isAdmin } from "@/lib/roles";
 
 type MemberRole = Member["role"];
@@ -360,7 +361,13 @@ export function MemberDetailPage() {
                   </div>
                 </div>
               ))}
-              {bookingsQuery.isLoading ? <p className="text-sm text-slate-500">Loading bookings...</p> : null}
+              {bookingsQuery.isLoading ? (
+                <>
+                  <SkeletonListRow />
+                  <SkeletonListRow />
+                  <SkeletonListRow />
+                </>
+              ) : null}
               {!bookingsQuery.isLoading && bookings.length === 0 ? (
                 <p className="text-sm text-slate-500">No bookings yet.</p>
               ) : null}
@@ -389,7 +396,13 @@ export function MemberDetailPage() {
                   </div>
                 </div>
               ))}
-               {attendanceQuery.isLoading ? <p className="text-sm text-slate-500">Cargando asistencia...</p> : null}
+               {attendanceQuery.isLoading ? (
+                 <>
+                   <SkeletonListRow />
+                   <SkeletonListRow />
+                   <SkeletonListRow />
+                 </>
+               ) : null}
                {!attendanceQuery.isLoading && (attendanceQuery.data ?? []).length === 0 ? (
                  <p className="text-sm text-slate-500">Sin registros de asistencia aún.</p>
                ) : null}

@@ -61,7 +61,7 @@ class MemberUpdate(BaseModel):
     instructor_bio: str | None = None
     instructor_specialties: str | None = None
     profile_metadata: dict[str, Any] | None = None
-    profile_image_url: str | None = Field(default=None, max_length=500)
+    profile_image_url: str | None = Field(default=None)
 
 
 class MemberListRead(BaseModel):

@@ -5,6 +5,7 @@ import type { PropsWithChildren } from "react";
 
 import { queryClient } from "@/api/query-client";
 import { AuthProvider } from "@/providers/auth-provider";
+import { ThemeProvider } from "@/providers/theme-provider";
 
 export function AppProviders({ children }: PropsWithChildren) {
   useEffect(() => {
@@ -42,9 +43,11 @@ export function AppProviders({ children }: PropsWithChildren) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        {children}
-      </AuthProvider>
+      <ThemeProvider defaultTheme="system">
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </ThemeProvider>
       <ReactQueryDevtools buttonPosition="bottom-left" initialIsOpen={false} />
     </QueryClientProvider>
   );

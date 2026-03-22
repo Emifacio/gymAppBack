@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Ticket, Clock, History, Ban, CheckCircle2, AlertCircle } from "lucide-react";
+
 import { useAuth } from "@/hooks/use-auth";
 import {
   useCancelBooking,
@@ -9,6 +11,7 @@ import {
 import { formatCredits, formatDateTime, formatWorkoutSchedule } from "@/lib/format";
 import { CancellationModal } from "@/components/cancellation-modal";
 import { ErrorBoundary } from "@/components/error-handling/ErrorBoundary";
+import { Button } from "@/components/ui/Button";
 
 export function BookingsPage() {
   const { session } = useAuth();
@@ -26,15 +29,16 @@ export function BookingsPage() {
     bookingId: "",
     isLate: false
   });
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 3000);
+    const timer = setTimeout(() => setToast(null), 5000);
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const bookings = bookingsQuery.data?.bookings ?? [];  const waitlist = bookingsQuery.data?.waitlist ?? [];
+  const bookings = bookingsQuery.data?.bookings ?? [];
+  const waitlist = bookingsQuery.data?.waitlist ?? [];
   const attendance = attendanceQuery.data ?? [];
   const subscription = subscriptionQuery.data;
 
@@ -56,11 +60,7 @@ export function BookingsPage() {
     const isLateCancellation = isBookingLateCancelable(scheduledAt);
     const isPastBooking = isBookingPast(scheduledAt);
 
-    if (isPastBooking) {
-      // Avoid sending cancellation requests for classes that already happened.
-      setCancelModal({ open: false, bookingId: "", isLate: false });
-      return;
-    }
+    if (isPastBooking) return;
 
     setCancelModal({
       open: true,
@@ -72,7 +72,7 @@ export function BookingsPage() {
   const confirmCancellation = () => {
     if (cancelModal.isLate) {
       setCancelModal({ ...cancelModal, open: false });
-      setToast("Las clases dentro de las últimas 24 horas no pueden cancelarse desde aquí.");
+      setToast({ type: "error", message: "Las clases dentro de las últimas 24 h no se pueden cancelar por política de créditos." });
       return;
     }
 
@@ -86,186 +86,205 @@ export function BookingsPage() {
       {
         onError: (error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
-          setToast(message || "Error al cancelar la reserva. Intenta de nuevo.");
+          setToast({ type: "error", message: message || "Error al procesar la cancelación." });
         },
         onSuccess: () => {
           setCancelModal({ ...cancelModal, open: false });
-          setToast("Reserva cancelada correctamente.");
+          setToast({ type: "success", message: "Reserva liberada. Crédito restaurado si aplica." });
         }
       }
     );
   };
 
   return (
-    <div className="space-y-6">
-      <section className="glass-panel rounded-[2rem] p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Operaciones de miembro</p>
-        <h1 className="section-title mt-3 text-4xl font-semibold">Tus reservas e historial</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-8 text-[var(--muted)]">
-          Haz un seguimiento de reservas confirmadas, listas de espera y cómo cambian los créditos de tu plan a medida que se reservan,
-          cancelan o promueven clases de la lista de espera.
+    <div className="space-y-[var(--section-gap)] transition-colors duration-300">
+      <header className="apple-card p-8 shadow-xl border border-[var(--border-base)]">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent-soft)] mb-6">
+          <Ticket className="h-8 w-8" />
+        </div>
+        <p className="text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent)] opacity-80">Mis Actividades</p>
+        <h1 className="mt-3 text-4xl font-bold text-[var(--text-primary)] tracking-tight">Reservas y Asistencia</h1>
+        <p className="mt-3 max-w-2xl text-sm md:text-base leading-relaxed text-[var(--text-secondary)]">
+          Administra tus cupos confirmados y revisa tu histórico de entrenamiento. Recuerda cancelar con al menos 24 h para recuperar tus créditos.
         </p>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[1.5rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Plan</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              {subscription?.active_plan
-                ? subscription.plan_name
-                : subscription?.error_code === "PLAN_EXPIRED"
-                  ? "Plan expirado"
-                  : "Sin plan activo asignado"}
-            </p>
-          </div>
-          <div className="rounded-[1.5rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Créditos</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              {subscription?.active_plan
-                ? subscription.allows_free_pass
-                  ? "Ilimitado mientras queden lugares"
-                  : formatCredits(subscription.active_credits)
-                : "Reserva no disponible"}
-            </p>
-          </div>
-          <div className="rounded-[1.5rem] bg-white/80 p-5">
-            <p className="text-sm font-semibold text-[var(--ink)]">Fin del periodo</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">{formatDateTime(subscription?.period_end)}</p>
-          </div>
-        </div>
 
-        {cancelBooking.data ? (
-          <div className="mt-6 rounded-[1.5rem] bg-[rgba(23,184,156,0.12)] px-4 py-3 text-sm text-[var(--highlight)]">
-            Cancelación completada.
-            {cancelBooking.data.credit_restored ? " Crédito restaurado a tu suscripción." : ""}
-            {cancelBooking.data.promoted_booking ? " El siguiente miembro elegible de la lista de espera fue promovido." : ""}
-          </div>
-        ) : null}
-      </section>
-
-      {toast ? (
-        <div className="rounded-[1.5rem] bg-green-50 border border-green-100 p-4 text-sm text-green-700">
-          {toast}
-        </div>
-      ) : null}
-
-      <section className="grid gap-6 xl:grid-cols-2">
-        <ErrorBoundary 
-          fallback={
-            <div className="glass-panel rounded-[2rem] p-8 text-center">
-              <p className="text-sm font-semibold text-red-500">Error cargando tus reservas</p>
-              <p className="mt-2 text-xs text-gray-500">Estamos trabajando para solucionarlo.</p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="rounded-2xl bg-[var(--bg-surface-secondary)] p-5 border border-[var(--border-base)]/50 shadow-sm flex items-center gap-4">
+            <div className="h-10 w-10 rounded-xl bg-[var(--bg-surface)] flex items-center justify-center text-[var(--accent)] shadow-sm">
+               <CheckCircle2 className="h-5 w-5" />
             </div>
-          }
-        >
-          <div className="glass-panel rounded-[2rem] p-8" id="tour-cancel-booking">
-            <h2 className="section-title text-3xl font-semibold">Reservas</h2>
-            <div className="mt-6 space-y-4">
-              {bookings.map((booking) => (
-                <div key={booking.id} className="rounded-[1.5rem] bg-white/80 p-5">
-                  <p className="text-lg font-semibold text-[var(--ink)]">
-                    {booking.gym_class?.name ?? booking.class_id}
-                  </p>
-                  <p className="mt-2 text-sm text-[var(--muted)]">
-                    {booking.gym_class?.scheduled_at
-                      ? formatWorkoutSchedule(booking.gym_class.scheduled_at)
-                      : formatWorkoutSchedule(booking.booked_at)}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">Estado: {booking.status === "confirmed" ? "confirmado" : booking.status}</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">
-                    Tipo de reserva: {booking.booking_type}
-                    {booking.credits_consumed ? ` · Créditos usados: ${booking.credits_consumed}` : ""}
-                  </p>
-                  <button
-                    className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
-                    disabled={
-                      cancelBooking.isPending ||
-                      booking.status !== "confirmed" ||
-                      isBookingLateCancelable(booking.gym_class?.scheduled_at) ||
-                      isBookingPast(booking.gym_class?.scheduled_at)
-                    }
-                    onClick={() => {
-                      handleCancelClick(booking.id, booking.gym_class?.scheduled_at);
-                    }}
-                    type="button"
-                  >
-                    {isBookingPast(booking.gym_class?.scheduled_at)
-                      ? "Clase finalizada"
-                      : isBookingLateCancelable(booking.gym_class?.scheduled_at)
-                      ? "No cancelable (menos de 24h)"
-                      : booking.status === "confirmed"
-                      ? "Cancelar reserva"
-                      : "No cancelable"}
-                  </button>
-                </div>
-              ))}
-
-              {!bookings.length ? (
-                <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
-                  Aún no tienes reservas.
-                </div>
-              ) : null}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Plan Actual</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">{subscription?.plan_name ?? "Sin Suscripción"}</p>
             </div>
           </div>
-        </ErrorBoundary>
-
-        <ErrorBoundary
-          fallback={
-            <div className="glass-panel rounded-[2rem] p-8 text-center">
-              <p className="text-sm font-semibold text-red-500">Error cargando la lista de espera</p>
+          <div className="rounded-2xl bg-[var(--bg-surface-secondary)] p-5 border border-[var(--border-base)]/50 shadow-sm flex items-center gap-4">
+            <div className="h-10 w-10 rounded-xl bg-[var(--bg-surface)] flex items-center justify-center text-[var(--accent)] shadow-sm">
+               <Ticket className="h-5 w-5" />
             </div>
-          }
-        >
-          <div className="glass-panel rounded-[2rem] p-8">
-            <h2 className="section-title text-3xl font-semibold">Lista de espera</h2>
-            <div className="mt-6 space-y-4">
-              {waitlist.map((entry) => (
-                <div key={entry.id} className="rounded-[1.5rem] bg-white/80 p-5">
-                  <p className="text-lg font-semibold text-[var(--ink)]">
-                    {entry.gym_class?.name ?? entry.class_id}
-                  </p>
-                  <p className="mt-2 text-sm text-[var(--muted)]">
-                    Posición {entry.position} · Estado {entry.status === "waiting" ? "en espera" : entry.status}
-                  </p>
-                  <button
-                    className="mt-4 rounded-full border border-[rgba(255,122,89,0.3)] px-4 py-2 text-sm font-semibold text-[var(--accent)]"
-                    disabled={cancelBooking.isPending || entry.status !== "waiting"}
-                    onClick={() => {
-                      handleCancelClick(entry.id, entry.gym_class?.scheduled_at);
-                    }}
-                    type="button"
-                  >
-                    {entry.status === "waiting" ? "Salir de la lista de espera" : "No cancelable"}
-                  </button>
-                </div>
-              ))}
-
-              {!waitlist.length ? (
-                <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
-                  No estás en ninguna lista de espera.
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </ErrorBoundary>
-      </section>
-
-      <section className="glass-panel rounded-[2rem] p-8">
-        <h2 className="section-title text-3xl font-semibold">Historial de asistencia</h2>
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {attendance.map((record) => (
-            <div key={record.id} className="rounded-[1.5rem] bg-white/80 p-5">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
-                {record.status === "present" ? "presente" : "ausente"}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Balance</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">
+                {subscription?.allows_free_pass ? "Pase Libre" : formatCredits(subscription?.active_credits ?? 0)}
               </p>
-              <p className="mt-2 text-sm text-[var(--muted)]">ID de clase: {record.class_id}</p>
-              <p className="mt-1 text-sm text-[var(--muted)]">Marcado el: {formatWorkoutSchedule(record.marked_at)}</p>
+            </div>
+          </div>
+          <div className="rounded-2xl bg-[var(--bg-surface-secondary)] p-5 border border-[var(--border-base)]/50 shadow-sm flex items-center gap-4">
+            <div className="h-10 w-10 rounded-xl bg-[var(--bg-surface)] flex items-center justify-center text-[var(--accent)] shadow-sm">
+               <Clock className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Vence el</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">{formatDateTime(subscription?.period_end)}</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {toast && (
+        <div className={`rounded-2xl p-5 text-sm font-bold border shadow-lg transition-all animate-in zoom-in-95 slide-in-from-top-4 flex items-center gap-3 ${
+          toast.type === "success" ? "bg-[var(--success-soft)] text-[var(--success)] border-[var(--success-soft)]" : "bg-[var(--danger-soft)] text-[var(--danger)] border-[var(--danger-soft)]"
+        }`}>
+          {toast.type === "success" ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+          {toast.message}
+        </div>
+      )}
+
+      <div className="grid gap-8 lg:grid-cols-2">
+        <section className="apple-card p-8 shadow-xl" id="tour-cancel-booking">
+          <div className="flex items-center gap-3 mb-8">
+            <CheckCircle2 className="h-6 w-6 text-[var(--success)]" />
+            <h2 className="section-title text-[var(--font-size-xl)] text-[var(--text-primary)]">Confirmadas</h2>
+          </div>
+          
+          <div className="space-y-4">
+            {bookings.map((booking) => (
+              <div key={booking.id} className="group rounded-2xl bg-[var(--bg-surface-secondary)]/40 p-6 border border-transparent hover:border-[var(--border-base)] hover:bg-[var(--bg-surface-secondary)] transition-all shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-lg font-bold text-[var(--text-primary)] leading-tight group-hover:text-[var(--accent)] transition-colors">
+                      {booking.gym_class?.name ?? "Clase sin nombre"}
+                    </p>
+                    <p className="text-sm font-medium text-[var(--text-secondary)] flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 opacity-60" />
+                      {formatWorkoutSchedule(booking.gym_class?.scheduled_at ?? booking.booked_at)}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-[var(--accent-soft)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] border border-[var(--accent-soft)]">
+                    Confirmado
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                    {booking.booking_type} · {booking.credits_consumed ? `${booking.credits_consumed} CR` : "S/C"}
+                  </p>
+                  
+                  {!isBookingPast(booking.gym_class?.scheduled_at) && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="rounded-xl font-bold h-9 px-4 border-[var(--border-base)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] hover:border-transparent transition-all"
+                      disabled={cancelBooking.isPending || isBookingLateCancelable(booking.gym_class?.scheduled_at)}
+                      onClick={() => handleCancelClick(booking.id, booking.gym_class?.scheduled_at)}
+                    >
+                      {isBookingLateCancelable(booking.gym_class?.scheduled_at) ? "Restringido < 24h" : "Cancelar cupo"}
+                    </Button>
+                  )}
+                  {isBookingPast(booking.gym_class?.scheduled_at) && (
+                     <span className="text-[10px] font-bold uppercase text-[var(--text-muted)] opacity-60">Finalizado</span>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {!bookings.length && !bookingsQuery.isLoading && (
+              <div className="py-12 text-center opacity-50 grayscale">
+                <Ban className="h-10 w-10 mx-auto text-[var(--text-muted)] mb-3" />
+                <p className="text-sm font-bold">Sin reservas activas</p>
+              </div>
+            )}
+            
+            {bookingsQuery.isLoading && (
+               <div className="animate-pulse space-y-4">
+                 {[1,2,3].map(i => <div key={i} className="h-32 rounded-2xl bg-[var(--bg-surface-secondary)]" />)}
+               </div>
+            )}
+          </div>
+        </section>
+
+        <section className="apple-card p-8 shadow-xl">
+          <div className="flex items-center gap-3 mb-8">
+            <Clock className="h-6 w-6 text-[var(--warning)]" />
+            <h2 className="section-title text-[var(--font-size-xl)] text-[var(--text-primary)]">Lista de Espera</h2>
+          </div>
+
+          <div className="space-y-4">
+            {waitlist.map((entry) => (
+              <div key={entry.id} className="group rounded-2xl bg-[var(--bg-surface-secondary)]/40 p-6 border border-transparent hover:border-[var(--border-base)] hover:bg-[var(--bg-surface-secondary)] transition-all shadow-sm">
+                 <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1">
+                    <p className="text-lg font-bold text-[var(--text-primary)] leading-tight group-hover:text-[var(--accent)] transition-colors">
+                      {entry.gym_class?.name ?? "Clase sin nombre"}
+                    </p>
+                    <p className="text-sm font-medium text-[var(--text-secondary)]">
+                       Posición en cola: <span className="text-[var(--warning)] font-black">#{entry.position}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex items-center justify-between">
+                   <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                      Deseo entrar · {formatWorkoutSchedule(entry.gym_class?.scheduled_at)}
+                   </p>
+                   <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 font-bold text-[var(--danger)] hover:bg-[var(--danger-soft)] rounded-xl"
+                    disabled={cancelBooking.isPending}
+                    onClick={() => handleCancelClick(entry.id, entry.gym_class?.scheduled_at)}
+                  >
+                    Salir de cola
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            {!waitlist.length && !bookingsQuery.isLoading && (
+              <div className="py-12 text-center opacity-50 grayscale">
+                <Clock className="h-10 w-10 mx-auto text-[var(--text-muted)] mb-3" />
+                <p className="text-sm font-bold">No estás en espera</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      <section className="apple-card p-8 shadow-xl">
+        <div className="flex items-center gap-3 mb-8">
+          <History className="h-6 w-6 text-[var(--accent)]" />
+          <h2 className="section-title text-[var(--font-size-xl)] text-[var(--text-primary)]">Historial de Clases</h2>
+        </div>
+        
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {attendance.map((record) => (
+            <div key={record.id} className="rounded-2xl bg-[var(--bg-surface-secondary)]/50 p-5 border border-[var(--border-base)] hover:shadow-md transition-shadow">
+               <div className={`mb-3 inline-flex px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-tighter ${
+                 record.status === "present" ? "bg-[var(--success-soft)] text-[var(--success)]" : "bg-[var(--danger-soft)] text-[var(--danger)]"
+               }`}>
+                  {record.status === "present" ? "Asistido" : "Falta"}
+               </div>
+               <p className="text-sm font-bold text-[var(--text-primary)] truncate">Entrenamiento ID: {record.class_id}</p>
+               <p className="mt-1 text-xs font-medium text-[var(--text-secondary)]">{formatWorkoutSchedule(record.marked_at)}</p>
             </div>
           ))}
 
-          {!attendance.length ? (
-            <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
-              Aún no hay registros de asistencia.
-            </div>
-          ) : null}
+          {!attendance.length && !attendanceQuery.isLoading && (
+             <div className="col-span-full py-20 text-center opacity-40">
+                <History className="h-12 w-12 mx-auto mb-4" />
+                <p className="font-bold">Aún no hay registros de asistencia en tu historial.</p>
+             </div>
+          )}
         </div>
       </section>
 
@@ -279,4 +298,3 @@ export function BookingsPage() {
     </div>
   );
 }
-

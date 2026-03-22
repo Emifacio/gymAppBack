@@ -1,5 +1,5 @@
 import { type FormEvent, useState, useRef } from "react";
-import { Camera, Trash2 } from "lucide-react";
+import { Camera, Trash2, User, Mail, Phone, Rocket, ShieldCheck } from "lucide-react";
 
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useUpdateMember } from "@/hooks/use-workouts";
 import { getAvatarData } from "@/lib/avatar";
 import { resetTour } from "@/features/onboarding/onboarding.store";
+import { getApiErrorMessage } from "@/api/client";
 import type { Profile, PartialProfileUpdate } from "@/types/gym";
 
 export function ProfilePage() {
@@ -50,7 +51,7 @@ export function ProfilePage() {
       setMessage({ type: "success", text: "Perfil actualizado exitosamente." });
     } catch (err) {
       console.error(err);
-      setMessage({ type: "error", text: "Error al actualizar el perfil." });
+      setMessage({ type: "error", text: getApiErrorMessage(err) });
     }
   };
 
@@ -87,12 +88,16 @@ export function ProfilePage() {
       reader.onloadend = async () => {
         const base64 = reader.result as string;
         
-        await updateMember.mutateAsync({
-          memberId: member.id,
-          payload: { profile_image_url: base64 }
-        });
-        
-        setAvatarMessage({ type: "success", text: "Foto de perfil actualizada." });
+        try {
+          await updateMember.mutateAsync({
+            memberId: member.id,
+            payload: { profile_image_url: base64 }
+          });
+          setAvatarMessage({ type: "success", text: "Foto de perfil actualizada." });
+        } catch (err) {
+          console.error(err);
+          setAvatarMessage({ type: "error", text: getApiErrorMessage(err) });
+        }
       };
       reader.onerror = () => {
         setAvatarMessage({ type: "error", text: "Error al procesar la imagen." });
@@ -100,7 +105,7 @@ export function ProfilePage() {
       reader.readAsDataURL(file);
     } catch (err) {
       console.error(err);
-      setAvatarMessage({ type: "error", text: "Error al subir la imagen." });
+      setAvatarMessage({ type: "error", text: getApiErrorMessage(err) });
     }
 
     if (fileInputRef.current) {
@@ -124,137 +129,161 @@ export function ProfilePage() {
   };
 
   return (
-    <div className="space-y-[var(--section-gap)]">
-      <header>
-        <h1 className="section-title text-[var(--font-size-4xl)]">Mi Perfil</h1>
-        <p className="mt-2 text-sm font-medium text-[var(--ink-500)] lg:text-base">
-          Administra tu información personal y de contacto.
-        </p>
+    <div className="max-w-4xl mx-auto space-y-[var(--section-gap)] transition-colors duration-300">
+      <header className="flex flex-col gap-6 sm:flex-row sm:items-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent-soft)]">
+          <User className="h-8 w-8" />
+        </div>
+        <div>
+          <h1 className="section-title text-[var(--font-size-2xl)] text-[var(--text-primary)] leading-tight">Ajustes de Cuenta</h1>
+          <p className="mt-1 text-sm font-medium text-[var(--text-secondary)] lg:text-base opacity-80">
+            Personaliza tu identidad en la plataforma y mantén tus datos al día.
+          </p>
+        </div>
       </header>
 
-      <div className="apple-card max-w-2xl">
-        <h2 className="section-title text-[var(--font-size-xl)]">Foto de Perfil</h2>
-        <div className="mt-4 flex items-center gap-6">
-          <Avatar member={member} size="xl" />
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
+      <div className="grid gap-8 lg:grid-cols-3">
+        {/* Profile Card Sidebar */}
+        <div className="lg:col-span-1 space-y-8">
+          <div className="apple-card p-8 shadow-xl text-center flex flex-col items-center">
+            <div className="relative group">
+              <Avatar member={member} size="xl" className="shadow-2xl border-4 border-[var(--bg-surface)] ring-1 ring-[var(--border-base)]" />
+              <button 
                 onClick={() => fileInputRef.current?.click()}
-                disabled={updateMember.isPending}
+                className="absolute bottom-0 right-0 p-2.5 bg-[var(--accent)] text-white rounded-xl shadow-lg hover:scale-110 active:scale-95 transition-transform border-4 border-[var(--bg-surface)]"
               >
-                <Camera className="h-4 w-4 mr-1" />
-                Subir foto
-              </Button>
+                <Camera className="h-4 w-4" />
+              </button>
+            </div>
+            
+            <h2 className="mt-6 text-xl font-bold text-[var(--text-primary)] tracking-tight">{member.full_name}</h2>
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mt-1">{member.role || "Miembro"}</p>
+            
+            <div className="w-full mt-8 pt-6 border-t border-[var(--border-base)] flex flex-col gap-3">
               {avatarData.hasCustomImage && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={handleRemoveAvatar}
                   disabled={updateMember.isPending}
-                  className="text-red-600 hover:text-red-700"
+                  className="w-full py-2.5 text-xs font-bold text-[var(--danger)] bg-[var(--danger-soft)] rounded-xl hover:opacity-80 transition-all flex items-center justify-center gap-2"
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Eliminar
-                </Button>
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Eliminar Foto
+                </button>
+              )}
+              {avatarData.hasGoogleImage && !avatarData.hasCustomImage && (
+                 <p className="text-[10px] text-[var(--text-muted)] italic">Sincronizado con Google</p>
               )}
             </div>
-            {avatarMessage ? (
-              <p className={`text-xs ${avatarMessage.type === "success" ? "text-green-600" : "text-red-600"}`}>
+            
+            {avatarMessage && (
+              <p className={`mt-4 text-[10px] font-bold p-2 px-4 rounded-lg bg-[var(--bg-surface-secondary)] border ${
+                avatarMessage.type === "success" ? "text-[var(--success)] border-[var(--success-soft)]" : "text-[var(--danger)] border-[var(--danger-soft)]"
+              }`}>
                 {avatarMessage.text}
-              </p>
-            ) : (
-              <p className="text-xs text-[var(--ink-400)]">
-                {avatarData.hasGoogleImage
-                  ? avatarData.hasCustomImage
-                    ? "Usando foto personalizada. Google foto disponible como respaldo."
-                    : "Usando foto de Google."
-                  : "Sin foto. Subí una imagen JPG o PNG (máx. 5MB)."}
               </p>
             )}
           </div>
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={handleAvatarUpload}
-        />
-      </div>
 
-      <div className="apple-card max-w-2xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Nombre Completo</label>
-              <input
-                className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium outline-none focus:border-[var(--primary)]"
-                value={formData.full_name}
-                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                required
-              />
+          <div className="apple-card p-6 shadow-md border-l-4 border-l-[var(--accent)]">
+            <div className="flex items-center gap-3 mb-4">
+              <Rocket className="h-5 w-5 text-[var(--accent)]" />
+              <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)]">Guía Rápida</h3>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Correo Electrónico</label>
-              <input
-                className="w-full rounded-xl border border-[var(--surface-outline)] bg-[var(--ink-50)] px-4 py-3 text-sm font-medium outline-none cursor-not-allowed"
-                value={formData.email}
-                disabled
-              />
-              <p className="text-[10px] text-[var(--ink-400)] italic">El correo no puede ser modificado por seguridad.</p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-[var(--ink-500)]">Teléfono</label>
-              <input
-                className="w-full rounded-xl border border-[var(--surface-outline)] bg-white px-4 py-3 text-sm font-medium outline-none focus:border-[var(--primary)]"
-                value={formData.phone ?? ""}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
+            <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed">
+              ¿Perdido? Puedes reiniciar el tutorial interactivo para recordar cómo navegar las secciones principales.
+            </p>
+            <Button
+              variant="secondary"
+              className="w-full h-10 mt-6 text-xs font-bold"
+              onClick={handleResetOnboarding}
+            >
+              Reiniciar Tour
+            </Button>
           </div>
+        </div>
 
-          {message ? (
-            <div className={`p-4 rounded-xl text-sm font-medium ${
-              message.type === "success" ? "bg-green-50 text-green-700 border border-green-100" : "bg-red-50 text-red-700 border border-red-100"
-            }`}>
-              {message.text}
+        {/* Form Area */}
+        <div className="lg:col-span-2 space-y-8">
+          <div className="apple-card p-8 lg:p-10 shadow-xl">
+            <div className="flex items-center gap-4 mb-8">
+              <ShieldCheck className="h-6 w-6 text-[var(--success)]" />
+              <h3 className="section-title text-[var(--font-size-xl)] text-[var(--text-primary)]">Información Pública</h3>
             </div>
-          ) : null}
 
-          <Button
-            type="submit"
-            variant="primary"
-            className="w-full h-12"
-            loading={updateMember.isPending}
-          >
-            Guardar Cambios
-          </Button>
-        </form>
-      </div>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">
+                    <User className="h-3 w-3" />
+                    Nombre Completo
+                  </label>
+                  <input
+                    className="w-full rounded-2xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-5 py-4 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm focus:shadow-md"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    required
+                  />
+                </div>
 
-      <div className="apple-card max-w-2xl">
-        <h2 className="section-title text-[var(--font-size-xl)]">Onboarding</h2>
-        <p className="mt-2 text-sm font-medium text-[var(--ink-500)]">
-          Si acabas de desplegar o necesitas probar el tour, puedes reiniciarlo aquí.
-        </p>
-        <div className="mt-5">
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full h-12"
-            onClick={handleResetOnboarding}
-            loading={updateMember.isPending}
-          >
-            Reiniciar tour de bienvenida
-          </Button>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">
+                    <Phone className="h-3 w-3" />
+                    Teléfono Movil
+                  </label>
+                  <input
+                    className="w-full rounded-2xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-5 py-4 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm focus:shadow-md"
+                    placeholder="+54 11..."
+                    value={formData.phone ?? ""}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] px-1">
+                  <Mail className="h-3 w-3" />
+                  Email (Principal)
+                </label>
+                <div className="relative group">
+                  <input
+                    className="w-full rounded-2xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-muted)] px-5 py-4 text-sm font-bold outline-none cursor-not-allowed opacity-60"
+                    value={formData.email}
+                    disabled
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 bg-[var(--bg-surface)] px-3 py-1 rounded-lg text-xs font-bold text-[var(--text-muted)] border border-[var(--border-base)] shadow-sm pointer-events-none">
+                    Protegido
+                  </span>
+                </div>
+              </div>
+
+              {message && (
+                <div className={`p-5 rounded-2xl text-sm font-bold border transition-all animate-in fade-in slide-in-from-top-2 ${
+                  message.type === "success" ? "bg-[var(--success-soft)] text-[var(--success)] border-[var(--success-soft)] shadow-sm" : "bg-[var(--danger-soft)] text-[var(--danger)] border-[var(--danger-soft)]"
+                }`}>
+                  {message.type === "success" ? "✅ " : "⚠️ "} {message.text}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                variant="primary"
+                className="w-full h-14 text-base font-bold shadow-lg shadow-[var(--accent-soft)] rounded-2xl transition-all"
+                loading={updateMember.isPending}
+              >
+                Actualizar Perfil
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={handleAvatarUpload}
+      />
     </div>
   );
 }

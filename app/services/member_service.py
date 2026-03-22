@@ -97,7 +97,7 @@ class MemberService:
             await self.session.rollback()
         update_data = payload.model_dump(exclude_unset=True)
         if not allow_admin_fields:
-            allowed_fields = {"full_name", "phone", "birth_date", "emergency_contact", "notes", "password", "profile_metadata"}
+            allowed_fields = {"full_name", "phone", "birth_date", "emergency_contact", "notes", "password", "profile_metadata", "profile_image_url"}
             update_data = {key: value for key, value in update_data.items() if key in allowed_fields}
 
         password = update_data.pop("password", None)

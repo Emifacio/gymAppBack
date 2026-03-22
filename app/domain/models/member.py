@@ -52,7 +52,7 @@ class Member(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     google_sub: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
     google_picture_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    profile_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    profile_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     membership_plan: Mapped["MembershipPlan | None"] = relationship(back_populates="members")
     instructor_profile: Mapped["Instructor | None"] = relationship(

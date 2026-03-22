@@ -3,7 +3,8 @@ import {
   createApiHooks,
   createBrowserStorageAdapter,
   createSessionManager,
-  DEFAULT_API_BASE_URL
+  DEFAULT_API_BASE_URL,
+  getApiErrorMessage
 } from "@gym/api-client";
 
 export const sessionManager = createSessionManager({
@@ -26,3 +27,6 @@ export const apiHooks = createApiHooks({
   client: apiClient,
   sessionManager
 });
+
+export { getApiErrorMessage };
+

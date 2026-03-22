@@ -13,6 +13,8 @@ import { AttendancePanel } from "./components/AttendancePanel";
 import { useWorkoutBooking } from "./hooks/useWorkoutBooking";
 import { useWorkoutAdmin } from "./hooks/useWorkoutAdmin";
 
+import { SkeletonWorkoutDetail } from "@/components/ui/skeletons";
+
 export function WorkoutDetailPage() {
   const { workoutId = "" } = useParams();
   const navigate = useNavigate();
@@ -41,7 +43,7 @@ export function WorkoutDetailPage() {
   const isNotFound = workoutQuery.isSuccess && !workout;
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <SkeletonWorkoutDetail />;
   }
 
   if (isNotFound || (workoutQuery.isError && isApiResponseError(workoutQuery.error) && workoutQuery.error.status === 404)) {
