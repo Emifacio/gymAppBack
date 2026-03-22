@@ -16,7 +16,7 @@ export function ThemeToggle() {
     <button
       onClick={toggleTheme}
       title={`Theme: ${theme} (Click to toggle)`}
-      className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--bg-surface-secondary)] text-[var(--text-secondary)] transition-all hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] hover:scale-105 active:scale-95 border border-[var(--border-base)]"
+      className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bg-surface-secondary)] text-[var(--text-secondary)] transition-all hover:bg-[var(--accent-soft)] hover:text-[var(--accent)] hover:scale-105 active:scale-95 border border-[var(--border-base)]"
       aria-label="Toggle theme"
     >
       <Icon className="h-5 w-5" />

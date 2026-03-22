@@ -17,3 +17,4 @@ greenlet==3.2.4
 authlib==1.5.0
 google-auth==2.38.0
 requests==2.32.3
+python-multipart==0.0.9

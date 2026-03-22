@@ -62,7 +62,7 @@ export function LoginPage() {
       <div className="grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="hidden rounded-[2.5rem] p-10 lg:flex flex-col justify-center bg-[#132238] shadow-2xl transition-all duration-700 animate-in fade-in slide-in-from-left-8">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-            Tu Gimnasio
+            ATHLYT
           </p>
           <h1 className="mt-6 text-5xl font-semibold leading-tight text-white">
             Gestioná tu entrenamiento de forma inteligente
@@ -72,7 +72,14 @@ export function LoginPage() {
           </p>
         </section>
 
-        <section className="glass-panel rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-center bg-[var(--bg-surface)] border border-[var(--border-base)] shadow-xl">
+        <section className="glass-panel rounded-[2.5rem] p-8 md:p-10 flex flex-col justify-center bg-[var(--bg-surface)] border border-[var(--border-base)] shadow-xl relative overflow-hidden">
+          {/* Mobile/Global Brand Header */}
+          <div className="mb-8 flex justify-center lg:justify-start">
+            <h1 className="text-4xl font-black tracking-tighter text-[var(--text-primary)]">
+              ATHL<span className="text-[var(--accent)]">YT</span>
+            </h1>
+          </div>
+
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Iniciar sesión</p>
           <h2 className="section-title mt-4 text-4xl font-semibold text-[var(--text-primary)]">Bienvenido de nuevo</h2>
           <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">

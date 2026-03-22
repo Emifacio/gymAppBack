@@ -65,7 +65,7 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
         {/* Technical context footer (subtle) */}
         <div className="pt-12">
           <p className="text-xs font-medium uppercase tracking-widest text-gray-400/60">
-            GymApp Production Resilience
+            ATHLYT Production Resilience
           </p>
         </div>
       </div>
