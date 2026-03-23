@@ -1,89 +1,13 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId } from "react";
 
 import { Button } from "@/components/ui/Button";
-
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: {
-            client_id: string;
-            callback: (response: { credential?: string }) => void;
-            cancel_on_tap_outside?: boolean;
-            context?: "signin" | "signup" | "use";
-          }) => void;
-          prompt: (
-            momentListener?: (notification: {
-              isDisplayMoment?: () => boolean;
-              isDisplayed?: () => boolean;
-              isNotDisplayed?: () => boolean;
-              isSkippedMoment?: () => boolean;
-              isDismissedMoment?: () => boolean;
-              getNotDisplayedReason?: () => string;
-              getSkippedReason?: () => string;
-              getDismissedReason?: () => string;
-            }) => void
-          ) => void;
-          cancel: () => void;
-        };
-      };
-    };
-  }
-}
+import { useGoogleAuth } from "@/hooks/use-google-auth";
 
 interface GoogleSignInProps {
   clientId: string;
   onSuccess: (credential: string) => void;
   onError: (message: string) => void;
   disabled?: boolean;
-}
-
-let googleIdentityScriptPromise: Promise<void> | null = null;
-
-function loadGoogleIdentityScript() {
-  if (typeof window === "undefined") {
-    return Promise.reject(new Error("Google Identity Services is only available in the browser."));
-  }
-
-  if (window.google?.accounts?.id) {
-    return Promise.resolve();
-  }
-
-  if (googleIdentityScriptPromise) {
-    return googleIdentityScriptPromise;
-  }
-
-  googleIdentityScriptPromise = new Promise<void>((resolve, reject) => {
-    const existingScript = document.querySelector<HTMLScriptElement>(
-      'script[data-google-identity="true"]'
-    );
-
-    if (existingScript) {
-      existingScript.addEventListener("load", () => resolve(), { once: true });
-      existingScript.addEventListener(
-        "error",
-        () =>
-          reject(
-            new Error("No se pudo cargar Google Identity Service. Por favor intente nuevamente.")
-          ),
-        { once: true }
-      );
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.dataset.googleIdentity = "true";
-    script.onload = () => resolve();
-    script.onerror = () =>
-      reject(new Error("No se pudo cargar Google Identity Service. Por favor intente nuevamente."));
-    document.head.appendChild(script);
-  });
-
-  return googleIdentityScriptPromise;
 }
 
 function GoogleMark() {
@@ -110,75 +34,13 @@ function GoogleMark() {
 }
 
 export function GoogleSignIn({ clientId, onSuccess, onError, disabled }: GoogleSignInProps) {
-  const [isReady, setIsReady] = useState(false);
-  const [isLaunching, setIsLaunching] = useState(false);
-  const initializedClientId = useRef<string | null>(null);
   const statusId = useId();
-  const isConfigured = clientId.length > 0;
-
-  useEffect(() => {
-    if (!isConfigured) {
-      return;
-    }
-
-    let isMounted = true;
-
-    void loadGoogleIdentityScript()
-      .then(() => {
-        if (!isMounted || !window.google?.accounts?.id) {
-          return;
-        }
-
-        if (initializedClientId.current !== clientId) {
-          window.google.accounts.id.initialize({
-            client_id: clientId,
-            callback: (response: { credential?: string }) => {
-              setIsLaunching(false);
-
-              if (!response?.credential) {
-                onError("No se pudo obtener la credencial de Google.");
-                return;
-              }
-
-              onSuccess(response.credential);
-            },
-            cancel_on_tap_outside: true,
-            context: "signin"
-          });
-
-          initializedClientId.current = clientId;
-        }
-
-        setIsReady(true);
-      })
-      .catch((error: Error) => {
-        if (isMounted) {
-          setIsReady(false);
-          setIsLaunching(false);
-          onError(error.message);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [clientId, isConfigured, onError, onSuccess]);
-
-  useEffect(() => {
-    if (!disabled) {
-      return;
-    }
-
-    window.google?.accounts?.id.cancel?.();
-
-    const resetLaunchStateTimeout = window.setTimeout(() => {
-      setIsLaunching(false);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(resetLaunchStateTimeout);
-    };
-  }, [disabled]);
+  const { buttonContainerRef, isConfigured, isReady } = useGoogleAuth({
+    clientId,
+    disabled,
+    onSuccess,
+    onError
+  });
 
   if (!isConfigured) {
     return (
@@ -190,46 +52,36 @@ export function GoogleSignIn({ clientId, onSuccess, onError, disabled }: GoogleS
     );
   }
 
-  const isBusy = disabled || isLaunching;
+  const isBusy = Boolean(disabled);
 
   return (
     <div className="relative w-full">
-      <Button
-        aria-describedby={statusId}
-        className="h-13 w-full justify-center rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] px-5 text-[15px] font-semibold text-[var(--text-primary)] shadow-sm shadow-black/5 hover:border-[var(--border-strong)] hover:bg-[var(--bg-surface)] hover:shadow-md focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-surface)] disabled:border-[var(--border-base)] disabled:bg-[var(--bg-surface-secondary)] disabled:text-[var(--text-muted)]"
-        disabled={!isReady || isBusy}
-        loading={isBusy}
-        size="lg"
-        type="button"
-        variant="outline"
-        onClick={() => {
-          if (!isReady || !window.google?.accounts?.id) {
-            onError("Google Identity Services not available in browser.");
-            return;
-          }
-
-          setIsLaunching(true);
-          window.google.accounts.id.prompt((notification) => {
-            if (notification.isNotDisplayed?.()) {
-              setIsLaunching(false);
-              onError("No se pudo abrir el selector de Google. Por favor intente nuevamente.");
-              return;
-            }
-
-            if (notification.isSkippedMoment?.() || notification.isDismissedMoment?.()) {
-              setIsLaunching(false);
-            }
-          });
-        }}
-      >
-        {!isBusy ? <GoogleMark /> : null}
-        <span>Continuar con Google</span>
-      </Button>
+      {isReady ? (
+        <div
+          aria-describedby={statusId}
+          aria-disabled={isBusy}
+          className={isBusy ? "pointer-events-none opacity-60" : undefined}
+          ref={buttonContainerRef}
+        />
+      ) : (
+        <Button
+          aria-describedby={statusId}
+          className="h-13 w-full justify-center rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] px-5 text-[15px] font-semibold text-[var(--text-primary)] shadow-sm shadow-black/5"
+          disabled
+          loading
+          size="lg"
+          type="button"
+          variant="outline"
+        >
+          <GoogleMark />
+          <span>Continuar con Google</span>
+        </Button>
+      )}
       <p className="sr-only" id={statusId}>
         {isBusy
-          ? "Abriendo autenticación de Google."
+          ? "Autenticación de Google temporalmente deshabilitada."
           : isReady
-            ? "Botón para iniciar sesión con Google."
+            ? "Botón oficial de Google para iniciar sesión."
             : "Cargando autenticación de Google."}
       </p>
     </div>
