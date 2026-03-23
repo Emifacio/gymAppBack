@@ -24,6 +24,79 @@ import { MotionTokens } from "@/components/ui/motion-tokens";
 import type { Workout } from "@/types/gym";
 import type { WorkoutCreatePayload } from "@gym/api-client";
 
+const DISPLAY_DATE_PLACEHOLDER = "dd/mm/yyyy";
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DISPLAY_DATE_PATTERN = /^\d{2}\/\d{2}\/\d{4}$/;
+
+function formatDateToDisplay(value: string) {
+  if (!ISO_DATE_PATTERN.test(value)) {
+    return value;
+  }
+
+  const [year, month, day] = value.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+function formatDisplayDateInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+  if (digits.length <= 4) {
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  }
+
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function isLeapYear(year: number) {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+}
+
+function getDaysInMonth(month: number, year: number) {
+  if (month === 2) {
+    return isLeapYear(year) ? 29 : 28;
+  }
+
+  if ([4, 6, 9, 11].includes(month)) {
+    return 30;
+  }
+
+  return 31;
+}
+
+function isValidDisplayDate(value: string) {
+  if (!DISPLAY_DATE_PATTERN.test(value)) {
+    return false;
+  }
+
+  const [dayString, monthString, yearString] = value.split("/");
+  const day = Number(dayString);
+  const month = Number(monthString);
+  const year = Number(yearString);
+
+  if (!Number.isInteger(day) || !Number.isInteger(month) || !Number.isInteger(year)) {
+    return false;
+  }
+
+  if (month < 1 || month > 12 || day < 1 || year < 1000 || year > 9999) {
+    return false;
+  }
+
+  return day <= getDaysInMonth(month, year);
+}
+
+function parseDisplayDateToIso(value: string) {
+  if (!isValidDisplayDate(value)) {
+    return null;
+  }
+
+  const [day, month, year] = value.split("/");
+  return `${year}-${month}-${day}`;
+}
+
 const workoutCreateSchema = z.object({
   name: z.string().trim().min(1, "El nombre es obligatorio"),
   location: z.string().trim().min(1, "La ubicación es obligatoria"),
@@ -58,7 +131,8 @@ export function WorkoutsPage() {
     enabled: canManage
   });
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
-  const [pendingDate, setPendingDate] = useState<string>("");
+  const [pendingDateDisplay, setPendingDateDisplay] = useState<string>("");
+  const [pendingDateError, setPendingDateError] = useState<string>("");
   const [listHighlight, setListHighlight] = useState(false);
   const feedback = useTransientState();
 
@@ -83,10 +157,26 @@ export function WorkoutsPage() {
   const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
 
   const addDate = () => {
-    if (pendingDate && !selectedDates.includes(pendingDate)) {
-      setSelectedDates((prev) => [...prev, pendingDate].sort());
-      setPendingDate("");
+    if (!pendingDateDisplay) {
+      setPendingDateError(`Ingresa una fecha con formato ${DISPLAY_DATE_PLACEHOLDER}.`);
+      return;
     }
+
+    const isoDate = parseDisplayDateToIso(pendingDateDisplay);
+
+    if (!isoDate) {
+      setPendingDateError(`Ingresa una fecha valida con formato ${DISPLAY_DATE_PLACEHOLDER}.`);
+      return;
+    }
+
+    if (selectedDates.includes(isoDate)) {
+      setPendingDateError("Esa fecha ya fue agregada.");
+      return;
+    }
+
+    setSelectedDates((prev) => [...prev, isoDate].sort());
+    setPendingDateDisplay("");
+    setPendingDateError("");
   };
 
   const removeDate = (date: string) => {
@@ -118,7 +208,8 @@ export function WorkoutsPage() {
       await createWorkout.mutateAsync(payload);
       reset();
       setSelectedDates([]);
-      setPendingDate("");
+      setPendingDateDisplay("");
+      setPendingDateError("");
       setListHighlight(true);
       setTimeout(() => setListHighlight(false), MotionTokens.highlight.containerReset);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -290,9 +381,35 @@ export function WorkoutsPage() {
                 <div className="flex gap-2">
                   <input
                     className="flex-1 rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none focus:border-[var(--accent)] shadow-sm"
-                    type="date"
-                    value={pendingDate}
-                    onChange={(e) => setPendingDate(e.target.value)}
+                    aria-describedby="workout-date-help"
+                    aria-invalid={pendingDateError ? "true" : "false"}
+                    inputMode="numeric"
+                    maxLength={10}
+                    placeholder={DISPLAY_DATE_PLACEHOLDER}
+                    type="text"
+                    value={pendingDateDisplay}
+                    onBlur={() => {
+                      if (!pendingDateDisplay) {
+                        setPendingDateError("");
+                        return;
+                      }
+
+                      if (!isValidDisplayDate(pendingDateDisplay)) {
+                        setPendingDateError(`Ingresa una fecha valida con formato ${DISPLAY_DATE_PLACEHOLDER}.`);
+                      }
+                    }}
+                    onChange={(event) => {
+                      setPendingDateDisplay(formatDisplayDateInput(event.target.value));
+                      if (pendingDateError) {
+                        setPendingDateError("");
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        addDate();
+                      }
+                    }}
                   />
                   <Button
                     type="button"
@@ -303,12 +420,16 @@ export function WorkoutsPage() {
                     +
                   </Button>
                 </div>
+                <p id="workout-date-help" className="px-1 text-[10px] font-bold text-[var(--text-muted)]">
+                  Usa el formato {DISPLAY_DATE_PLACEHOLDER}.
+                </p>
+                {pendingDateError && <p className="px-1 text-[10px] font-bold text-[var(--danger)]">{pendingDateError}</p>}
                 
                 <div className="flex flex-wrap gap-2 mt-3 p-3 rounded-2xl bg-[var(--bg-surface-secondary)]/30 border border-dashed border-[var(--border-base)] min-h-[44px]">
                   {selectedDates.map((date) => (
                     <span key={date} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--accent)] text-white text-[10px] font-black uppercase shadow-sm">
-                      {date}
-                      <button onClick={() => removeDate(date)} className="hover:opacity-60">×</button>
+                      {formatDateToDisplay(date)}
+                      <button type="button" onClick={() => removeDate(date)} className="hover:opacity-60">×</button>
                     </span>
                   ))}
                   {selectedDates.length === 0 && <span className="text-[10px] text-[var(--text-muted)] italic font-bold">Sin fechas...</span>}

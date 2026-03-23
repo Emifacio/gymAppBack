@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
+import type { Member } from "@gym/api-client";
 
+import { MemberCard } from "@/components/member-card";
 import { Button } from "@/components/ui/Button";
 import { InlineFeedback } from "@/components/ui/InlineFeedback";
 import { MotionTokens, SuccessTokens } from "@/components/ui/motion-tokens";
@@ -10,8 +12,8 @@ import { useCreateMember, useMembers } from "@/hooks/use-workouts";
 import { canManageOperations } from "@/lib/roles";
 import { useTransientState } from "@/hooks/useTransientState";
 
-type MemberRole = "member" | "instructor" | "admin";
-type MembershipStatus = "active" | "inactive" | "cancelled";
+type MemberRole = Member["role"];
+type MembershipStatus = Member["membership_status"];
 
 export function MembersPage() {
   const { session } = useAuth();
@@ -157,33 +159,20 @@ export function MembersPage() {
             </div>
           </div>
 
-          <div className={`mt-8 space-y-3 rounded-2xl p-2 -m-2 transition-all duration-${MotionTokens.transition.slow} ${directoryHighlight ? `${SuccessTokens.ring.standard} ${SuccessTokens.background.tint}` : ""}`}>
+          <div className={`mt-8 rounded-[2rem] p-2 -m-2 transition-all duration-${MotionTokens.transition.slow} ${directoryHighlight ? `${SuccessTokens.ring.standard} ${SuccessTokens.background.tint}` : ""}`}>
             {membersQuery.isLoading ? (
-              <>
+              <div className="grid gap-4 xl:grid-cols-2">
                 <SkeletonMemberRow />
                 <SkeletonMemberRow />
                 <SkeletonMemberRow />
                 <SkeletonMemberRow />
-              </>
+              </div>
             ) : members.length > 0 ? (
-              members.map((member) => (
-                <Link
-                  key={member.id}
-                  to={`/members/${member.id}`}
-                  className="flex items-center justify-between p-4 rounded-xl border border-[var(--surface-outline)] hover:bg-[var(--ink-100)] transition-colors group"
-                >
-                  <div>
-                    <p className="text-base font-bold text-[var(--ink-900)]">{member.full_name}</p>
-                    <p className="text-sm font-medium text-[var(--ink-500)]">{member.email}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="rounded-lg bg-[var(--bg-main)] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[var(--ink-700)]">
-                      {member.role}
-                    </span>
-                    <span className="h-2 w-2 rounded-full bg-green-500" />
-                  </div>
-                </Link>
-              ))
+              <div className="grid gap-5 xl:grid-cols-2">
+                {members.map((member) => (
+                  <MemberCard key={member.id} member={member} />
+                ))}
+              </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-[var(--ink-300)] px-4 py-10 text-center text-sm font-medium text-[var(--ink-500)]">
                 No se encontraron miembros que coincidan con estos filtros.

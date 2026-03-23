@@ -1,38 +1,54 @@
+function toValidDate(value: string | Date | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function formatDateValue(date: Date) {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+
+function formatTimeValue(date: Date) {
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${hours}:${minutes}`;
+}
+
 export function formatWorkoutSchedule(value: string | null | undefined) {
-  if (!value) return "N/A";
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit"
-  }).format(new Date(value));
+  const date = toValidDate(value);
+  if (!date) return "N/A";
+
+  return `${formatDateValue(date)} ${formatTimeValue(date)}`;
 }
 
 export function formatDateTime(value: string | null | undefined) {
-  if (!value) {
+  const date = toValidDate(value);
+  if (!date) {
     return "N/A";
   }
 
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit"
-  }).format(new Date(value));
+  return `${formatDateValue(date)} ${formatTimeValue(date)}`;
 }
 
 export function formatRelativeSlot(value: string) {
-  const date = new Date(value);
+  const date = toValidDate(value);
+  if (!date) {
+    return "N/A";
+  }
+
   const today = new Date();
   const sameDay = date.toDateString() === today.toDateString();
 
   if (sameDay) {
-    return `Today at ${new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "2-digit"
-    }).format(date)}`;
+    return `Today at ${formatTimeValue(date)}`;
   }
 
   return formatWorkoutSchedule(value);
@@ -74,15 +90,10 @@ export function formatPlanPeriod(periodType: "weekly" | "monthly" | null | undef
 }
 
 export function formatDate(value: string | Date | null | undefined) {
-  if (!value) {
+  const date = toValidDate(value);
+  if (!date) {
     return "N/A";
   }
 
-  const date = typeof value === "string" ? new Date(value) : value;
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-
-  return `${day}/${month}/${year}`;
+  return formatDateValue(date);
 }
-
