@@ -1,7 +1,20 @@
 import { Button } from "@/components/ui/Button";
-import { Card, CardContent, CardDescription, CardEyebrow, CardHeader, CardInset, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardEyebrow,
+  CardHeader,
+  CardInset,
+  CardTitle
+} from "@/components/ui/Card";
 import { BookingEligibilityModal } from "@/components/booking-eligibility-modal";
-import { getSubscriptionCreditDetail, getSubscriptionStatusLabel } from "@/features/subscription/utils/subscriptionDisplay";
+import {
+  getSubscriptionCreditDetail,
+  getSubscriptionStatusLabel
+} from "@/features/subscription/utils/subscriptionDisplay";
+import { formatDateTime } from "@/lib/format";
 import type { MemberSubscriptionStatus } from "@gym/api-client";
 
 interface Props {
@@ -37,6 +50,14 @@ export function BookingPanel({
         : bookingState === "closed"
           ? "Reserva cerrada"
           : "Disponible";
+  const bookingStateTone =
+    bookingState === "confirmed"
+      ? "success"
+      : bookingState === "waitlisted"
+        ? "warning"
+        : bookingState === "closed"
+          ? "danger"
+          : "accent";
 
   return (
     <Card as="aside" className="space-y-6">
@@ -44,8 +65,8 @@ export function BookingPanel({
         <CardEyebrow>Flujo de reserva</CardEyebrow>
         <CardTitle>Reserva tu lugar</CardTitle>
         <CardDescription>
-          Reserva al instante cuando haya capacidad, únete a la lista de espera cuando la clase esté llena y mantén tus
-          créditos sincronizados con el plan activo.
+          Reserva al instante cuando haya capacidad, únete a la lista de espera cuando la clase esté
+          llena y mantén tus créditos sincronizados con el plan activo.
         </CardDescription>
       </CardHeader>
 
@@ -60,12 +81,14 @@ export function BookingPanel({
                 {getSubscriptionStatusLabel(subscription)}
               </p>
             </div>
-            <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
-              {bookingStateLabel}
-            </span>
+            <Badge tone={bookingStateTone}>{bookingStateLabel}</Badge>
           </div>
-          <p className="mt-3 text-sm text-[var(--text-secondary)]">{getSubscriptionCreditDetail(subscription)}</p>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">Fin del periodo: {subscription?.period_end ?? "-"}</p>
+          <p className="mt-3 text-sm text-[var(--text-secondary)]">
+            {getSubscriptionCreditDetail(subscription)}
+          </p>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            Fin del periodo: {formatDateTime(subscription?.period_end)}
+          </p>
         </CardInset>
 
         <Button
@@ -81,7 +104,8 @@ export function BookingPanel({
         {precheckErrorCode ? (
           <CardInset className="border-[var(--warning-soft)] bg-[var(--warning-soft)] shadow-none">
             <p className="text-sm font-medium text-[var(--text-primary)]">
-              Tus créditos semanales se han agotado. Contacta con administración para más información o para ajustar tu plan de membresía.
+              Tus créditos semanales se han agotado. Contacta con administración para más
+              información o para ajustar tu plan de membresía.
             </p>
           </CardInset>
         ) : null}

@@ -3,48 +3,52 @@ import { Link } from "react-router-dom";
 import type { LucideIcon } from "lucide-react";
 
 import type { Member } from "@gym/api-client";
+import { Badge } from "@/components/ui/Badge";
 
 interface MemberCardProps {
   member: Member;
 }
 
-const roleConfig: Record<Member["role"], { label: string; icon: LucideIcon; className: string }> = {
+const roleConfig: Record<
+  Member["role"],
+  { label: string; icon: LucideIcon; tone: "accent" | "neutral" | "warning" }
+> = {
   admin: {
     label: "Administrador",
     icon: ShieldCheck,
-    className: "border-[var(--accent-soft)] bg-[var(--accent-soft)] text-[var(--accent)]"
+    tone: "accent"
   },
   instructor: {
     label: "Instructor",
     icon: GraduationCap,
-    className: "border-[var(--warning-soft)] bg-[var(--warning-soft)] text-[var(--warning)]"
+    tone: "warning"
   },
   member: {
     label: "Miembro",
     icon: UserRound,
-    className: "border-[var(--bg-surface-secondary)] bg-[var(--bg-surface-secondary)] text-[var(--text-secondary)]"
+    tone: "neutral"
   }
 };
 
 const membershipStatusConfig: Record<
   Member["membership_status"],
-  { label: string; className: string }
+  { label: string; tone: "success" | "warning" | "danger" }
 > = {
   active: {
     label: "Membresia activa",
-    className: "border-[var(--success-soft)] bg-[var(--success-soft)] text-[var(--success)]"
+    tone: "success"
   },
   cancelled: {
     label: "Membresia cancelada",
-    className: "border-[var(--danger-soft)] bg-[var(--danger-soft)] text-[var(--danger)]"
+    tone: "danger"
   },
   inactive: {
     label: "Membresia inactiva",
-    className: "border-[var(--warning-soft)] bg-[var(--warning-soft)] text-[var(--warning)]"
+    tone: "warning"
   },
   suspended: {
     label: "Membresia suspendida",
-    className: "border-[var(--danger-soft)] bg-[var(--danger-soft)] text-[var(--danger)]"
+    tone: "danger"
   }
 };
 
@@ -66,9 +70,6 @@ export function MemberCard({ member }: MemberCardProps) {
   const role = roleConfig[member.role];
   const RoleIcon = role.icon;
   const membershipStatus = membershipStatusConfig[member.membership_status];
-  const accountStatusClass = member.is_active
-    ? "border-[var(--success-soft)] bg-[var(--success-soft)] text-[var(--success)]"
-    : "border-[var(--border-base)] bg-[var(--bg-surface-secondary)] text-[var(--text-secondary)]";
 
   return (
     <Link
@@ -105,17 +106,11 @@ export function MemberCard({ member }: MemberCardProps) {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <span
-          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] ${role.className}`}
-        >
+        <Badge tone={role.tone}>
           <RoleIcon className="h-3.5 w-3.5" />
           {role.label}
-        </span>
-        <span
-          className={`inline-flex items-center rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] ${membershipStatus.className}`}
-        >
-          {membershipStatus.label}
-        </span>
+        </Badge>
+        <Badge tone={membershipStatus.tone}>{membershipStatus.label}</Badge>
       </div>
 
       <div className="mt-auto flex items-center justify-between gap-3 rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)]/70 px-4 py-3">
@@ -127,12 +122,9 @@ export function MemberCard({ member }: MemberCardProps) {
             {member.is_active ? "Activa y operativa" : "Inactiva"}
           </p>
         </div>
-        <span
-          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.18em] ${accountStatusClass}`}
-        >
-          <span className="h-2 w-2 rounded-full bg-current opacity-80" />
+        <Badge dot tone={member.is_active ? "success" : "neutral"}>
           {member.is_active ? "Online" : "Offline"}
-        </span>
+        </Badge>
       </div>
     </Link>
   );

@@ -37,9 +37,25 @@ export function WorkoutDetailPage() {
   } = useWorkoutBooking(workoutId);
 
   const canManage = canManageOperations(session?.member);
-  const { classMembersQuery, classAttendanceQuery, assignMemberMutation, updateWorkoutMutation, deleteWorkoutMutation } = useWorkoutAdmin(workoutId, canManage);
+  const {
+    classMembersQuery,
+    classAttendanceQuery,
+    assignMemberMutation,
+    updateWorkoutMutation,
+    deleteWorkoutMutation
+  } = useWorkoutAdmin(workoutId, canManage);
 
-  const isPast = useMemo(() => (workout ? new Date(workout.scheduled_at) < new Date() : false), [workout]);
+  const isPast = useMemo(
+    () => (workout ? new Date(workout.scheduled_at) < new Date() : false),
+    [workout]
+  );
+  const classMemberNamesById = useMemo(
+    () =>
+      Object.fromEntries(
+        (classMembersQuery.data ?? []).map((member) => [member.member_id, member.full_name])
+      ),
+    [classMembersQuery.data]
+  );
   const isLoading = workoutQuery.isPending || isCheckingEligibility || bookingMutation.isPending;
   const isNotFound = workoutQuery.isSuccess && !workout;
 
@@ -47,10 +63,17 @@ export function WorkoutDetailPage() {
     return <SkeletonWorkoutDetail />;
   }
 
-  if (isNotFound || (workoutQuery.isError && isApiResponseError(workoutQuery.error) && workoutQuery.error.status === 404)) {
+  if (
+    isNotFound ||
+    (workoutQuery.isError &&
+      isApiResponseError(workoutQuery.error) &&
+      workoutQuery.error.status === 404)
+  ) {
     return (
       <div className="pt-10">
-        <p className="text-center text-xl text-[var(--accent)]">Clase no encontrada o ya eliminada.</p>
+        <p className="text-center text-xl text-[var(--accent)]">
+          Clase no encontrada o ya eliminada.
+        </p>
       </div>
     );
   }
@@ -58,7 +81,9 @@ export function WorkoutDetailPage() {
   if (workoutQuery.isError) {
     return (
       <div className="pt-10">
-        <p className="text-center text-xl text-[var(--accent)]">Error al cargar la clase. Por favor intenta de nuevo.</p>
+        <p className="text-center text-xl text-[var(--accent)]">
+          Error al cargar la clase. Por favor intenta de nuevo.
+        </p>
       </div>
     );
   }
@@ -104,7 +129,7 @@ export function WorkoutDetailPage() {
               <CardTitle>Miembros confirmados</CardTitle>
             </CardHeader>
             <CardContent>
-                <MembersList members={classMembersQuery.data ?? []} />
+              <MembersList members={classMembersQuery.data ?? []} />
             </CardContent>
           </Card>
 
@@ -114,7 +139,10 @@ export function WorkoutDetailPage() {
               <CardTitle>Resumen de asistencia</CardTitle>
             </CardHeader>
             <CardContent>
-                <AttendancePanel attendance={classAttendanceQuery.data ?? []} />
+              <AttendancePanel
+                attendance={classAttendanceQuery.data ?? []}
+                memberNamesById={classMemberNamesById}
+              />
             </CardContent>
           </Card>
         </div>

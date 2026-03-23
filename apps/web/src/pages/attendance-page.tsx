@@ -35,6 +35,11 @@ export function AttendancePage() {
     () => (workoutsQuery.data ?? []).find((workout) => workout.id === selectedClassId),
     [selectedClassId, workoutsQuery.data]
   );
+  const memberNamesById = useMemo(
+    () =>
+      Object.fromEntries((membersQuery.data ?? []).map((member) => [member.id, member.full_name])),
+    [membersQuery.data]
+  );
 
   if (!session || !canManageOperations(session.member)) {
     return <Navigate to="/dashboard" replace />;
@@ -63,10 +68,15 @@ export function AttendancePage() {
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent-soft)] mb-6">
           <ClipboardCheck className="h-8 w-8" />
         </div>
-        <p className="text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent)] opacity-80">Gestión de Sala</p>
-        <h1 className="mt-3 text-4xl font-bold text-[var(--text-primary)] tracking-tight">Registro de Asistencia</h1>
+        <p className="text-sm font-bold uppercase tracking-[0.3em] text-[var(--accent)] opacity-80">
+          Gestión de Sala
+        </p>
+        <h1 className="mt-3 text-4xl font-bold text-[var(--text-primary)] tracking-tight">
+          Registro de Asistencia
+        </h1>
         <p className="mt-3 max-w-2xl text-sm md:text-base leading-relaxed text-[var(--text-secondary)]">
-          Control de acceso en tiempo real. Selecciona una clase para visualizar quién ha llegado o marca nuevas asistencias manualmente.
+          Control de acceso en tiempo real. Selecciona una clase para visualizar quién ha llegado o
+          marca nuevas asistencias manualmente.
         </p>
       </header>
 
@@ -77,10 +87,12 @@ export function AttendancePage() {
               <UserCheck className="h-6 w-6 text-[var(--accent)]" />
               <h2 className="text-2xl font-bold text-[var(--text-primary)]">Marcar Manual</h2>
             </div>
-            
+
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Clase de Entrenamiento</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">
+                  Clase de Entrenamiento
+                </label>
                 <select
                   required
                   value={formState.class_id}
@@ -99,7 +111,9 @@ export function AttendancePage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Miembro</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">
+                  Miembro
+                </label>
                 <select
                   required
                   value={formState.member_id}
@@ -118,7 +132,9 @@ export function AttendancePage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Estado de Entrada</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">
+                  Estado de Entrada
+                </label>
                 <select
                   value={formState.status}
                   onChange={(event) =>
@@ -136,7 +152,9 @@ export function AttendancePage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Observaciones</label>
+                <label className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">
+                  Observaciones
+                </label>
                 <textarea
                   rows={2}
                   value={formState.notes}
@@ -179,7 +197,7 @@ export function AttendancePage() {
               <option value="">Selecciona para ver lista...</option>
               {(workoutsQuery.data ?? []).map((workout) => (
                 <option key={workout.id} value={workout.id}>
-                  {workout.name}
+                  {workout.name} · {formatDateTime(workout.scheduled_at)}
                 </option>
               ))}
             </select>
@@ -207,10 +225,15 @@ export function AttendancePage() {
 
           <div className="flex-1 space-y-4">
             {(attendanceQuery.data ?? []).map((record) => (
-              <div key={record.id} className="rounded-2xl bg-[var(--bg-surface-secondary)]/40 p-5 hover:bg-[var(--bg-surface-secondary)] transition-colors border border-transparent hover:border-[var(--border-base)] group shadow-sm">
+              <div
+                key={record.id}
+                className="rounded-2xl bg-[var(--bg-surface-secondary)]/40 p-5 hover:bg-[var(--bg-surface-secondary)] transition-colors border border-transparent hover:border-[var(--border-base)] group shadow-sm"
+              >
                 <div className="flex items-center justify-between gap-4">
                   <div className="space-y-1">
-                    <p className="font-bold text-[var(--text-primary)] text-lg group-hover:text-[var(--accent)] transition-colors">{record.member_id}</p>
+                    <p className="font-bold text-[var(--text-primary)] text-lg group-hover:text-[var(--accent)] transition-colors">
+                      {memberNamesById[record.member_id] ?? record.member_id}
+                    </p>
                     <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-tight">
                       {record.mark_source === "manual"
                         ? "Registro Manual"
@@ -218,7 +241,9 @@ export function AttendancePage() {
                     </p>
                     {record.notes ? (
                       <p className="mt-2 text-sm font-medium text-[var(--text-secondary)] bg-[var(--bg-surface)] p-3 rounded-xl border border-[var(--border-base)] shadow-inner">
-                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block mb-1">Nota del Administrador</span>
+                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block mb-1">
+                          Nota del Administrador
+                        </span>
                         {record.notes}
                       </p>
                     ) : null}
@@ -228,11 +253,15 @@ export function AttendancePage() {
                       record.status === "present"
                         ? "bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-soft)]"
                         : record.status === "absent"
-                        ? "bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger-soft)]"
-                        : "bg-[var(--warning-soft)] text-[var(--warning)] border border-[var(--warning-soft)]"
+                          ? "bg-[var(--danger-soft)] text-[var(--danger)] border border-[var(--danger-soft)]"
+                          : "bg-[var(--warning-soft)] text-[var(--warning)] border border-[var(--warning-soft)]"
                     }`}
                   >
-                    {record.status === "present" ? "Presente" : record.status === "absent" ? "Ausente" : "Tarde"}
+                    {record.status === "present"
+                      ? "Presente"
+                      : record.status === "absent"
+                        ? "Ausente"
+                        : "Tarde"}
                   </div>
                 </div>
               </div>
@@ -249,16 +278,22 @@ export function AttendancePage() {
             {!selectedClassId && !attendanceQuery.isLoading && (
               <div className="flex flex-col items-center justify-center py-32 text-center space-y-4 opacity-50 grayscale">
                 <CalendarDays className="h-16 w-16 text-[var(--text-muted)]" />
-                <p className="max-w-xs text-sm font-bold">Listado vacío. Selecciona una clase para auditar la asistencia.</p>
+                <p className="max-w-xs text-sm font-bold">
+                  Listado vacío. Selecciona una clase para auditar la asistencia.
+                </p>
               </div>
             )}
 
-            {selectedClassId && !attendanceQuery.isLoading && (attendanceQuery.data ?? []).length === 0 && (
-               <div className="flex flex-col items-center justify-center py-32 text-center space-y-2">
-                 <p className="font-bold text-[var(--text-primary)]">Sin registros</p>
-                 <p className="text-sm text-[var(--text-muted)]">Aún no se ha marcado asistencia para esta clase.</p>
-               </div>
-            )}
+            {selectedClassId &&
+              !attendanceQuery.isLoading &&
+              (attendanceQuery.data ?? []).length === 0 && (
+                <div className="flex flex-col items-center justify-center py-32 text-center space-y-2">
+                  <p className="font-bold text-[var(--text-primary)]">Sin registros</p>
+                  <p className="text-sm text-[var(--text-muted)]">
+                    Aún no se ha marcado asistencia para esta clase.
+                  </p>
+                </div>
+              )}
           </div>
         </section>
       </div>

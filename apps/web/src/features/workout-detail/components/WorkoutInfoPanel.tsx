@@ -1,6 +1,15 @@
 import type { Workout } from "@gym/api-client";
 
-import { Card, CardContent, CardDescription, CardEyebrow, CardHeader, CardInset, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardEyebrow,
+  CardHeader,
+  CardInset,
+  CardTitle
+} from "@/components/ui/Card";
 import { formatWorkoutSchedule } from "@/lib/format";
 
 interface Props {
@@ -50,10 +59,9 @@ export function WorkoutInfoPanel({ workout, isPast }: Props) {
         <CardTitle className="text-[var(--font-size-2xl)]">{workout.name}</CardTitle>
 
         {isPast ? (
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--danger-soft)] bg-[var(--danger-soft)] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--danger)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--danger)]" />
+          <Badge dot size="md" tone="danger">
             Clase concluida
-          </div>
+          </Badge>
         ) : null}
 
         <CardDescription className="max-w-3xl text-base leading-8">
