@@ -1,5 +1,6 @@
 import os
 import secrets
+import json
 from functools import lru_cache
 from typing import Any
 from urllib.parse import quote, urlparse, urlunparse
@@ -79,6 +80,19 @@ def _next_redis_database_url(redis_url: str) -> str:
     return urlunparse(parsed._replace(path=f"/{database_index + 1}"))
 
 
+DEFAULT_DEV_CORS_ORIGINS = [
+    "http://localhost:5173",
+]
+
+DEFAULT_PROD_CORS_ORIGINS = [
+    "https://athlyt.com",
+    "https://www.athlyt.com",
+    # Temporary during domain migration; remove once athlyt.com is fully retired.
+    "https://atlhyt.com",
+    "https://www.atlhyt.com",
+]
+
+
 class Settings(BaseSettings):
     project_name: str = "Gym Backend"
     environment: str = "local"
@@ -105,12 +119,7 @@ class Settings(BaseSettings):
     celery_result_backend: str | None = None
     cache_ttl_seconds: int = 300
     redis_connect_timeout_seconds: float = 5.0
-    cors_origins: list[str] = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://gym-app-back-web.vercel.app",
-    ]
+    cors_origins: list[str] = [*DEFAULT_DEV_CORS_ORIGINS, *DEFAULT_PROD_CORS_ORIGINS]
     cors_origin_regex: str | None = None
     timezone: str = "UTC"
     strava_client_id: str | None = None
@@ -142,14 +151,28 @@ class Settings(BaseSettings):
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: Any) -> list[str]:
+        if value is None:
+            return [*DEFAULT_DEV_CORS_ORIGINS, *DEFAULT_PROD_CORS_ORIGINS]
         if isinstance(value, str):
             value = value.strip()
+            if not value:
+                return [*DEFAULT_DEV_CORS_ORIGINS, *DEFAULT_PROD_CORS_ORIGINS]
             if value.startswith("[") and value.endswith("]"):
-                import json
-
-                return json.loads(value)
-            return [item.strip() for item in value.split(",") if item.strip()]
-        return value
+                value = json.loads(value)
+            else:
+                value = [item.strip() for item in value.split(",") if item.strip()]
+        if isinstance(value, (list, tuple, set)):
+            seen: set[str] = set()
+            origins: list[str] = []
+            for item in value:
+                if not isinstance(item, str):
+                    continue
+                normalized = item.strip().rstrip("/")
+                if normalized and normalized not in seen:
+                    seen.add(normalized)
+                    origins.append(normalized)
+            return origins
+        return [*DEFAULT_DEV_CORS_ORIGINS, *DEFAULT_PROD_CORS_ORIGINS]
 
     @field_validator("google_client_ids", mode="before")
     @classmethod

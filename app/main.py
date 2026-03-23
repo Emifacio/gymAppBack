@@ -130,13 +130,8 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 # CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://gym-app-back-web.vercel.app",
-        "https://gym-app-back-web.vercel.app/",
-    ],
+    allow_origins=settings.cors_origins,
+    allow_origin_regex=settings.cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -145,6 +140,10 @@ app.add_middleware(
 # Middle: Readiness Check
 @app.middleware("http")
 async def readiness_middleware(request: Request, call_next):
+    # Let CORS preflight requests complete even while the app is warming up.
+    if request.method == "OPTIONS":
+        return await call_next(request)
+
     # Skip for health and docs
     if request.url.path in ("/health", "/docs", "/redoc", "/openapi.json"):
         return await call_next(request)
