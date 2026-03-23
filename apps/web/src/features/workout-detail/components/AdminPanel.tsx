@@ -1,6 +1,15 @@
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type {
+  ClassMember,
+  ClassAssignmentPayload,
+  Member,
+  Workout,
+  WorkoutUpdatePayload
+} from "@gym/api-client";
+
 import { Button } from "@/components/ui/Button";
 import {
   Card,
@@ -11,14 +20,14 @@ import {
   CardInset,
   CardTitle
 } from "@/components/ui/Card";
-import { Field, FieldError, FieldLabel } from "@/components/ui/Field";
+import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/Field";
+import { useMembers } from "@/hooks/use-workouts";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
-import type { Workout, ClassAssignmentPayload, WorkoutUpdatePayload } from "@gym/api-client";
 
 const assignMemberSchema = z.object({
-  member_id: z.string().trim().min(1, "ID del miembro obligatorio")
+  member_id: z.string().trim().min(1, "Selecciona un miembro para asignarlo")
 });
 
 type AssignMemberFormData = z.infer<typeof assignMemberSchema>;
@@ -48,6 +57,7 @@ type MutationState<TData = unknown, TVariables = unknown> = {
 
 interface Props {
   workout: Workout;
+  classMembers: ClassMember[];
   onDelete: () => void;
   assignMemberMutation: MutationState<
     { message: string },
@@ -62,17 +72,27 @@ interface Props {
 
 export function AdminPanel({
   workout,
+  classMembers,
   assignMemberMutation,
   updateWorkoutMutation,
   deleteWorkoutMutation,
   onDelete
 }: Props) {
+  const [memberSearch, setMemberSearch] = useState("");
   const {
     register: registerAssign,
     handleSubmit: handleSubmitAssign,
+    setValue: setAssignValue,
+    clearErrors: clearAssignErrors,
     reset: resetAssign,
     formState: { errors: assignErrors, isSubmitting: isAssigning }
   } = useForm<AssignMemberFormData>({ resolver: zodResolver(assignMemberSchema) });
+  const membersQuery = useMembers({
+    offset: 0,
+    limit: 500,
+    role: null,
+    membership_status: null
+  });
 
   const {
     register: registerUpdate,
@@ -91,6 +111,36 @@ export function AdminPanel({
       status: workout.status
     }
   });
+  const assignedMemberIds = useMemo(
+    () => new Set(classMembers.map((member) => member.member_id)),
+    [classMembers]
+  );
+  const availableMembers = useMemo(
+    () => (membersQuery.data ?? []).filter((member) => !assignedMemberIds.has(member.id)),
+    [assignedMemberIds, membersQuery.data]
+  );
+  const normalizedSearch = memberSearch.trim().toLocaleLowerCase();
+  const matchingMembers = useMemo(() => {
+    if (!normalizedSearch) {
+      return availableMembers.slice(0, 8);
+    }
+
+    return availableMembers
+      .filter((member) => {
+        const haystack = `${member.full_name} ${member.email}`.toLocaleLowerCase();
+        return haystack.includes(normalizedSearch);
+      })
+      .slice(0, 8);
+  }, [availableMembers, normalizedSearch]);
+  const [selectedMemberId, setSelectedMemberId] = useState("");
+  const selectedAvailableMember = useMemo(
+    () => availableMembers.find((member) => member.id === selectedMemberId) ?? null,
+    [availableMembers, selectedMemberId]
+  );
+
+  function formatMemberLabel(member: Pick<Member, "full_name" | "email">) {
+    return `${member.full_name} (${member.email})`;
+  }
 
   return (
     <Card as="section" className="xl:col-span-2">
@@ -100,37 +150,129 @@ export function AdminPanel({
             <CardEyebrow>Asignación manual</CardEyebrow>
             <CardTitle className="text-[var(--font-size-lg)]">Agregar miembro a la clase</CardTitle>
             <CardDescription>
-              Usa un identificador de miembro existente para sumarlo manualmente a esta sesión.
+              Busca un miembro por nombre y asígnalo manualmente a esta sesión.
             </CardDescription>
           </CardHeader>
 
           <CardContent className="mt-5">
             <form
               onSubmit={handleSubmitAssign((values) => {
-                assignMemberMutation.mutate({
-                  classId: workout.id,
-                  memberId: values.member_id,
-                  payload: { member_id: values.member_id }
-                });
-                resetAssign();
+                assignMemberMutation.mutate(
+                  {
+                    classId: workout.id,
+                    memberId: values.member_id,
+                    payload: { member_id: values.member_id }
+                  },
+                  {
+                    onSuccess: () => {
+                      resetAssign();
+                      setSelectedMemberId("");
+                      setMemberSearch("");
+                    }
+                  }
+                );
               })}
               className="space-y-4"
             >
+              <input type="hidden" {...registerAssign("member_id")} />
               <Field>
-                <FieldLabel htmlFor="assign-member-id">ID del miembro</FieldLabel>
+                <FieldLabel htmlFor="assign-member-search">Buscar miembro</FieldLabel>
                 <Input
-                  id="assign-member-id"
+                  id="assign-member-search"
                   error={Boolean(assignErrors.member_id)}
+                  placeholder="Escribe un nombre o email"
                   aria-invalid={assignErrors.member_id ? "true" : "false"}
-                  {...registerAssign("member_id")}
+                  value={memberSearch}
+                  onChange={(event) => {
+                    setMemberSearch(event.target.value);
+                    setSelectedMemberId("");
+                    setAssignValue("member_id", "", { shouldValidate: false });
+                  }}
                 />
+                <FieldHint>
+                  {membersQuery.isLoading
+                    ? "Cargando miembros..."
+                    : selectedAvailableMember
+                      ? `Seleccionado: ${formatMemberLabel(selectedAvailableMember)}`
+                      : "Selecciona un miembro de la lista para asignarlo."}
+                </FieldHint>
                 {assignErrors.member_id ? (
                   <FieldError>{assignErrors.member_id.message}</FieldError>
                 ) : null}
               </Field>
 
+              {selectedAvailableMember ? (
+                <CardInset className="border-[var(--border-base)] bg-[var(--bg-surface-secondary)] shadow-none">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">
+                        {selectedAvailableMember.full_name}
+                      </p>
+                      <p className="text-xs text-[var(--text-secondary)]">
+                        {selectedAvailableMember.email}
+                      </p>
+                    </div>
+                    <Button
+                      className="rounded-xl"
+                      onClick={() => {
+                        setSelectedMemberId("");
+                        setMemberSearch("");
+                        setAssignValue("member_id", "", { shouldValidate: false });
+                      }}
+                      size="sm"
+                      type="button"
+                      variant="ghost"
+                    >
+                      Cambiar
+                    </Button>
+                  </div>
+                </CardInset>
+              ) : null}
+
+              {!selectedAvailableMember && memberSearch.trim().length > 0 ? (
+                <div className="space-y-2 rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] p-2">
+                  {matchingMembers.length > 0 ? (
+                    matchingMembers.map((member) => (
+                      <button
+                        key={member.id}
+                        className="flex w-full items-start justify-between rounded-xl px-3 py-2 text-left transition hover:bg-[var(--bg-surface)]"
+                        onClick={() => {
+                          setSelectedMemberId(member.id);
+                          setMemberSearch(formatMemberLabel(member));
+                          setAssignValue("member_id", member.id, { shouldValidate: true });
+                          clearAssignErrors("member_id");
+                        }}
+                        type="button"
+                      >
+                        <span>
+                          <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                            {member.full_name}
+                          </span>
+                          <span className="block text-xs text-[var(--text-secondary)]">
+                            {member.email}
+                          </span>
+                        </span>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="px-3 py-2 text-sm text-[var(--text-secondary)]">
+                      No encontramos miembros con ese nombre.
+                    </p>
+                  )}
+                </div>
+              ) : null}
+
+              {!membersQuery.isLoading && availableMembers.length === 0 ? (
+                <FieldHint>No hay miembros disponibles para agregar a esta clase.</FieldHint>
+              ) : null}
+
               <Button
                 className="h-12 w-full rounded-2xl"
+                disabled={
+                  membersQuery.isLoading ||
+                  availableMembers.length === 0 ||
+                  !selectedAvailableMember
+                }
                 loading={isAssigning || assignMemberMutation.isPending}
                 type="submit"
                 variant="secondary"

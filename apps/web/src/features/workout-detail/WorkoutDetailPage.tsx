@@ -114,6 +114,7 @@ export function WorkoutDetailPage() {
       {canManage ? (
         <AdminPanel
           workout={workout!}
+          classMembers={classMembersQuery.data ?? []}
           onDelete={handleDelete}
           assignMemberMutation={assignMemberMutation}
           updateWorkoutMutation={updateWorkoutMutation}
