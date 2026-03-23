@@ -79,7 +79,7 @@ export function LoginPage() {
           {/* Mobile/Global Brand Header */}
           <div className="mb-8 flex justify-center lg:justify-start">
             <h1 className="text-4xl font-black tracking-tighter text-[var(--text-primary)]">
-              ATHL<span className="text-[var(--accent)]">YT</span>
+              ATLH<span className="text-[var(--accent)]">YT</span>
             </h1>
           </div>
 

@@ -49,7 +49,7 @@ export function DashboardLayout() {
             to="/"
             className="text-2xl font-bold tracking-tighter text-[var(--text-primary)] transition-opacity hover:opacity-80"
           >
-            ATHL<span className="text-[var(--accent)]">YT</span>
+            ATLH<span className="text-[var(--accent)]">YT</span>
           </Link>
         </div>
 
@@ -109,7 +109,7 @@ export function DashboardLayout() {
                 </h2>
               ) : (
                 <h1 className="text-xl font-black tracking-tighter text-[var(--text-primary)]">
-                  ATHL<span className="text-[var(--accent)]">YT</span>
+                  ATLH<span className="text-[var(--accent)]">YT</span>
                 </h1>
               )}
               {session?.member?.role && (
