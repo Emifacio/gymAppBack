@@ -25,7 +25,12 @@ export function ProfilePage() {
   }));
 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [avatarMessage, setAvatarMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [avatarMessage, setAvatarMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const uploadAvatar = useUploadAvatar();
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
 
   if (!member) return null;
 
@@ -67,16 +72,16 @@ export function ProfilePage() {
     setMessage({ type: "success", text: "Onboarding reiniciado. Vuelve al Dashboard para verlo." });
   };
 
-  const uploadAvatar = useUploadAvatar();
-  const [localPreview, setLocalPreview] = useState<string | null>(null);
-
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     // 1. Validation
     if (!file.type.startsWith("image/")) {
-      setAvatarMessage({ type: "error", text: "Por favor selecciona una imagen (PNG, JPG o WebP)." });
+      setAvatarMessage({
+        type: "error",
+        text: "Por favor selecciona una imagen (PNG, JPG o WebP)."
+      });
       return;
     }
 
@@ -94,18 +99,21 @@ export function ProfilePage() {
     try {
       // 3. Upload File
       const { url: uploadedUrl } = await uploadAvatar.mutateAsync(file);
-      
+
       // 4. Update Profile with returned URL
       await updateMember.mutateAsync({
         memberId: member.id,
         payload: { profile_image_url: uploadedUrl }
       });
-      
+
       setAvatarMessage({ type: "success", text: "Foto de perfil actualizada exitosamente." });
       setLocalPreview(null); // Clear preview once saved
     } catch (err) {
       console.error(err);
-      setAvatarMessage({ type: "error", text: getApiErrorMessage(err) || "Error al subir la imagen." });
+      setAvatarMessage({
+        type: "error",
+        text: getApiErrorMessage(err) || "Error al subir la imagen."
+      });
       setLocalPreview(null);
     } finally {
       URL.revokeObjectURL(previewUrl);
@@ -137,7 +145,9 @@ export function ProfilePage() {
           <User className="h-8 w-8" />
         </div>
         <div>
-          <h1 className="section-title text-[var(--font-size-2xl)] text-[var(--text-primary)] leading-tight">Ajustes de Cuenta</h1>
+          <h1 className="section-title text-[var(--font-size-2xl)] text-[var(--text-primary)] leading-tight">
+            Ajustes de Cuenta
+          </h1>
           <p className="mt-1 text-sm font-medium text-[var(--text-secondary)] lg:text-base opacity-80">
             Personaliza tu identidad en la plataforma y mantén tus datos al día.
           </p>
@@ -149,27 +159,31 @@ export function ProfilePage() {
         <div className="lg:col-span-1 space-y-8">
           <div className="apple-card p-8 shadow-xl text-center flex flex-col items-center">
             <div className="relative group">
-              <Avatar 
-                member={localPreview ? { ...member, profile_image_url: localPreview } : member} 
-                size="xl" 
-                className="shadow-2xl border-4 border-[var(--bg-surface)] ring-1 ring-[var(--border-base)]" 
+              <Avatar
+                member={localPreview ? { ...member, profile_image_url: localPreview } : member}
+                size="xl"
+                className="shadow-2xl border-4 border-[var(--bg-surface)] ring-1 ring-[var(--border-base)]"
               />
               {(uploadAvatar.isPending || updateMember.isPending) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded-full animate-pulse">
                   <Rocket className="h-8 w-8 text-white animate-bounce" />
                 </div>
               )}
-              <button 
+              <button
                 onClick={() => fileInputRef.current?.click()}
                 className="absolute bottom-0 right-0 p-2.5 bg-[var(--accent)] text-white rounded-xl shadow-lg hover:scale-110 active:scale-95 transition-transform border-4 border-[var(--bg-surface)]"
               >
                 <Camera className="h-4 w-4" />
               </button>
             </div>
-            
-            <h2 className="mt-6 text-xl font-bold text-[var(--text-primary)] tracking-tight">{member.full_name}</h2>
-            <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mt-1">{member.role || "Miembro"}</p>
-            
+
+            <h2 className="mt-6 text-xl font-bold text-[var(--text-primary)] tracking-tight">
+              {member.full_name}
+            </h2>
+            <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mt-1">
+              {member.role || "Miembro"}
+            </p>
+
             <div className="w-full mt-8 pt-6 border-t border-[var(--border-base)] flex flex-col gap-3">
               {avatarData.hasCustomImage && (
                 <button
@@ -182,14 +196,20 @@ export function ProfilePage() {
                 </button>
               )}
               {avatarData.hasGoogleImage && !avatarData.hasCustomImage && (
-                 <p className="text-[10px] text-[var(--text-muted)] italic">Sincronizado con Google</p>
+                <p className="text-[10px] text-[var(--text-muted)] italic">
+                  Sincronizado con Google
+                </p>
               )}
             </div>
-            
+
             {avatarMessage && (
-              <p className={`mt-4 text-[10px] font-bold p-2 px-4 rounded-lg bg-[var(--bg-surface-secondary)] border ${
-                avatarMessage.type === "success" ? "text-[var(--success)] border-[var(--success-soft)]" : "text-[var(--danger)] border-[var(--danger-soft)]"
-              }`}>
+              <p
+                className={`mt-4 text-[10px] font-bold p-2 px-4 rounded-lg bg-[var(--bg-surface-secondary)] border ${
+                  avatarMessage.type === "success"
+                    ? "text-[var(--success)] border-[var(--success-soft)]"
+                    : "text-[var(--danger)] border-[var(--danger-soft)]"
+                }`}
+              >
                 {avatarMessage.text}
               </p>
             )}
@@ -198,10 +218,13 @@ export function ProfilePage() {
           <div className="apple-card p-6 shadow-md border-l-4 border-l-[var(--accent)]">
             <div className="flex items-center gap-3 mb-4">
               <Rocket className="h-5 w-5 text-[var(--accent)]" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)]">Guía Rápida</h3>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)]">
+                Guía Rápida
+              </h3>
             </div>
             <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed">
-              ¿Perdido? Puedes reiniciar el tutorial interactivo para recordar cómo navegar las secciones principales.
+              ¿Perdido? Puedes reiniciar el tutorial interactivo para recordar cómo navegar las
+              secciones principales.
             </p>
             <Button
               variant="secondary"
@@ -218,7 +241,9 @@ export function ProfilePage() {
           <div className="apple-card p-8 lg:p-10 shadow-xl">
             <div className="flex items-center gap-4 mb-8">
               <ShieldCheck className="h-6 w-6 text-[var(--success)]" />
-              <h3 className="section-title text-[var(--font-size-xl)] text-[var(--text-primary)]">Información Pública</h3>
+              <h3 className="section-title text-[var(--font-size-xl)] text-[var(--text-primary)]">
+                Información Pública
+              </h3>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-8">
@@ -268,9 +293,13 @@ export function ProfilePage() {
               </div>
 
               {message && (
-                <div className={`p-5 rounded-2xl text-sm font-bold border transition-all animate-in fade-in slide-in-from-top-2 ${
-                  message.type === "success" ? "bg-[var(--success-soft)] text-[var(--success)] border-[var(--success-soft)] shadow-sm" : "bg-[var(--danger-soft)] text-[var(--danger)] border-[var(--danger-soft)]"
-                }`}>
+                <div
+                  className={`p-5 rounded-2xl text-sm font-bold border transition-all animate-in fade-in slide-in-from-top-2 ${
+                    message.type === "success"
+                      ? "bg-[var(--success-soft)] text-[var(--success)] border-[var(--success-soft)] shadow-sm"
+                      : "bg-[var(--danger-soft)] text-[var(--danger)] border-[var(--danger-soft)]"
+                  }`}
+                >
                   {message.type === "success" ? "✅ " : "⚠️ "} {message.text}
                 </div>
               )}

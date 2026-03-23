@@ -55,13 +55,18 @@ function loadGoogleIdentityScript() {
   }
 
   googleIdentityScriptPromise = new Promise<void>((resolve, reject) => {
-    const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-identity="true"]');
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      'script[data-google-identity="true"]'
+    );
 
     if (existingScript) {
       existingScript.addEventListener("load", () => resolve(), { once: true });
       existingScript.addEventListener(
         "error",
-        () => reject(new Error("No se pudo cargar Google Identity Service. Por favor intente nuevamente.")),
+        () =>
+          reject(
+            new Error("No se pudo cargar Google Identity Service. Por favor intente nuevamente.")
+          ),
         { once: true }
       );
       return;
@@ -73,7 +78,8 @@ function loadGoogleIdentityScript() {
     script.defer = true;
     script.dataset.googleIdentity = "true";
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error("No se pudo cargar Google Identity Service. Por favor intente nuevamente."));
+    script.onerror = () =>
+      reject(new Error("No se pudo cargar Google Identity Service. Por favor intente nuevamente."));
     document.head.appendChild(script);
   });
 
@@ -163,8 +169,15 @@ export function GoogleSignIn({ clientId, onSuccess, onError, disabled }: GoogleS
       return;
     }
 
-    setIsLaunching(false);
     window.google?.accounts?.id.cancel?.();
+
+    const resetLaunchStateTimeout = window.setTimeout(() => {
+      setIsLaunching(false);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(resetLaunchStateTimeout);
+    };
   }, [disabled]);
 
   if (!isConfigured) {

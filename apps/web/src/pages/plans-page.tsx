@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ComponentPropsWithoutRef } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { InlineFeedback } from "@/components/ui/InlineFeedback";
@@ -32,7 +32,6 @@ export function PlansPage() {
   const [rowStates, setRowStates] = useState<Record<string, RowState>>({});
   const [highlightedPlanId, setHighlightedPlanId] = useState<string | null>(null);
   const [newlyCreatedPlanId, setNewlyCreatedPlanId] = useState<string | null>(null);
-  const [deactivatedPlanId, setDeactivatedPlanId] = useState<string | null>(null);
   const createFeedback = useTransientState({ duration: MotionTokens.feedback.errorDuration });
 
   const getRowState = (planId: string): RowState => {
@@ -137,11 +136,9 @@ export function PlansPage() {
         {
           onSuccess: () => {
             setRowState(planId, { isDeactivating: false, isSuccess: true });
-            setDeactivatedPlanId(planId);
             highlightRow(planId);
             setTimeout(() => {
               setRowState(planId, { isSuccess: false });
-              setDeactivatedPlanId(null);
             }, MotionTokens.highlight.rowReset);
           },
           onError: () => {
@@ -415,7 +412,7 @@ export function PlansPage() {
   );
 }
 
-function CreditCard(props: any) {
+function CreditCard(props: ComponentPropsWithoutRef<"svg">) {
   return (
     <svg
       {...props}

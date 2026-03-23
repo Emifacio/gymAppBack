@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Calendar as CalendarIcon, Clock, MapPin, Sparkles, PlusCircle } from "lucide-react";
+import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
@@ -17,10 +16,9 @@ import { WeeklySchedule } from "@/components/weekly-schedule";
 import { useAuth } from "@/hooks/use-auth";
 import { useCreateWorkout, useMySubscriptionStatus, useWorkouts } from "@/hooks/use-workouts";
 import { getMembersQueryOptions } from "@gym/api-client";
-import { formatCredits, formatDateTime } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import { canManageOperations } from "@/lib/roles";
 import { useTransientState } from "@/hooks/useTransientState";
-import { MotionTokens } from "@/components/ui/motion-tokens";
 import type { Workout } from "@/types/gym";
 import type { WorkoutCreatePayload } from "@gym/api-client";
 
@@ -103,9 +101,7 @@ const workoutCreateSchema = z.object({
   instructor_id: z.string().nullable().optional(),
   duration_minutes: z.number().int().min(15, "La duración mínima es de 15 minutos"),
   capacity: z.number().int().min(1, "La capacidad debe ser al menos 1"),
-  class_time: z
-    .string()
-    .regex(/^\d{2}:\d{2}$/, "Formato de hora inválido"),
+  class_time: z.string().regex(/^\d{2}:\d{2}$/, "Formato de hora inválido"),
   description: z.string().max(500, "Descripción demasiado larga").optional().nullable()
 });
 
@@ -119,7 +115,6 @@ export function WorkoutsPage() {
     offset: 0,
     limit: 24
   });
-  const [searchParams] = useSearchParams();
   const workoutsQuery = useWorkouts({
     status: filters.status || null,
     offset: filters.offset,
@@ -133,7 +128,6 @@ export function WorkoutsPage() {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [pendingDateDisplay, setPendingDateDisplay] = useState<string>("");
   const [pendingDateError, setPendingDateError] = useState<string>("");
-  const [listHighlight, setListHighlight] = useState(false);
   const feedback = useTransientState();
 
   const {
@@ -210,8 +204,6 @@ export function WorkoutsPage() {
       setSelectedDates([]);
       setPendingDateDisplay("");
       setPendingDateError("");
-      setListHighlight(true);
-      setTimeout(() => setListHighlight(false), MotionTokens.highlight.containerReset);
       window.scrollTo({ top: 0, behavior: "smooth" });
       feedback.triggerSuccess("Entrenamientos creados con éxito.");
     } catch (error) {
@@ -227,7 +219,9 @@ export function WorkoutsPage() {
           <CalendarIcon className="h-8 w-8" />
         </div>
         <div>
-          <h1 className="section-title text-[var(--font-size-2xl)] text-[var(--text-primary)] leading-tight">Agenda de Clases</h1>
+          <h1 className="section-title text-[var(--font-size-2xl)] text-[var(--text-primary)] leading-tight">
+            Agenda de Clases
+          </h1>
           <p className="mt-1 text-sm font-medium text-[var(--text-secondary)] lg:text-base opacity-80">
             Reserva tus sesiones, revisa la disponibilidad y gestiona tus créditos.
           </p>
@@ -244,11 +238,19 @@ export function WorkoutsPage() {
         <StatCard
           detail={subscription?.allows_free_pass ? "Sin límites" : "Consumo por clase"}
           label="Créditos Disponibles"
-          value={subscription?.active_plan ? (subscription.allows_free_pass ? "∞" : String(subscription.active_credits)) : "0"}
+          value={
+            subscription?.active_plan
+              ? subscription.allows_free_pass
+                ? "∞"
+                : String(subscription.active_credits)
+              : "0"
+          }
           loading={subscriptionQuery.isLoading}
         />
         <StatCard
-          detail={subscription?.period_end ? `Hasta ${formatDateTime(subscription.period_end)}` : "-"}
+          detail={
+            subscription?.period_end ? `Hasta ${formatDateTime(subscription.period_end)}` : "-"
+          }
           label="Vigencia"
           value="Ciclo actual"
           loading={subscriptionQuery.isLoading}
@@ -258,12 +260,16 @@ export function WorkoutsPage() {
       <div className="flex flex-col lg:flex-row gap-8 items-start">
         <section className="apple-card flex-1 shadow-md hover:shadow-lg transition-shadow">
           <div className="flex items-center gap-3 mb-6">
-            <h2 className="section-title text-[var(--font-size-xl)] text-[var(--text-primary)]">Próximos Entrenamientos</h2>
+            <h2 className="section-title text-[var(--font-size-xl)] text-[var(--text-primary)]">
+              Próximos Entrenamientos
+            </h2>
             <div className="h-px flex-1 bg-[var(--border-base)] opacity-50" />
           </div>
-          
+
           <div className="mb-8 p-4 rounded-2xl bg-[var(--bg-surface-secondary)]/50 border border-[var(--border-base)] flex items-center gap-4">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] ml-2 whitespace-nowrap">Ver:</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] ml-2 whitespace-nowrap">
+              Ver:
+            </span>
             <select
               className="flex-1 bg-transparent text-sm font-bold text-[var(--text-primary)] outline-none cursor-pointer"
               value={filters.status}
@@ -281,7 +287,9 @@ export function WorkoutsPage() {
             </select>
           </div>
 
-          <div className={`space-y-6 transition-opacity duration-300 ${workoutsQuery.isFetching ? "opacity-50" : "opacity-100"}`}>
+          <div
+            className={`space-y-6 transition-opacity duration-300 ${workoutsQuery.isFetching ? "opacity-50" : "opacity-100"}`}
+          >
             {workoutsQuery.isLoading ? (
               <div className="space-y-6">
                 <SkeletonWorkoutCard />
@@ -311,7 +319,9 @@ export function WorkoutsPage() {
           <section className="apple-card w-full lg:w-96 shadow-xl sticky top-28 border border-[var(--accent-soft)]/20">
             <div className="flex items-center gap-2 mb-6 text-[var(--accent)]">
               <PlusCircle className="h-5 w-5" />
-              <h2 className="section-title text-[var(--font-size-lg)] text-[var(--text-primary)]">Nueva Sesión</h2>
+              <h2 className="section-title text-[var(--font-size-lg)] text-[var(--text-primary)]">
+                Nueva Sesión
+              </h2>
             </div>
 
             <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
@@ -323,28 +333,42 @@ export function WorkoutsPage() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Título</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">
+                  Título
+                </label>
                 <input
                   className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm"
                   placeholder="Ej: Cross Training"
                   {...register("name")}
                 />
-                {errors.name && <p className="text-[10px] text-[var(--danger)] font-bold px-1">{errors.name.message}</p>}
+                {errors.name && (
+                  <p className="text-[10px] text-[var(--danger)] font-bold px-1">
+                    {errors.name.message}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Ubicación</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">
+                  Ubicación
+                </label>
                 <input
                   className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm"
                   placeholder="Sala Principal"
                   {...register("location")}
                 />
-                {errors.location && <p className="text-[10px] text-[var(--danger)] font-bold px-1">{errors.location.message}</p>}
+                {errors.location && (
+                  <p className="text-[10px] text-[var(--danger)] font-bold px-1">
+                    {errors.location.message}
+                  </p>
+                )}
               </div>
 
               <div className="grid gap-4 grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Cupos</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">
+                    Cupos
+                  </label>
                   <input
                     className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm"
                     type="number"
@@ -352,7 +376,9 @@ export function WorkoutsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Minutos</label>
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">
+                    Minutos
+                  </label>
                   <input
                     className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm"
                     type="number"
@@ -362,7 +388,9 @@ export function WorkoutsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Instructor</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">
+                  Instructor
+                </label>
                 <select
                   className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none transition focus:bg-[var(--bg-surface)] focus:border-[var(--accent)] shadow-sm appearance-none"
                   {...register("instructor_id")}
@@ -377,7 +405,9 @@ export function WorkoutsPage() {
               </div>
 
               <div className="space-y-1.5 pt-2 border-t border-[var(--border-base)]">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Programar Fecha</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">
+                  Programar Fecha
+                </label>
                 <div className="flex gap-2">
                   <input
                     className="flex-1 rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none focus:border-[var(--accent)] shadow-sm"
@@ -395,7 +425,9 @@ export function WorkoutsPage() {
                       }
 
                       if (!isValidDisplayDate(pendingDateDisplay)) {
-                        setPendingDateError(`Ingresa una fecha valida con formato ${DISPLAY_DATE_PLACEHOLDER}.`);
+                        setPendingDateError(
+                          `Ingresa una fecha valida con formato ${DISPLAY_DATE_PLACEHOLDER}.`
+                        );
                       }
                     }}
                     onChange={(event) => {
@@ -420,24 +452,46 @@ export function WorkoutsPage() {
                     +
                   </Button>
                 </div>
-                <p id="workout-date-help" className="px-1 text-[10px] font-bold text-[var(--text-muted)]">
+                <p
+                  id="workout-date-help"
+                  className="px-1 text-[10px] font-bold text-[var(--text-muted)]"
+                >
                   Usa el formato {DISPLAY_DATE_PLACEHOLDER}.
                 </p>
-                {pendingDateError && <p className="px-1 text-[10px] font-bold text-[var(--danger)]">{pendingDateError}</p>}
-                
+                {pendingDateError && (
+                  <p className="px-1 text-[10px] font-bold text-[var(--danger)]">
+                    {pendingDateError}
+                  </p>
+                )}
+
                 <div className="flex flex-wrap gap-2 mt-3 p-3 rounded-2xl bg-[var(--bg-surface-secondary)]/30 border border-dashed border-[var(--border-base)] min-h-[44px]">
                   {selectedDates.map((date) => (
-                    <span key={date} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--accent)] text-white text-[10px] font-black uppercase shadow-sm">
+                    <span
+                      key={date}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--accent)] text-white text-[10px] font-black uppercase shadow-sm"
+                    >
                       {formatDateToDisplay(date)}
-                      <button type="button" onClick={() => removeDate(date)} className="hover:opacity-60">×</button>
+                      <button
+                        type="button"
+                        onClick={() => removeDate(date)}
+                        className="hover:opacity-60"
+                      >
+                        ×
+                      </button>
                     </span>
                   ))}
-                  {selectedDates.length === 0 && <span className="text-[10px] text-[var(--text-muted)] italic font-bold">Sin fechas...</span>}
+                  {selectedDates.length === 0 && (
+                    <span className="text-[10px] text-[var(--text-muted)] italic font-bold">
+                      Sin fechas...
+                    </span>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">Hora de Inicio</label>
+                <label className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] px-1">
+                  Hora de Inicio
+                </label>
                 <input
                   className="w-full rounded-xl border border-transparent bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 text-sm font-bold outline-none focus:border-[var(--accent)] shadow-sm"
                   type="time"

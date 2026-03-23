@@ -1,16 +1,5 @@
-import React, { useState } from "react";
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
-import {
-  LayoutDashboard,
-  Calendar,
-  Users,
-  CreditCard,
-  History,
-  LogOut,
-  Menu,
-  X,
-  User
-} from "lucide-react";
+import { LayoutDashboard, Calendar, Users, CreditCard, History, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar } from "@/components/ui/Avatar";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -32,7 +21,7 @@ export function DashboardLayout() {
 
   const handleSignOut = async () => {
     await logout();
-    navigate("/login");
+    void navigate("/login");
   };
 
   const filteredNavigation = navigation.filter((item) => {
@@ -56,7 +45,10 @@ export function DashboardLayout() {
       {/* Sidebar Desktop */}
       <aside className="fixed inset-y-0 left-0 hidden w-72 flex-col border-r border-[var(--border-base)] bg-[var(--bg-surface)] lg:flex shadow-sm">
         <div className="flex h-20 items-center px-8">
-          <Link to="/" className="text-2xl font-bold tracking-tighter text-[var(--text-primary)] transition-opacity hover:opacity-80">
+          <Link
+            to="/"
+            className="text-2xl font-bold tracking-tighter text-[var(--text-primary)] transition-opacity hover:opacity-80"
+          >
             ATHL<span className="text-[var(--accent)]">YT</span>
           </Link>
         </div>
@@ -75,13 +67,19 @@ export function DashboardLayout() {
             to="/profile"
             className="flex items-center gap-3 rounded-xl p-3 text-sm font-medium text-[var(--text-secondary)] transition-all hover:bg-[var(--bg-surface-secondary)] hover:text-[var(--text-primary)] group"
           >
-            <Avatar member={session?.member} size="sm" className="group-hover:scale-105 transition-transform" />
+            <Avatar
+              member={session?.member}
+              size="sm"
+              className="group-hover:scale-105 transition-transform"
+            />
             <div className="flex flex-col truncate">
-              <span className="truncate font-semibold text-[var(--text-primary)]">{session?.member?.full_name}</span>
+              <span className="truncate font-semibold text-[var(--text-primary)]">
+                {session?.member?.full_name}
+              </span>
               <span className="truncate text-xs opacity-70">Ver perfil</span>
             </div>
           </Link>
-          
+
           <button
             onClick={handleSignOut}
             className="flex w-full items-center gap-3 rounded-xl p-3 text-sm font-medium text-[var(--danger)] transition-all hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] group"
@@ -105,9 +103,9 @@ export function DashboardLayout() {
               <LogOut className="h-5 w-5" />
             </button>
             <div className="flex flex-col lg:flex-row lg:items-center lg:gap-3">
-              {filteredNavigation.find(n => n.href === location.pathname)?.name ? (
+              {filteredNavigation.find((n) => n.href === location.pathname)?.name ? (
                 <h2 className="text-sm font-bold text-[var(--text-primary)] lg:font-medium lg:text-[var(--text-muted)]">
-                  {filteredNavigation.find(n => n.href === location.pathname)?.name}
+                  {filteredNavigation.find((n) => n.href === location.pathname)?.name}
                 </h2>
               ) : (
                 <h1 className="text-xl font-black tracking-tighter text-[var(--text-primary)]">
@@ -124,14 +122,14 @@ export function DashboardLayout() {
 
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Link 
-              to="/profile" 
+            <Link
+              to="/profile"
               className="group flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 active:scale-90"
             >
-              <Avatar 
-                member={session?.member} 
-                size="md" 
-                className="ring-2 ring-[var(--accent)]/10 ring-offset-2 ring-offset-[var(--bg-surface)] transition-all group-hover:ring-[var(--accent)]/30" 
+              <Avatar
+                member={session?.member}
+                size="md"
+                className="ring-2 ring-[var(--accent)]/10 ring-offset-2 ring-offset-[var(--bg-surface)] transition-all group-hover:ring-[var(--accent)]/30"
               />
             </Link>
           </div>

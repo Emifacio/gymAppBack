@@ -1,21 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { useState, type ElementType } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  History, 
-  Users, 
-  User,
-  ChevronUp
-} from "lucide-react";
+import { LayoutDashboard, Calendar, History, Users, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 
 interface NavItem {
   name: string;
   href: string;
-  icon: React.ElementType;
+  icon: ElementType;
   role?: "admin" | "member";
 }
 
@@ -30,9 +23,8 @@ export function FloatingNav() {
   const { session } = useAuth();
   const location = useLocation();
   const { scrollY } = useScroll();
-  
+
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
 
   // Filter navigation based on user role
   const filteredNav = navigation.filter((item) => {
@@ -52,7 +44,7 @@ export function FloatingNav() {
     }
   });
 
-  const activeItem = filteredNav.find(item => location.pathname === item.href) || filteredNav[0];
+  const activeItem = filteredNav.find((item) => location.pathname === item.href) || filteredNav[0];
 
   return (
     <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-6 lg:hidden pointer-events-none">
@@ -61,7 +53,7 @@ export function FloatingNav() {
         animate={{
           width: isCollapsed ? "64px" : "auto",
           height: isCollapsed ? "64px" : "72px",
-          borderRadius: "32px",
+          borderRadius: "32px"
         }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={cn(
@@ -100,7 +92,9 @@ export function FloatingNav() {
                     to={item.href}
                     className={cn(
                       "relative flex h-14 min-w-[64px] flex-col items-center justify-center rounded-2xl transition-all duration-300",
-                      isActive ? "text-[var(--accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                      isActive
+                        ? "text-[var(--accent)]"
+                        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                     )}
                   >
                     {isActive && (
@@ -110,7 +104,12 @@ export function FloatingNav() {
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                       />
                     )}
-                    <item.icon className={cn("relative z-10 h-5 w-5 mb-0.5 transition-transform duration-300", isActive && "scale-110")} />
+                    <item.icon
+                      className={cn(
+                        "relative z-10 h-5 w-5 mb-0.5 transition-transform duration-300",
+                        isActive && "scale-110"
+                      )}
+                    />
                     <span className="relative z-10 text-[10px] font-bold uppercase tracking-tighter transition-all duration-300">
                       {item.name}
                     </span>
