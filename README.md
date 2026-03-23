@@ -218,7 +218,7 @@ If `SECRET_KEY` is omitted, the app now generates an ephemeral key at boot so th
 If Postgres is temporarily unavailable during startup, the FastAPI service now retries database readiness checks with bounded backoff before failing the boot.
 If Redis variables are omitted, the web process can still boot, but it now skips Redis connection attempts and returns a clear `503` for background-job requests until a Redis service is configured.
 If Redis is configured but slow to answer during startup, the web process now gives up after a short timeout and keeps booting without cache instead of hanging the whole deploy.
-The backend now allows the production web app origin `https://gym-app-back-web.vercel.app` by default. For Vercel preview deployments, you can additionally set `CORS_ORIGIN_REGEX`.
+The backend now always allows the stable frontend origins `https://atlhyt.com`, `https://www.atlhyt.com`, and `https://gym-app-back-web.vercel.app` by default. Any `CORS_ORIGINS` value you set adds extra origins instead of replacing those defaults. For Vercel preview deployments, you can additionally set `CORS_ORIGIN_REGEX`.
 
 Important Railway UI check:
 
@@ -246,7 +246,7 @@ Key variables:
 - `DATABASE_STARTUP_MAX_BACKOFF_SECONDS`: cap for startup retry delay
 - `DATABASE_STARTUP_BACKOFF_MULTIPLIER`: backoff multiplier applied between attempts
 - `REDIS_URL`: Redis cache URL
-- `CORS_ORIGINS`: explicit allowed frontend origins
+- `CORS_ORIGINS`: extra allowed frontend origins added on top of the built-in stable frontend origins
 - `CORS_ORIGIN_REGEX`: optional regex for preview deployments such as Vercel branch URLs
 - `CELERY_BROKER_URL`: Redis broker URL for Celery
 - `CELERY_RESULT_BACKEND`: result backend URL for Celery
@@ -285,7 +285,6 @@ GOOGLE_CLIENT_IDS=your-web-client-id.apps.googleusercontent.com,your-mobile-clie
 3. Navigate to **APIs & Services** > **Credentials**
 4. Create or select an OAuth 2.0 Client ID (Web application type)
 5. Add **Authorized JavaScript origins**:
-
    - `http://localhost:5173` (local development)
    - `https://your-production-domain.com` (production)
 
@@ -317,9 +316,9 @@ Authentication uses bearer tokens.
 
 Members are explicitly categorized by authentication origin:
 
-| Provider | Description |
-|----------|-------------|
-| `local` | Registered with email + password |
+| Provider | Description                      |
+| -------- | -------------------------------- |
+| `local`  | Registered with email + password |
 | `google` | Authenticated via Google Sign-In |
 
 The `auth_provider` field on the Member model distinguishes the authentication origin. This replaces the previous implicit approach of using empty password hash for Google users.

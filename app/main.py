@@ -54,6 +54,9 @@ async def lifespan(app: FastAPI):
     print(f"🚀 Starting GymApp in {settings.environment} mode")
     print(f"🔗 Database: {_describe_service_url(settings.database_url)}")
     print(f"🔗 Redis: {_describe_service_url(settings.redis_url)}")
+    print(f"🌐 CORS origins: {', '.join(settings.cors_origins)}")
+    if settings.cors_origin_regex:
+        print(f"🌐 CORS origin regex: {settings.cors_origin_regex}")
 
     logger.info(
         "database_configuration_selected source=%s target=%s connect_timeout_seconds=%s "
@@ -64,6 +67,11 @@ async def lifespan(app: FastAPI):
         settings.database_pool_size,
         settings.database_max_overflow,
         settings.database_startup_max_attempts,
+    )
+    logger.info(
+        "cors_configuration origins=%s origin_regex=%s",
+        settings.cors_origins,
+        settings.cors_origin_regex or "unset",
     )
 
     # Initialize dependency containers

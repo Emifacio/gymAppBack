@@ -87,10 +87,34 @@ DEFAULT_DEV_CORS_ORIGINS = [
 DEFAULT_PROD_CORS_ORIGINS = [
     "https://atlhyt.com",
     "https://www.atlhyt.com",
-    # Temporary during domain migration; remove once atlhyt.com is fully retired.
-    "https://atlhyt.com",
-    "https://www.atlhyt.com",
+    # Keep the legacy Vercel frontend working during the domain migration.
+    "https://gym-app-back-web.vercel.app",
 ]
+
+DEFAULT_CORS_ORIGINS = [*DEFAULT_DEV_CORS_ORIGINS, *DEFAULT_PROD_CORS_ORIGINS]
+
+
+def _normalize_origin_list(value: Any) -> list[str]:
+    if isinstance(value, str):
+        value = value.strip()
+        if not value:
+            return []
+        if value.startswith("[") and value.endswith("]"):
+            value = json.loads(value)
+        else:
+            value = [item.strip() for item in value.split(",") if item.strip()]
+    if isinstance(value, (list, tuple, set)):
+        seen: set[str] = set()
+        origins: list[str] = []
+        for item in value:
+            if not isinstance(item, str):
+                continue
+            normalized = item.strip().rstrip("/")
+            if normalized and normalized not in seen:
+                seen.add(normalized)
+                origins.append(normalized)
+        return origins
+    return []
 
 
 class Settings(BaseSettings):
@@ -119,7 +143,7 @@ class Settings(BaseSettings):
     celery_result_backend: str | None = None
     cache_ttl_seconds: int = 300
     redis_connect_timeout_seconds: float = 5.0
-    cors_origins: list[str] = [*DEFAULT_DEV_CORS_ORIGINS, *DEFAULT_PROD_CORS_ORIGINS]
+    cors_origins: list[str] = [*DEFAULT_CORS_ORIGINS]
     cors_origin_regex: str | None = None
     timezone: str = "UTC"
     strava_client_id: str | None = None
@@ -152,27 +176,13 @@ class Settings(BaseSettings):
     @classmethod
     def parse_cors_origins(cls, value: Any) -> list[str]:
         if value is None:
-            return [*DEFAULT_DEV_CORS_ORIGINS, *DEFAULT_PROD_CORS_ORIGINS]
-        if isinstance(value, str):
-            value = value.strip()
-            if not value:
-                return [*DEFAULT_DEV_CORS_ORIGINS, *DEFAULT_PROD_CORS_ORIGINS]
-            if value.startswith("[") and value.endswith("]"):
-                value = json.loads(value)
-            else:
-                value = [item.strip() for item in value.split(",") if item.strip()]
-        if isinstance(value, (list, tuple, set)):
-            seen: set[str] = set()
-            origins: list[str] = []
-            for item in value:
-                if not isinstance(item, str):
-                    continue
-                normalized = item.strip().rstrip("/")
-                if normalized and normalized not in seen:
-                    seen.add(normalized)
-                    origins.append(normalized)
-            return origins
-        return [*DEFAULT_DEV_CORS_ORIGINS, *DEFAULT_PROD_CORS_ORIGINS]
+            return [*DEFAULT_CORS_ORIGINS]
+        parsed_origins = _normalize_origin_list(value)
+        if not parsed_origins:
+            return [*DEFAULT_CORS_ORIGINS]
+        # Always retain the app's stable frontend origins so a partial env override
+        # cannot silently break the production login flow.
+        return _normalize_origin_list([*DEFAULT_CORS_ORIGINS, *parsed_origins])
 
     @field_validator("google_client_ids", mode="before")
     @classmethod
