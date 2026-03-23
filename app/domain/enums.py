@@ -25,6 +25,20 @@ class SubscriptionStatus(StrEnum):
     CANCELLED = "cancelled"
 
 
+class BillingStatus(StrEnum):
+    ACTIVE = "active"
+    PAYMENT_DUE = "payment_due"
+    SUSPENDED = "suspended"
+
+
+class BillingReminderStage(StrEnum):
+    DUE_DATE = "due_date"
+    DAY_5 = "day_5"
+    DAY_9 = "day_9"
+    OVERDUE = "overdue"
+    SUSPENDED = "suspended"
+
+
 class ClassStatus(StrEnum):
     SCHEDULED = "scheduled"
     CANCELLED = "cancelled"
@@ -56,6 +70,7 @@ class BookingEligibilityOutcome(StrEnum):
     NO_ACTIVE_PLAN = "NO_ACTIVE_PLAN"
     INSUFFICIENT_CREDITS = "INSUFFICIENT_CREDITS"
     PLAN_EXPIRED = "PLAN_EXPIRED"
+    BILLING_SUSPENDED = "BILLING_SUSPENDED"
     CLASS_FULL = "CLASS_FULL"
     DUPLICATE_BOOKING = "DUPLICATE_BOOKING"
     CLASS_PAST = "CLASS_PAST"

@@ -117,7 +117,7 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
             booked_at=now - timedelta(days=1),
             cancelled_at=None,
         )
-        future_booking.gym_class = future_class
+        future_booking.__dict__["gym_class"] = future_class
 
         past_booking = Booking(
             id=uuid4(),
@@ -129,7 +129,7 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
             booked_at=now - timedelta(days=3),
             cancelled_at=None,
         )
-        past_booking.gym_class = past_class
+        past_booking.__dict__["gym_class"] = past_class
 
         future_waitlist = Waitlist(
             id=uuid4(),
@@ -141,7 +141,7 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
             promoted_at=None,
             cancelled_at=None,
         )
-        future_waitlist.gym_class = future_class
+        future_waitlist.__dict__["gym_class"] = future_class
 
         past_waitlist = Waitlist(
             id=uuid4(),
@@ -153,7 +153,7 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
             promoted_at=None,
             cancelled_at=None,
         )
-        past_waitlist.gym_class = past_class
+        past_waitlist.__dict__["gym_class"] = past_class
 
         self.booking_repository.list_for_member = AsyncMock(return_value=[future_booking, past_booking])
         self.waitlist_repository.list_for_member = AsyncMock(return_value=[future_waitlist, past_waitlist])

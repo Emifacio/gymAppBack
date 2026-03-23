@@ -27,6 +27,7 @@ from app.schemas.subscription_schema import (
     MemberSubscriptionRead,
     MemberSubscriptionStatusRead,
     SubscriptionAssign,
+    SubscriptionPaymentRecord,
 )
 from app.services.activity_service import ActivityService
 from app.services.booking_service import BookingService
@@ -159,6 +160,19 @@ async def assign_plan_alias(
 ) -> MemberSubscriptionRead:
     """Alias for assign_member_subscription as requested by mobile app."""
     return await service.assign_subscription(member_id, payload.plan_id)
+
+
+@router.post(
+    "/{member_id}/subscription/payment",
+    response_model=MemberSubscriptionRead,
+    dependencies=[Depends(require_roles(MemberRole.ADMIN))],
+)
+async def record_member_subscription_payment(
+    member_id: UUID,
+    payload: SubscriptionPaymentRecord,
+    service: SubscriptionService = Depends(get_subscription_service),
+) -> MemberSubscriptionRead:
+    return await service.record_successful_payment(member_id, paid_at=payload.paid_at)
 
 
 @router.get("/{member_id}/subscription", response_model=MemberSubscriptionRead | None)

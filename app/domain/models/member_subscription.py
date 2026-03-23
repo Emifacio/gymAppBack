@@ -1,10 +1,10 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Index, func
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, Index, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.domain.enums import SubscriptionStatus, enum_values
+from app.domain.enums import BillingReminderStage, BillingStatus, SubscriptionStatus, enum_values
 from app.infrastructure.database.base import Base, UUIDPrimaryKeyMixin
 
 if TYPE_CHECKING:
@@ -28,6 +28,11 @@ class MemberSubscription(UUIDPrimaryKeyMixin, Base):
             "status",
             "period_end",
         ),
+        Index(
+            "idx_member_subscriptions_billing_status_next_due_date",
+            "billing_status",
+            "next_due_date",
+        ),
     )
 
     member_id = mapped_column(ForeignKey("members.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -41,6 +46,18 @@ class MemberSubscription(UUIDPrimaryKeyMixin, Base):
         default=SubscriptionStatus.ACTIVE,
         index=True,
     )
+    billing_status: Mapped[BillingStatus] = mapped_column(
+        Enum(BillingStatus, name="billing_status", values_callable=enum_values),
+        nullable=False,
+        default=BillingStatus.ACTIVE,
+        index=True,
+    )
+    next_due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    last_payment_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    suspended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reminder_due_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reminder_day_5_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reminder_day_9_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
@@ -55,3 +72,48 @@ class MemberSubscription(UUIDPrimaryKeyMixin, Base):
     @property
     def is_free_pass(self) -> bool:
         return bool(self.plan and self.plan.allows_free_pass)
+
+    @property
+    def effective_credits(self) -> int:
+        if self.billing_status == BillingStatus.SUSPENDED:
+            return 0
+        return self.active_credits
+
+    @property
+    def billing_warning(self) -> dict[str, str] | None:
+        if self.next_due_date is None:
+            return None
+
+        today = datetime.now(timezone.utc).date()
+        overdue_days = (today - self.next_due_date).days
+        if overdue_days < 0 and self.billing_status == BillingStatus.ACTIVE:
+            return None
+
+        if self.billing_status == BillingStatus.SUSPENDED:
+            return {
+                "stage": BillingReminderStage.SUSPENDED.value,
+                "message": "Your account has been suspended due to non-payment. Please complete payment to restore access.",
+            }
+
+        if self.billing_status != BillingStatus.PAYMENT_DUE:
+            return None
+
+        if overdue_days >= 9:
+            return {
+                "stage": BillingReminderStage.DAY_9.value,
+                "message": "Final reminder: your account will be suspended soon if payment is not received.",
+            }
+        if overdue_days >= 5:
+            return {
+                "stage": BillingReminderStage.DAY_5.value,
+                "message": "Your payment is overdue. Please complete it to avoid suspension.",
+            }
+        if overdue_days == 0:
+            return {
+                "stage": BillingReminderStage.DUE_DATE.value,
+                "message": "Your payment is due today.",
+            }
+        return {
+            "stage": BillingReminderStage.OVERDUE.value,
+            "message": "Your payment is overdue. Please complete it to avoid suspension.",
+        }

@@ -26,9 +26,11 @@ from app.repositories.waitlist_repository import WaitlistRepository
 from app.services.activity_service import ActivityService
 from app.services.attendance_service import AttendanceService
 from app.services.auth_service import AuthService
+from app.services.billing_service import BillingService
 from app.services.booking_eligibility_service import BookingEligibilityService
 from app.services.booking_service import BookingService
 from app.services.class_service import ClassService
+from app.services.email_service import EmailService
 from app.services.integration_service import IntegrationService
 from app.services.member_service import MemberService
 from app.services.plan_service import PlanService
@@ -141,6 +143,12 @@ def get_booking_service(
     cache: RedisCache = Depends(get_cache),
 ) -> BookingService:
     member_subscription_repository = MemberSubscriptionRepository(session)
+    billing_service = BillingService(
+        session=session,
+        member_subscription_repository=member_subscription_repository,
+        cache=cache,
+        email_service=EmailService(),
+    )
     return BookingService(
         session=session,
         class_repository=ClassRepository(session),
@@ -153,6 +161,7 @@ def get_booking_service(
             booking_repository=BookingRepository(session),
             waitlist_repository=WaitlistRepository(session),
             member_subscription_repository=member_subscription_repository,
+            billing_service=billing_service,
         ),
         subscription_service=SubscriptionService(
             session=session,
@@ -160,6 +169,7 @@ def get_booking_service(
             plan_repository=PlanRepository(session),
             member_subscription_repository=member_subscription_repository,
             cache=cache,
+            billing_service=billing_service,
         ),
         cache=cache,
     )
@@ -173,12 +183,20 @@ def get_subscription_service(
     session: AsyncSession = Depends(get_db_session),
     cache: RedisCache = Depends(get_cache),
 ) -> SubscriptionService:
+    member_subscription_repository = MemberSubscriptionRepository(session)
+    billing_service = BillingService(
+        session=session,
+        member_subscription_repository=member_subscription_repository,
+        cache=cache,
+        email_service=EmailService(),
+    )
     return SubscriptionService(
         session=session,
         member_repository=MemberRepository(session),
         plan_repository=PlanRepository(session),
-        member_subscription_repository=MemberSubscriptionRepository(session),
+        member_subscription_repository=member_subscription_repository,
         cache=cache,
+        billing_service=billing_service,
     )
 
 

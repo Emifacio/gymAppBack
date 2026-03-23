@@ -122,6 +122,15 @@ class Settings(BaseSettings):
     google_client_ids: list[str] | None = None
     google_client_secret: str | None = None
     jwt_algorithm: str = "HS256"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_use_tls: bool = True
+    smtp_use_ssl: bool = False
+    smtp_timeout_seconds: float = 10.0
+    email_from: str | None = None
+    email_reply_to: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",

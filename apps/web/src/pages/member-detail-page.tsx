@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -26,7 +27,7 @@ import {
   CardInset,
   CardTitle
 } from "@/components/ui/Card";
-import { Field, FieldHint, FieldLabel } from "@/components/ui/Field";
+import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { InlineFeedback } from "@/components/ui/InlineFeedback";
 import { Select } from "@/components/ui/Select";
@@ -142,6 +143,84 @@ function toSentenceCase(value: string) {
     .replace(/^\w/, (match) => match.toUpperCase());
 }
 
+const DISPLAY_DATE_PLACEHOLDER = "dd/mm/yyyy";
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DISPLAY_DATE_PATTERN = /^\d{2}\/\d{2}\/\d{4}$/;
+
+function formatIsoDateToDisplay(value: string | null | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  const isoDate = value.slice(0, 10);
+  if (!ISO_DATE_PATTERN.test(isoDate)) {
+    return "";
+  }
+
+  const [year, month, day] = isoDate.split("-");
+  return `${day}/${month}/${year}`;
+}
+
+function formatDisplayDateInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+
+  if (digits.length <= 2) {
+    return digits;
+  }
+
+  if (digits.length <= 4) {
+    return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  }
+
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function isLeapYear(year: number) {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+}
+
+function getDaysInMonth(month: number, year: number) {
+  if (month === 2) {
+    return isLeapYear(year) ? 29 : 28;
+  }
+
+  if ([4, 6, 9, 11].includes(month)) {
+    return 30;
+  }
+
+  return 31;
+}
+
+function isValidDisplayDate(value: string) {
+  if (!DISPLAY_DATE_PATTERN.test(value)) {
+    return false;
+  }
+
+  const [dayString, monthString, yearString] = value.split("/");
+  const day = Number(dayString);
+  const month = Number(monthString);
+  const year = Number(yearString);
+
+  if (!Number.isInteger(day) || !Number.isInteger(month) || !Number.isInteger(year)) {
+    return false;
+  }
+
+  if (month < 1 || month > 12 || day < 1 || year < 1000 || year > 9999) {
+    return false;
+  }
+
+  return day <= getDaysInMonth(month, year);
+}
+
+function parseDisplayDateToIso(value: string) {
+  if (!isValidDisplayDate(value)) {
+    return null;
+  }
+
+  const [day, month, year] = value.split("/");
+  return `${year}-${month}-${day}`;
+}
+
 export function MemberDetailPage() {
   const { memberId = "" } = useParams();
   const { session } = useAuth();
@@ -160,6 +239,13 @@ export function MemberDetailPage() {
   const subscription = subscriptionQuery.data;
   const canView =
     session && (canManageOperations(session.member) || session.member.id === memberId);
+  const [birthDateDisplay, setBirthDateDisplay] = useState("");
+  const [birthDateError, setBirthDateError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setBirthDateDisplay(formatIsoDateToDisplay(member?.birth_date));
+    setBirthDateError(null);
+  }, [member?.id, member?.birth_date]);
 
   if (!canView) {
     return <Navigate to="/dashboard" replace />;
@@ -217,7 +303,7 @@ export function MemberDetailPage() {
                     {member.birth_date ? (
                       <span className="inline-flex items-center gap-2">
                         <CalendarDays className="h-4 w-4 text-[var(--text-muted)]" />
-                        {member.birth_date}
+                        {formatIsoDateToDisplay(member.birth_date)}
                       </span>
                     ) : null}
                   </div>
@@ -312,13 +398,26 @@ export function MemberDetailPage() {
                 const instructorBio = formData.get("instructor_bio");
                 const instructorSpecialties = formData.get("instructor_specialties");
                 const isActive = formData.get("is_active");
+                const parsedBirthDate =
+                  typeof birthDate === "string" && birthDate
+                    ? parseDisplayDateToIso(birthDate)
+                    : null;
+
+                if (typeof birthDate === "string" && birthDate && !parsedBirthDate) {
+                  setBirthDateError(
+                    `Ingresa una fecha valida con formato ${DISPLAY_DATE_PLACEHOLDER}.`
+                  );
+                  return;
+                }
+
+                setBirthDateError(null);
 
                 updateMember.mutate({
                   memberId: member.id,
                   payload: {
                     full_name: typeof fullName === "string" ? fullName : member.full_name,
                     phone: typeof phone === "string" && phone ? phone : null,
-                    birth_date: typeof birthDate === "string" && birthDate ? birthDate : null,
+                    birth_date: parsedBirthDate,
                     emergency_contact:
                       typeof emergencyContact === "string" && emergencyContact
                         ? emergencyContact
@@ -363,11 +462,34 @@ export function MemberDetailPage() {
                 <Field>
                   <FieldLabel htmlFor="member-detail-birth-date">Fecha de nacimiento</FieldLabel>
                   <Input
-                    defaultValue={member.birth_date ?? ""}
                     id="member-detail-birth-date"
+                    inputMode="numeric"
+                    maxLength={10}
                     name="birth_date"
-                    type="date"
+                    placeholder={DISPLAY_DATE_PLACEHOLDER}
+                    type="text"
+                    value={birthDateDisplay}
+                    onBlur={() => {
+                      if (!birthDateDisplay) {
+                        setBirthDateError(null);
+                        return;
+                      }
+
+                      if (!isValidDisplayDate(birthDateDisplay)) {
+                        setBirthDateError(
+                          `Ingresa una fecha valida con formato ${DISPLAY_DATE_PLACEHOLDER}.`
+                        );
+                      }
+                    }}
+                    onChange={(event) => {
+                      setBirthDateDisplay(formatDisplayDateInput(event.target.value));
+                      if (birthDateError) {
+                        setBirthDateError(null);
+                      }
+                    }}
                   />
+                  <FieldHint>Usa el formato {DISPLAY_DATE_PLACEHOLDER}.</FieldHint>
+                  {birthDateError ? <FieldError>{birthDateError}</FieldError> : null}
                 </Field>
               </div>
 

@@ -63,6 +63,15 @@ class PlanExpiredError(AppException):
         )
 
 
+class BillingSuspendedError(AppException):
+    def __init__(self, detail: str = "Account access is suspended pending payment") -> None:
+        super().__init__(
+            detail=detail,
+            status_code=status.HTTP_403_FORBIDDEN,
+            code=BookingEligibilityOutcome.BILLING_SUSPENDED.value,
+        )
+
+
 class InsufficientCreditsError(AppException):
     def __init__(self, detail: str = "Not enough credits") -> None:
         super().__init__(

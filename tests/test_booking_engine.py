@@ -42,6 +42,9 @@ class _DummySession:
     def __init__(self) -> None:
         self._in_transaction = False
         self.flush = AsyncMock()
+        self.new = set()
+        self.dirty = set()
+        self.deleted = set()
 
     def in_transaction(self) -> bool:
         return self._in_transaction
@@ -93,7 +96,12 @@ class BookingEngineTests(IsolatedAsyncioTestCase):
             is_active=True,
             role=MemberRole.MEMBER,
         )
-        gym_class = SimpleNamespace(id=class_id, capacity=2, status=ClassStatus.SCHEDULED)
+        gym_class = SimpleNamespace(
+            id=class_id,
+            capacity=2,
+            status=ClassStatus.SCHEDULED,
+            scheduled_at=now + timedelta(days=1),
+        )
         subscription = self._build_subscription(member_id)
 
         class_repository = AsyncMock()
@@ -140,6 +148,7 @@ class BookingEngineTests(IsolatedAsyncioTestCase):
             booking_repository=booking_repository,
             waitlist_repository=waitlist_repository,
             member_subscription_repository=member_subscription_repository,
+            billing_service=SimpleNamespace(sync_billing_state=lambda *args, **kwargs: False),
         )
 
         subscription_service = SimpleNamespace(
@@ -189,7 +198,12 @@ class BookingEngineTests(IsolatedAsyncioTestCase):
             membership_status=MembershipStatus.ACTIVE,
             is_active=True,
         )
-        gym_class = SimpleNamespace(id=class_id, capacity=10, status=ClassStatus.SCHEDULED)
+        gym_class = SimpleNamespace(
+            id=class_id,
+            capacity=10,
+            status=ClassStatus.SCHEDULED,
+            scheduled_at=datetime.now(timezone.utc) + timedelta(days=1),
+        )
         waitlist_entry = Waitlist(
             member_id=member_id,
             class_id=class_id,
@@ -210,6 +224,7 @@ class BookingEngineTests(IsolatedAsyncioTestCase):
                 get_active_for_member=AsyncMock(return_value=None),
                 get_latest_for_member=AsyncMock(return_value=None),
             ),
+            billing_service=SimpleNamespace(sync_billing_state=lambda *args, **kwargs: False),
         )
 
         decision = await eligibility_service.validate_member_booking(member_id, class_id)

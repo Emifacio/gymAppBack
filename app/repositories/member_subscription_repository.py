@@ -1,10 +1,11 @@
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy import Select, select
 from sqlalchemy.orm import selectinload
 
 from app.domain.enums import SubscriptionStatus
+from app.domain.models.member import Member
 from app.domain.models.member_subscription import MemberSubscription
 from app.domain.models.plan import Plan
 from app.repositories.base_repository import BaseRepository
@@ -14,6 +15,7 @@ class MemberSubscriptionRepository(BaseRepository[MemberSubscription]):
     def _detail_query(self) -> Select[tuple[MemberSubscription]]:
         return select(MemberSubscription).options(
             selectinload(MemberSubscription.plan),
+            selectinload(MemberSubscription.member).selectinload(Member.membership_plan),
         )
 
     async def get_by_id(self, subscription_id: UUID, *, for_update: bool = False) -> MemberSubscription | None:
@@ -67,6 +69,18 @@ class MemberSubscriptionRepository(BaseRepository[MemberSubscription]):
                 MemberSubscription.period_end <= now,
             )
             .order_by(MemberSubscription.period_end.asc(), MemberSubscription.created_at.asc())
+        )
+        result = await self.session.scalars(stmt)
+        return list(result.unique().all())
+
+    async def list_billable_for_billing(self, reference_date: date) -> list[MemberSubscription]:
+        stmt = (
+            self._detail_query()
+            .where(
+                MemberSubscription.status == SubscriptionStatus.ACTIVE,
+                MemberSubscription.next_due_date <= reference_date,
+            )
+            .order_by(MemberSubscription.next_due_date.asc(), MemberSubscription.created_at.asc())
         )
         result = await self.session.scalars(stmt)
         return list(result.unique().all())

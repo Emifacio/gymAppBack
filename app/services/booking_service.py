@@ -324,18 +324,6 @@ class BookingService:
                 continue
             await self.cancel_booking(waitlist_entry.id, admin_actor)
 
-        promoted_schema = None
-        if promoted_booking_ids:
-            promoted_booking = await self.booking_repository.get_by_id(promoted_booking_ids[0])
-            if promoted_booking is not None:
-                promoted_schema = BookingRead.model_validate(promoted_booking)
-
-        return BookingCancellationResponse(
-            status="cancelled",
-            credit_restored=credit_restored,
-            promoted_booking=promoted_schema,
-        )
-
     async def list_member_bookings(self, member_id: UUID) -> MemberBookingsResponse:
         member = await self.member_repository.get_by_id(member_id)
         if member is None:

@@ -32,5 +32,9 @@ celery_app.conf.update(
             "task": "app.tasks.reset_subscription_credits",
             "schedule": crontab(minute=0),
         },
+        "run-daily-billing-enforcement": {
+            "task": "app.tasks.run_daily_billing_enforcement",
+            "schedule": crontab(hour=0, minute=5),
+        },
     },
 )

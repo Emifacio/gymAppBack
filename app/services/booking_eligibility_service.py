@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 
 from app.core.exceptions import (
+    BillingSuspendedError,
     BookingNotAllowedError,
     ClassFullError,
     ClassPastError,
@@ -13,6 +14,7 @@ from app.core.exceptions import (
     PlanExpiredError,
 )
 from app.domain.enums import (
+    BillingStatus,
     BookingEligibilityOutcome,
     BookingStatus,
     ClassStatus,
@@ -30,6 +32,7 @@ from app.repositories.class_repository import ClassRepository
 from app.repositories.member_repository import MemberRepository
 from app.repositories.member_subscription_repository import MemberSubscriptionRepository
 from app.repositories.waitlist_repository import WaitlistRepository
+from app.services.billing_service import BillingService
 from app.services.subscription_service import sync_subscription_period
 
 
@@ -52,12 +55,14 @@ class BookingEligibilityService:
         booking_repository: BookingRepository,
         waitlist_repository: WaitlistRepository,
         member_subscription_repository: MemberSubscriptionRepository,
+        billing_service: BillingService,
     ) -> None:
         self.member_repository = member_repository
         self.class_repository = class_repository
         self.booking_repository = booking_repository
         self.waitlist_repository = waitlist_repository
         self.member_subscription_repository = member_subscription_repository
+        self.billing_service = billing_service
 
     async def validate_member_booking(
         self,
@@ -168,6 +173,7 @@ class BookingEligibilityService:
             )
 
         sync_subscription_period(subscription, now)
+        self.billing_service.sync_billing_state(subscription, reference_time=now)
         if subscription.status != SubscriptionStatus.ACTIVE:
             return BookingEligibilityDecision(
                 outcome=BookingEligibilityOutcome.PLAN_EXPIRED,
@@ -177,6 +183,16 @@ class BookingEligibilityService:
                 existing_booking=existing_booking,
                 existing_waitlist=existing_waitlist,
                 message="Member plan has expired",
+            )
+        if subscription.billing_status == BillingStatus.SUSPENDED:
+            return BookingEligibilityDecision(
+                outcome=BookingEligibilityOutcome.BILLING_SUSPENDED,
+                member=member,
+                gym_class=gym_class,
+                subscription=subscription,
+                existing_booking=existing_booking,
+                existing_waitlist=existing_waitlist,
+                message="Account access is suspended pending payment",
             )
 
         if subscription.plan is None:
@@ -232,6 +248,8 @@ class BookingEligibilityService:
             raise NoActivePlanError(decision.message or "Member has no active plan assigned")
         if decision.outcome == BookingEligibilityOutcome.PLAN_EXPIRED:
             raise PlanExpiredError(decision.message or "Member plan has expired")
+        if decision.outcome == BookingEligibilityOutcome.BILLING_SUSPENDED:
+            raise BillingSuspendedError(decision.message or "Account access is suspended pending payment")
         if decision.outcome == BookingEligibilityOutcome.INSUFFICIENT_CREDITS:
             raise InsufficientCreditsError(decision.message or "Not enough credits")
         if decision.outcome == BookingEligibilityOutcome.CLASS_FULL:
