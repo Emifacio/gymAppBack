@@ -1,5 +1,7 @@
 import type { ClassMember } from "@gym/api-client";
 
+import { CardInset } from "@/components/ui/Card";
+
 interface Props {
   members: ClassMember[];
 }
@@ -7,25 +9,27 @@ interface Props {
 export function MembersList({ members }: Props) {
   if (!members.length) {
     return (
-      <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
+      <CardInset>
+        <p className="text-sm text-[var(--text-secondary)]">
         Aún no hay miembros confirmados para esta clase.
-      </div>
+        </p>
+      </CardInset>
     );
   }
 
   return (
     <div className="grid gap-4">
       {members.map((member) => (
-        <div key={member.booking_id} className="rounded-[1.5rem] bg-white/80 p-5">
-          <p className="text-sm font-semibold text-[var(--ink)]">{member.full_name}</p>
-          <p className="mt-2 text-sm text-[var(--muted)]">{member.email}</p>
-          <p className="mt-1 text-sm text-[var(--muted)]">
+        <CardInset key={member.booking_id}>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">{member.full_name}</p>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">{member.email}</p>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
             reserva de {member.booking_type}
             {member.credits_consumed
               ? ` · ${member.credits_consumed} ${member.credits_consumed === 1 ? "crédito usado" : "créditos usados"}`
               : ""}
           </p>
-        </div>
+        </CardInset>
       ))}
     </div>
   );

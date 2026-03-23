@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { BookingEligibilityModal } from "@/components/booking-eligibility-modal";
+import { Card, CardContent, CardEyebrow, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/use-auth";
 import { canManageOperations } from "@/lib/roles";
 import { isApiResponseError } from "@gym/api-client";
@@ -96,25 +97,27 @@ export function WorkoutDetailPage() {
       ) : null}
 
       {canManage ? (
-        <section className="glass-panel rounded-[2.25rem] p-8 xl:col-span-2">
-          <div className="grid gap-6 xl:grid-cols-2">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Lista de inscritos</p>
-              <h2 className="section-title mt-3 text-3xl font-semibold">Miembros confirmados</h2>
-              <div className="mt-6">
+        <div className="grid gap-6 xl:col-span-2 xl:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardEyebrow>Lista de inscritos</CardEyebrow>
+              <CardTitle>Miembros confirmados</CardTitle>
+            </CardHeader>
+            <CardContent>
                 <MembersList members={classMembersQuery.data ?? []} />
-              </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Asistencia</p>
-              <h2 className="section-title mt-3 text-3xl font-semibold">Resumen de asistencia</h2>
-              <div className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardEyebrow>Asistencia</CardEyebrow>
+              <CardTitle>Resumen de asistencia</CardTitle>
+            </CardHeader>
+            <CardContent>
                 <AttendancePanel attendance={classAttendanceQuery.data ?? []} />
-              </div>
-            </div>
-          </div>
-        </section>
+            </CardContent>
+          </Card>
+        </div>
       ) : null}
 
       <BookingEligibilityModal

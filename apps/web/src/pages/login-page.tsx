@@ -143,7 +143,7 @@ export function LoginPage() {
             ) : null}
 
             <Button
-              className="w-full"
+              className="h-13 w-full rounded-2xl text-[15px] shadow-lg shadow-[var(--accent-soft)]"
               loading={login.isPending}
               type="submit"
               variant="primary"
@@ -151,7 +151,7 @@ export function LoginPage() {
               {login.isPending ? "Iniciando sesión..." : "Iniciar sesión"}
             </Button>
 
-            <div className="relative my-4">
+            <div className="relative my-5">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-[var(--border-base)]"></div>
               </div>

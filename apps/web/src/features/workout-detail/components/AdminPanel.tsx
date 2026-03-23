@@ -2,6 +2,11 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardEyebrow, CardHeader, CardInset, CardTitle } from "@/components/ui/Card";
+import { Field, FieldError, FieldLabel } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Textarea } from "@/components/ui/Textarea";
 import type { Workout, ClassAssignmentPayload, WorkoutUpdatePayload } from "@gym/api-client";
 
 const assignMemberSchema = z.object({
@@ -71,37 +76,52 @@ export function AdminPanel({
   });
 
   return (
-    <section className="mt-8 glass-panel rounded-[2.25rem] p-8 xl:col-span-2 border-t border-[rgba(19,34,56,0.08)]">
+    <Card as="section" className="xl:col-span-2">
       <div className="grid gap-6 xl:grid-cols-2">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Asignación manual</p>
+        <CardInset>
+          <CardHeader className="space-y-2">
+            <CardEyebrow>Asignación manual</CardEyebrow>
+            <CardTitle className="text-[var(--font-size-lg)]">Agregar miembro a la clase</CardTitle>
+          </CardHeader>
+
+          <CardContent className="mt-5">
           <form
             onSubmit={handleSubmitAssign((values) => {
               assignMemberMutation.mutate({ classId: workout.id, memberId: values.member_id, payload: { member_id: values.member_id } });
               resetAssign();
             })}
-            className="mt-4 space-y-3"
+            className="space-y-4"
           >
-            <label className="block text-sm font-medium text-[var(--ink)]">ID del miembro</label>
-            <input
-              className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3"
-              {...registerAssign("member_id")}
-              aria-invalid={assignErrors.member_id ? "true" : "false"}
-            />
-            {assignErrors.member_id && <p className="text-xs text-red-500">{assignErrors.member_id.message}</p>}
-            <Button className="w-full" loading={isAssigning || assignMemberMutation.isPending} type="submit" variant="secondary">
+            <Field>
+              <FieldLabel htmlFor="assign-member-id">ID del miembro</FieldLabel>
+              <Input
+                id="assign-member-id"
+                error={Boolean(assignErrors.member_id)}
+                aria-invalid={assignErrors.member_id ? "true" : "false"}
+                {...registerAssign("member_id")}
+              />
+              {assignErrors.member_id ? <FieldError>{assignErrors.member_id.message}</FieldError> : null}
+            </Field>
+
+            <Button className="h-12 w-full rounded-2xl" loading={isAssigning || assignMemberMutation.isPending} type="submit" variant="secondary">
               {isAssigning || assignMemberMutation.isPending ? "Asignando..." : "Asignar miembro a la clase"}
             </Button>
             {assignMemberMutation.data && (
-              <div className="rounded-2xl bg-[rgba(23,184,156,0.12)] px-4 py-3 text-sm text-[var(--highlight)]">
-                {assignMemberMutation.data.message}
-              </div>
+              <CardInset className="border-[var(--success-soft)] bg-[var(--success-soft)] shadow-none">
+                <p className="text-sm font-medium text-[var(--success)]">{assignMemberMutation.data.message}</p>
+              </CardInset>
             )}
           </form>
-        </div>
+          </CardContent>
+        </CardInset>
 
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Gestión de clase</p>
+        <CardInset>
+          <CardHeader className="space-y-2">
+            <CardEyebrow>Gestión de clase</CardEyebrow>
+            <CardTitle className="text-[var(--font-size-lg)]">Editar detalles</CardTitle>
+          </CardHeader>
+
+          <CardContent className="mt-5">
           <form
             onSubmit={handleSubmitUpdate((values) => {
               updateWorkoutMutation.mutate({
@@ -118,51 +138,81 @@ export function AdminPanel({
                 }
               });
             })}
-            className="mt-4 space-y-3"
+            className="space-y-4"
           >
-            <label className="block text-sm font-medium text-[var(--ink)]">Nombre</label>
-            <input className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" {...registerUpdate("name")} />
-            {updateErrors.name && <p className="text-xs text-red-500">{updateErrors.name.message}</p>}
+            <Field>
+              <FieldLabel htmlFor="update-workout-name">Nombre</FieldLabel>
+              <Input id="update-workout-name" error={Boolean(updateErrors.name)} {...registerUpdate("name")} />
+              {updateErrors.name ? <FieldError>{updateErrors.name.message}</FieldError> : null}
+            </Field>
 
-            <label className="block text-sm font-medium text-[var(--ink)]">Ubicación</label>
-            <input className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" {...registerUpdate("location")} />
-            {updateErrors.location && <p className="text-xs text-red-500">{updateErrors.location.message}</p>}
+            <Field>
+              <FieldLabel htmlFor="update-workout-location">Ubicación</FieldLabel>
+              <Input id="update-workout-location" error={Boolean(updateErrors.location)} {...registerUpdate("location")} />
+              {updateErrors.location ? <FieldError>{updateErrors.location.message}</FieldError> : null}
+            </Field>
 
-            <label className="block text-sm font-medium text-[var(--ink)]">ID del instructor</label>
-            <input className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" {...registerUpdate("instructor_id")} />
+            <Field>
+              <FieldLabel htmlFor="update-workout-instructor">ID del instructor</FieldLabel>
+              <Input id="update-workout-instructor" {...registerUpdate("instructor_id")} />
+            </Field>
 
-            <label className="block text-sm font-medium text-[var(--ink)]">Fecha y hora</label>
-            <input type="datetime-local" className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" {...registerUpdate("scheduled_at")} />
-            {updateErrors.scheduled_at && <p className="text-xs text-red-500">{updateErrors.scheduled_at.message}</p>}
+            <Field>
+              <FieldLabel htmlFor="update-workout-scheduled-at">Fecha y hora</FieldLabel>
+              <Input
+                id="update-workout-scheduled-at"
+                type="datetime-local"
+                error={Boolean(updateErrors.scheduled_at)}
+                {...registerUpdate("scheduled_at")}
+              />
+              {updateErrors.scheduled_at ? <FieldError>{updateErrors.scheduled_at.message}</FieldError> : null}
+            </Field>
 
-            <label className="block text-sm font-medium text-[var(--ink)]">Descripción</label>
-            <textarea className="w-full min-h-[96px] rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" {...registerUpdate("description")} />
+            <Field>
+              <FieldLabel htmlFor="update-workout-description">Descripción</FieldLabel>
+              <Textarea id="update-workout-description" {...registerUpdate("description")} />
+            </Field>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="block text-sm font-medium text-[var(--ink)]">Duración (min)</label>
-                <input type="number" min={15} className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" {...registerUpdate("duration_minutes", { valueAsNumber: true })} />
-                {updateErrors.duration_minutes && <p className="text-xs text-red-500">{updateErrors.duration_minutes.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[var(--ink)]">Capacidad</label>
-                <input type="number" min={1} className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" {...registerUpdate("capacity", { valueAsNumber: true })} />
-                {updateErrors.capacity && <p className="text-xs text-red-500">{updateErrors.capacity.message}</p>}
-              </div>
+              <Field>
+                <FieldLabel htmlFor="update-workout-duration">Duración (min)</FieldLabel>
+                <Input
+                  id="update-workout-duration"
+                  type="number"
+                  min={15}
+                  error={Boolean(updateErrors.duration_minutes)}
+                  {...registerUpdate("duration_minutes", { valueAsNumber: true })}
+                />
+                {updateErrors.duration_minutes ? <FieldError>{updateErrors.duration_minutes.message}</FieldError> : null}
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="update-workout-capacity">Capacidad</FieldLabel>
+                <Input
+                  id="update-workout-capacity"
+                  type="number"
+                  min={1}
+                  error={Boolean(updateErrors.capacity)}
+                  {...registerUpdate("capacity", { valueAsNumber: true })}
+                />
+                {updateErrors.capacity ? <FieldError>{updateErrors.capacity.message}</FieldError> : null}
+              </Field>
             </div>
 
-            <label className="block text-sm font-medium text-[var(--ink)]">Estado</label>
-            <select className="w-full rounded-2xl border border-[rgba(19,34,56,0.08)] bg-white px-4 py-3" {...registerUpdate("status")}>
-              <option value="scheduled">programado</option>
-              <option value="cancelled">cancelado</option>
-              <option value="completed">completado</option>
-            </select>
+            <Field>
+              <FieldLabel htmlFor="update-workout-status">Estado</FieldLabel>
+              <Select id="update-workout-status" {...registerUpdate("status")}>
+                <option value="scheduled">programado</option>
+                <option value="cancelled">cancelado</option>
+                <option value="completed">completado</option>
+              </Select>
+            </Field>
 
             <div className="flex flex-wrap gap-3">
-              <Button loading={isUpdating || updateWorkoutMutation.isPending} type="submit" variant="primary">
+              <Button className="rounded-2xl" loading={isUpdating || updateWorkoutMutation.isPending} type="submit" variant="primary">
                 {isUpdating || updateWorkoutMutation.isPending ? "Guardando..." : "Guardar cambios"}
               </Button>
               <Button
+                className="rounded-2xl"
                 disabled={deleteWorkoutMutation.isPending}
                 loading={deleteWorkoutMutation.isPending}
                 onClick={() => { void onDelete(); }}
@@ -173,8 +223,9 @@ export function AdminPanel({
               </Button>
             </div>
           </form>
-        </div>
+          </CardContent>
+        </CardInset>
       </div>
-    </section>
+    </Card>
   );
 }

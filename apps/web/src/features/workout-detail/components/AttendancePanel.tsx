@@ -1,4 +1,6 @@
 import type { AttendanceRecord } from "@gym/api-client";
+
+import { CardInset } from "@/components/ui/Card";
 import { formatWorkoutSchedule } from "@/lib/format";
 
 interface Props {
@@ -8,21 +10,23 @@ interface Props {
 export function AttendancePanel({ attendance }: Props) {
   if (!attendance.length) {
     return (
-      <div className="rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
+      <CardInset>
+        <p className="text-sm text-[var(--text-secondary)]">
         Aún no se ha marcado asistencia para esta clase.
-      </div>
+        </p>
+      </CardInset>
     );
   }
 
   return (
     <div className="grid gap-4">
       {attendance.map((record) => (
-        <div key={record.id} className="rounded-[1.5rem] bg-white/80 p-5">
-          <p className="text-sm font-semibold text-[var(--ink)]">{record.member_id}</p>
-          <p className="mt-2 text-sm text-[var(--muted)]">
+        <CardInset key={record.id}>
+          <p className="text-sm font-semibold text-[var(--text-primary)]">{record.member_id}</p>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
             Estado: {record.status === "present" ? "presente" : record.status === "absent" ? "ausente" : record.status} · Marcado el {formatWorkoutSchedule(record.marked_at)}
           </p>
-        </div>
+        </CardInset>
       ))}
     </div>
   );

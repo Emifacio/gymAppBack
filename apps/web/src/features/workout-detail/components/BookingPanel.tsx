@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardDescription, CardEyebrow, CardHeader, CardInset, CardTitle } from "@/components/ui/Card";
 import { BookingEligibilityModal } from "@/components/booking-eligibility-modal";
 import { getSubscriptionCreditDetail, getSubscriptionStatusLabel } from "@/features/subscription/utils/subscriptionDisplay";
 import type { MemberSubscriptionStatus } from "@gym/api-client";
@@ -19,6 +20,7 @@ interface Props {
 export function BookingPanel({
   bookingButtonConfig,
   bookingFeedbackMessage,
+  bookingState,
   bookingMutationPending,
   subscription,
   precheckErrorCode,
@@ -27,25 +29,47 @@ export function BookingPanel({
   onCloseModal,
   onRedirect
 }: Props) {
+  const bookingStateLabel =
+    bookingState === "confirmed"
+      ? "Reserva confirmada"
+      : bookingState === "waitlisted"
+        ? "En lista de espera"
+        : bookingState === "closed"
+          ? "Reserva cerrada"
+          : "Disponible";
+
   return (
-    <aside className="glass-panel rounded-[2.25rem] p-8">
-      <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Flujo de reserva</p>
-      <h2 className="section-title mt-4 text-3xl font-semibold">Reserva tu lugar</h2>
-      <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-        Reserva al instante cuando haya capacidad, únete a la lista de espera cuando la clase esté llena y mantén tus
-        créditos sincronizados con el plan activo.
-      </p>
+    <Card as="aside" className="space-y-6">
+      <CardHeader>
+        <CardEyebrow>Flujo de reserva</CardEyebrow>
+        <CardTitle>Reserva tu lugar</CardTitle>
+        <CardDescription>
+          Reserva al instante cuando haya capacidad, únete a la lista de espera cuando la clase esté llena y mantén tus
+          créditos sincronizados con el plan activo.
+        </CardDescription>
+      </CardHeader>
 
-      <div className="mt-6 rounded-[1.5rem] bg-white/80 p-5 text-sm text-[var(--muted)]">
-        <p className="font-semibold text-[var(--ink)]">Suscripción activa</p>
-        <p className="mt-2">{getSubscriptionStatusLabel(subscription)}</p>
-        <p className="mt-1">{getSubscriptionCreditDetail(subscription)}</p>
-        <p className="mt-1">Fin del periodo: {subscription?.period_end ?? "-"}</p>
-      </div>
+      <CardContent className="mt-0 space-y-4">
+        <CardInset>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                Suscripción activa
+              </p>
+              <p className="mt-2 text-sm font-semibold text-[var(--text-primary)]">
+                {getSubscriptionStatusLabel(subscription)}
+              </p>
+            </div>
+            <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
+              {bookingStateLabel}
+            </span>
+          </div>
+          <p className="mt-3 text-sm text-[var(--text-secondary)]">{getSubscriptionCreditDetail(subscription)}</p>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">Fin del periodo: {subscription?.period_end ?? "-"}</p>
+        </CardInset>
 
-      <div className="mt-6">
         <Button
-          className="w-full"
+          className="h-12 w-full rounded-2xl shadow-lg shadow-[var(--accent-soft)]"
           loading={bookingMutationPending}
           disabled={bookingButtonConfig.disabled || bookingMutationPending}
           onClick={() => onBook()}
@@ -53,19 +77,21 @@ export function BookingPanel({
         >
           {bookingMutationPending ? "Procesando..." : bookingButtonConfig.label}
         </Button>
-      </div>
 
-      {precheckErrorCode && (
-        <p className="mt-3 text-sm text-[var(--accent)]">
-          Tus créditos semanales se han agotado. Contacta con administración para más información o para ajustar tu plan de membresía.
-        </p>
-      )}
+        {precheckErrorCode ? (
+          <CardInset className="border-[var(--warning-soft)] bg-[var(--warning-soft)] shadow-none">
+            <p className="text-sm font-medium text-[var(--text-primary)]">
+              Tus créditos semanales se han agotado. Contacta con administración para más información o para ajustar tu plan de membresía.
+            </p>
+          </CardInset>
+        ) : null}
 
-      {bookingFeedbackMessage && (
-        <div className="mt-4 rounded-2xl bg-[rgba(23,184,156,0.12)] px-4 py-3 text-sm text-[var(--highlight)]">
-          {bookingFeedbackMessage}
-        </div>
-      )}
+        {bookingFeedbackMessage ? (
+          <CardInset className="border-[var(--success-soft)] bg-[var(--success-soft)] shadow-none">
+            <p className="text-sm font-medium text-[var(--success)]">{bookingFeedbackMessage}</p>
+          </CardInset>
+        ) : null}
+      </CardContent>
 
       <BookingEligibilityModal
         description={eligibilityModal?.description ?? ""}
@@ -75,6 +101,6 @@ export function BookingPanel({
         actionLabel={onRedirect ? "Ver próximas clases" : undefined}
         onAction={onRedirect ? () => onRedirect() : undefined}
       />
-    </aside>
+    </Card>
   );
 }
