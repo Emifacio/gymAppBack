@@ -85,9 +85,9 @@ DEFAULT_DEV_CORS_ORIGINS = [
 ]
 
 DEFAULT_PROD_CORS_ORIGINS = [
-    "https://athlyt.com",
-    "https://www.athlyt.com",
-    # Temporary during domain migration; remove once athlyt.com is fully retired.
+    "https://atlhyt.com",
+    "https://www.atlhyt.com",
+    # Temporary during domain migration; remove once atlhyt.com is fully retired.
     "https://atlhyt.com",
     "https://www.atlhyt.com",
 ]

@@ -20,7 +20,8 @@ export function LoginPage() {
   const [googleError, setGoogleError] = useState<string | null>(null);
   const clientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined) ?? "";
 
-  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/";
+  const redirectTo =
+    (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/";
 
   const handleGoogleSuccess = useCallback(
     (credential: string) => {
@@ -34,11 +35,13 @@ export function LoginPage() {
           },
           onError: (err: Error) => {
             if (isApiResponseError(err)) {
-              setGoogleError("Error al iniciar sesión con Google. Verifique su cuenta e intente nuevamente.");
+              setGoogleError(
+                "Error al iniciar sesión con Google. Verifique su cuenta e intente nuevamente."
+              );
             } else {
               setGoogleError(err.message ?? "Error al iniciar sesión con Google.");
             }
-          },
+          }
         }
       );
     },
@@ -58,11 +61,11 @@ export function LoginPage() {
       <div className="fixed top-6 right-6 z-50">
         <ThemeToggle />
       </div>
-      
+
       <div className="grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="hidden rounded-[2.5rem] p-10 lg:flex flex-col justify-center bg-[#132238] shadow-2xl transition-all duration-700 animate-in fade-in slide-in-from-left-8">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-            ATHLYT
+            atlhyt
           </p>
           <h1 className="mt-6 text-5xl font-semibold leading-tight text-white">
             Gestioná tu entrenamiento de forma inteligente
@@ -80,8 +83,12 @@ export function LoginPage() {
             </h1>
           </div>
 
-          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Iniciar sesión</p>
-          <h2 className="section-title mt-4 text-4xl font-semibold text-[var(--text-primary)]">Bienvenido de nuevo</h2>
+          <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
+            Iniciar sesión
+          </p>
+          <h2 className="section-title mt-4 text-4xl font-semibold text-[var(--text-primary)]">
+            Bienvenido de nuevo
+          </h2>
           <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
             Iniciá sesión para acceder a tu perfil y clases.
           </p>
@@ -106,7 +113,9 @@ export function LoginPage() {
             }}
           >
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[var(--text-primary)]">Correo electrónico</span>
+              <span className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
+                Correo electrónico
+              </span>
               <input
                 className="w-full rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 outline-none transition focus:border-[var(--accent)]"
                 name="email"
@@ -117,7 +126,9 @@ export function LoginPage() {
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[var(--text-primary)]">Contraseña</span>
+              <span className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
+                Contraseña
+              </span>
               <input
                 className="w-full rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] text-[var(--text-primary)] px-4 py-3 outline-none transition focus:border-[var(--accent)]"
                 minLength={8}
@@ -156,7 +167,9 @@ export function LoginPage() {
                 <div className="w-full border-t border-[var(--border-base)]"></div>
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-[var(--bg-surface)] px-4 text-[var(--text-muted)] font-medium tracking-widest">O</span>
+                <span className="bg-[var(--bg-surface)] px-4 text-[var(--text-muted)] font-medium tracking-widest">
+                  O
+                </span>
               </div>
             </div>
 

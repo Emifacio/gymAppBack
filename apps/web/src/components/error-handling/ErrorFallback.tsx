@@ -7,9 +7,7 @@ interface ErrorFallbackProps {
   resetErrorBoundary?: () => void;
 }
 
-export const ErrorFallback: React.FC<ErrorFallbackProps> = ({ 
-  resetErrorBoundary 
-}) => {
+export const ErrorFallback: React.FC<ErrorFallbackProps> = ({ resetErrorBoundary }) => {
   const handleReload = () => {
     if (resetErrorBoundary) {
       resetErrorBoundary();
@@ -38,7 +36,8 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
             Algo no salió como esperábamos
           </h1>
           <p className="text-base text-gray-500 leading-relaxed">
-            Estamos trabajando para solucionarlo. Mientras tanto, puedes intentar recargar la página o volver al inicio.
+            Estamos trabajando para solucionarlo. Mientras tanto, puedes intentar recargar la página
+            o volver al inicio.
           </p>
         </div>
 
@@ -51,7 +50,7 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
             <RefreshCcw className="h-4 w-4 transition-transform group-hover:rotate-180 duration-500" />
             Reintentar
           </Button>
-          
+
           <Button
             variant="outline"
             onClick={handleGoHome}
@@ -65,7 +64,7 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
         {/* Technical context footer (subtle) */}
         <div className="pt-12">
           <p className="text-xs font-medium uppercase tracking-widest text-gray-400/60">
-            ATHLYT Production Resilience
+            atlhyt Production Resilience
           </p>
         </div>
       </div>
