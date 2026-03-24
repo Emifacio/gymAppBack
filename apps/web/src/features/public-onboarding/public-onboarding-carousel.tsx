@@ -47,10 +47,6 @@ export function PublicOnboardingCarousel({ onComplete }: PublicOnboardingCarouse
 
   const currentGradient = SLIDE_GRADIENTS[currentIndex] ?? SLIDE_GRADIENTS[0];
 
-  if (!currentSlide) {
-    return null;
-  }
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "ArrowRight" && !isLastSlide) {
@@ -69,6 +65,10 @@ export function PublicOnboardingCarousel({ onComplete }: PublicOnboardingCarouse
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isFirstSlide, isLastSlide]);
+
+  if (!currentSlide) {
+    return null;
+  }
 
   const handleNext = () => {
     if (isLastSlide) {

@@ -5,10 +5,11 @@ import type {
 } from "./onboarding.types";
 import { completeTour } from "./onboarding.store";
 import type { Driver } from "driver.js";
+import type * as DriverJs from "driver.js";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_POLL_INTERVAL_MS = 100;
-let driverAssetsPromise: Promise<typeof import("driver.js")> | null = null;
+let driverAssetsPromise: Promise<typeof DriverJs> | null = null;
 
 async function loadDriverAssets() {
   if (!driverAssetsPromise) {

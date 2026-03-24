@@ -17,9 +17,9 @@ export function PublicEntryGate() {
   const navigate = useNavigate();
   const { isHydrated, session } = useAuth();
   const { complete, isCompleted } = usePublicOnboarding();
+  const routeState = location.state as { from?: { pathname?: string } } | null;
 
-  const redirectTo =
-    (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/";
+  const redirectTo = routeState?.from?.pathname ?? "/";
 
   if (!isHydrated) {
     return <LoadingScreen label="Preparando tu acceso..." />;
@@ -37,7 +37,7 @@ export function PublicEntryGate() {
             complete();
             void navigate("/login", {
               replace: true,
-              state: location.state
+              state: routeState
             });
           }}
         />
