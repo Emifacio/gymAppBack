@@ -23,6 +23,13 @@ import {
 import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/Field";
 import { useMembers } from "@/hooks/use-workouts";
 import { Input } from "@/components/ui/Input";
+import {
+  DISPLAY_DATE_PLACEHOLDER,
+  formatDateToDisplay,
+  formatDisplayDateInput,
+  isValidDisplayDate,
+  parseDisplayDateToIso
+} from "@/lib/display-date-input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 
@@ -36,7 +43,13 @@ const updateWorkoutSchema = z.object({
   name: z.string().trim().min(1, "Nombre obligatorio"),
   location: z.string().trim().min(1, "Ubicación obligatoria"),
   instructor_id: z.string().optional().or(z.literal("")),
-  scheduled_at: z.string().min(1, "Fecha/hora obligatoria"),
+  scheduled_date: z
+    .string()
+    .min(1, "Fecha obligatoria")
+    .refine((value) => isValidDisplayDate(value), {
+      message: `Ingresa una fecha valida con formato ${DISPLAY_DATE_PLACEHOLDER}.`
+    }),
+  scheduled_time: z.string().regex(/^\d{2}:\d{2}$/, "Hora obligatoria"),
   description: z.string().optional(),
   duration_minutes: z.number().int().min(15, "La duración mínima es 15 minutos"),
   capacity: z.number().int().min(1, "Capacidad mínima es 1"),
@@ -103,6 +116,8 @@ export function AdminPanel({
   const {
     register: registerUpdate,
     handleSubmit: handleSubmitUpdate,
+    clearErrors: clearUpdateErrors,
+    trigger: triggerUpdate,
     formState: { errors: updateErrors, isSubmitting: isUpdating }
   } = useForm<UpdateWorkoutFormData>({
     resolver: zodResolver(updateWorkoutSchema),
@@ -110,7 +125,8 @@ export function AdminPanel({
       name: workout.name,
       location: workout.location,
       instructor_id: workout.instructor_id ?? "",
-      scheduled_at: workout.scheduled_at.slice(0, 16),
+      scheduled_date: formatDateToDisplay(workout.scheduled_at.slice(0, 10)),
+      scheduled_time: workout.scheduled_at.slice(11, 16),
       description: workout.description ?? "",
       duration_minutes: workout.duration_minutes,
       capacity: workout.capacity,
@@ -151,6 +167,9 @@ export function AdminPanel({
   function formatMemberLabel(member: Pick<Member, "full_name" | "email">) {
     return `${member.full_name} (${member.email})`;
   }
+
+  const scheduledDateField = registerUpdate("scheduled_date");
+  const scheduledTimeField = registerUpdate("scheduled_time");
 
   return (
     <Card as="section" className="xl:col-span-2">
@@ -314,13 +333,21 @@ export function AdminPanel({
           <CardContent className="mt-5">
             <form
               onSubmit={handleSubmitUpdate((values) => {
+                const scheduledDate = parseDisplayDateToIso(values.scheduled_date);
+
+                if (!scheduledDate) {
+                  return;
+                }
+
                 updateWorkoutMutation.mutate({
                   workoutId: workout.id,
                   payload: {
                     name: values.name,
                     location: values.location,
                     instructor_id: values.instructor_id || null,
-                    scheduled_at: new Date(values.scheduled_at).toISOString(),
+                    scheduled_at: new Date(
+                      `${scheduledDate}T${values.scheduled_time}`
+                    ).toISOString(),
                     description: values.description || null,
                     duration_minutes: values.duration_minutes,
                     capacity: values.capacity,
@@ -369,18 +396,49 @@ export function AdminPanel({
                 ) : null}
               </Field>
 
-              <Field>
-                <FieldLabel htmlFor="update-workout-scheduled-at">Fecha y hora</FieldLabel>
-                <Input
-                  id="update-workout-scheduled-at"
-                  type="datetime-local"
-                  error={Boolean(updateErrors.scheduled_at)}
-                  {...registerUpdate("scheduled_at")}
-                />
-                {updateErrors.scheduled_at ? (
-                  <FieldError>{updateErrors.scheduled_at.message}</FieldError>
-                ) : null}
-              </Field>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="update-workout-scheduled-date">Fecha</FieldLabel>
+                  <Input
+                    {...scheduledDateField}
+                    id="update-workout-scheduled-date"
+                    aria-invalid={updateErrors.scheduled_date ? "true" : "false"}
+                    error={Boolean(updateErrors.scheduled_date)}
+                    inputMode="numeric"
+                    maxLength={10}
+                    placeholder={DISPLAY_DATE_PLACEHOLDER}
+                    type="text"
+                    onBlur={(event) => {
+                      scheduledDateField.onBlur(event);
+                      void triggerUpdate("scheduled_date");
+                    }}
+                    onChange={(event) => {
+                      event.target.value = formatDisplayDateInput(event.target.value);
+                      scheduledDateField.onChange(event);
+                      if (updateErrors.scheduled_date) {
+                        clearUpdateErrors("scheduled_date");
+                      }
+                    }}
+                  />
+                  <FieldHint>Usa el formato {DISPLAY_DATE_PLACEHOLDER}.</FieldHint>
+                  {updateErrors.scheduled_date ? (
+                    <FieldError>{updateErrors.scheduled_date.message}</FieldError>
+                  ) : null}
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="update-workout-scheduled-time">Hora</FieldLabel>
+                  <Input
+                    {...scheduledTimeField}
+                    id="update-workout-scheduled-time"
+                    type="time"
+                    error={Boolean(updateErrors.scheduled_time)}
+                  />
+                  {updateErrors.scheduled_time ? (
+                    <FieldError>{updateErrors.scheduled_time.message}</FieldError>
+                  ) : null}
+                </Field>
+              </div>
 
               <Field>
                 <FieldLabel htmlFor="update-workout-description">Descripción</FieldLabel>
