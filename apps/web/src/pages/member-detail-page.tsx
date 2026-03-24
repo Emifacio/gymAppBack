@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -239,13 +239,7 @@ export function MemberDetailPage() {
   const subscription = subscriptionQuery.data;
   const canView =
     session && (canManageOperations(session.member) || session.member.id === memberId);
-  const [birthDateDisplay, setBirthDateDisplay] = useState("");
   const [birthDateError, setBirthDateError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setBirthDateDisplay(formatIsoDateToDisplay(member?.birth_date));
-    setBirthDateError(null);
-  }, [member?.id, member?.birth_date]);
 
   if (!canView) {
     return <Navigate to="/dashboard" replace />;
@@ -462,27 +456,32 @@ export function MemberDetailPage() {
                 <Field>
                   <FieldLabel htmlFor="member-detail-birth-date">Fecha de nacimiento</FieldLabel>
                   <Input
+                    defaultValue={formatIsoDateToDisplay(member.birth_date)}
                     id="member-detail-birth-date"
                     inputMode="numeric"
                     maxLength={10}
                     name="birth_date"
                     placeholder={DISPLAY_DATE_PLACEHOLDER}
                     type="text"
-                    value={birthDateDisplay}
-                    onBlur={() => {
-                      if (!birthDateDisplay) {
+                    onBlur={(event) => {
+                      const { value } = event.target;
+
+                      if (!value) {
                         setBirthDateError(null);
                         return;
                       }
 
-                      if (!isValidDisplayDate(birthDateDisplay)) {
+                      if (!isValidDisplayDate(value)) {
                         setBirthDateError(
                           `Ingresa una fecha valida con formato ${DISPLAY_DATE_PLACEHOLDER}.`
                         );
+                        return;
                       }
+
+                      setBirthDateError(null);
                     }}
                     onChange={(event) => {
-                      setBirthDateDisplay(formatDisplayDateInput(event.target.value));
+                      event.target.value = formatDisplayDateInput(event.target.value);
                       if (birthDateError) {
                         setBirthDateError(null);
                       }

@@ -177,7 +177,7 @@ export function WorkoutsPage() {
   });
 
   const createWorkout = useCreateWorkout();
-  const workouts: Workout[] = workoutsQuery.data ?? [];
+  const workouts = useMemo<Workout[]>(() => workoutsQuery.data ?? [], [workoutsQuery.data]);
   const instructors = instructorsQuery.data ?? [];
   const subscription = subscriptionQuery.data;
   const [isConcludedSectionOpen, setIsConcludedSectionOpen] = useState(false);

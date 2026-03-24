@@ -409,12 +409,12 @@ export function AdminPanel({
                     placeholder={DISPLAY_DATE_PLACEHOLDER}
                     type="text"
                     onBlur={(event) => {
-                      scheduledDateField.onBlur(event);
+                      void scheduledDateField.onBlur(event);
                       void triggerUpdate("scheduled_date");
                     }}
                     onChange={(event) => {
                       event.target.value = formatDisplayDateInput(event.target.value);
-                      scheduledDateField.onChange(event);
+                      void scheduledDateField.onChange(event);
                       if (updateErrors.scheduled_date) {
                         clearUpdateErrors("scheduled_date");
                       }
