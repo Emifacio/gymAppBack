@@ -1,6 +1,7 @@
 export type RootStackParamList = {
   Login: undefined;
   MainTabs: undefined;
+  Paywall: undefined;
   WorkoutDetail: { workoutId: string };
   Members: undefined;
   Register: undefined;
@@ -12,5 +13,3 @@ export type MainTabParamList = {
   Members: undefined;
   Settings: undefined;
 };
-
-

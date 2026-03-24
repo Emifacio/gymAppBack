@@ -44,6 +44,7 @@ class Member(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         nullable=True,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_premium: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     profile_metadata: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     auth_provider: Mapped[AuthProvider] = mapped_column(
         Enum(AuthProvider, name="auth_provider", values_callable=enum_values),

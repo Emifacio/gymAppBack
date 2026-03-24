@@ -214,6 +214,7 @@ class AuthService:
                 role=member.role,
                 membership_status=member.membership_status,
                 is_active=member.is_active,
+                is_premium=member.is_premium,
                 google_picture_url=member.google_picture_url,
                 profile_image_url=member.profile_image_url,
                 membership_plan=membership_plan,

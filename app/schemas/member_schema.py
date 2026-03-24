@@ -111,6 +111,7 @@ class MemberRead(BaseModel):
     role: MemberRole
     membership_status: MembershipStatus
     is_active: bool
+    is_premium: bool = False
     google_picture_url: str | None = None
     profile_image_url: str | None = None
     membership_plan: MembershipPlanRead | None = None

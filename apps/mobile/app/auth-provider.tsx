@@ -2,6 +2,7 @@ import type { AuthSession } from "@gym/api-client";
 import { createContext, useEffect, useState, type PropsWithChildren } from "react";
 
 import { sessionManager } from "./api-client";
+import { billingService } from "../services/billing.service";
 
 interface AuthContextValue {
   isHydrated: boolean;
@@ -27,6 +28,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     return unsubscribe;
   }, []);
+
+  useEffect(() => {
+    async function syncBillingIdentity(nextSession: AuthSession | null) {
+      try {
+        if (!nextSession?.member.id) {
+          await billingService.logout();
+          return;
+        }
+
+        await billingService.login(nextSession.member.id);
+      } catch {
+        // Keep auth stable even when billing is not configured locally.
+      }
+    }
+
+    void syncBillingIdentity(session);
+  }, [session]);
 
   return (
     <AuthContext.Provider

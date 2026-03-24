@@ -3,6 +3,8 @@ type ExpoEnv = {
   readonly EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: string;
   readonly EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: string;
   readonly EXPO_PUBLIC_API_URL: string;
+  readonly EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY: string;
+  readonly EXPO_PUBLIC_REVENUECAT_IOS_API_KEY: string;
 };
 
 const env = process.env as Readonly<Record<string, string | undefined>>;
@@ -31,4 +33,12 @@ export function getGoogleIosClientId(): string | undefined {
 
 export function getApiUrl(): string {
   return getEnv("EXPO_PUBLIC_API_URL");
+}
+
+export function getRevenueCatAndroidApiKey(): string {
+  return getEnv("EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY");
+}
+
+export function getRevenueCatIosApiKey(): string {
+  return getEnv("EXPO_PUBLIC_REVENUECAT_IOS_API_KEY");
 }

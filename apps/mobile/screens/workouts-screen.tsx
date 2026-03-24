@@ -5,12 +5,17 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { ScreenShell } from "../components/screen-shell";
 import { WorkoutCard } from "../components/workout-card";
+import { useAuth } from "../hooks/use-auth";
+import { useBilling } from "../hooks/useBilling";
 import { useWorkouts } from "../hooks/use-workouts";
 import type { RootStackParamList } from "../navigation/types";
 
 export function WorkoutsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { session } = useAuth();
+  const { isPremium } = useBilling();
   const workoutsQuery = useWorkouts({ limit: 20 });
+  const needsPremium = session?.member.role === "member" && !isPremium;
 
   useEffect(() => {
     const refresh = setInterval(() => {
@@ -32,18 +37,24 @@ export function WorkoutsScreen() {
         <Text style={styles.eyebrow}>Recurso compartido `/classes`</Text>
         <Text style={styles.title}>Clases</Text>
         <Text style={styles.copy}>
-          Esta sección muestra las sesiones de entrenamiento disponibles, obtenidas directamente de los endpoints reales del backend.
+          Esta sección muestra las sesiones de entrenamiento disponibles, obtenidas directamente de
+          los endpoints reales del backend.
         </Text>
       </View>
 
-
       {upcomingWorkouts.length === 0 ? (
-        <Text style={styles.noWorkoutsText}>No hay clases próximas. Revisa de nuevo en unos minutos.</Text>
+        <Text style={styles.noWorkoutsText}>
+          No hay clases próximas. Revisa de nuevo en unos minutos.
+        </Text>
       ) : (
         upcomingWorkouts.map((workout) => (
           <WorkoutCard
             key={workout.id}
             onPress={() => {
+              if (needsPremium) {
+                navigation.navigate("Paywall");
+                return;
+              }
               navigation.navigate("WorkoutDetail", { workoutId: workout.id });
             }}
             workout={workout}

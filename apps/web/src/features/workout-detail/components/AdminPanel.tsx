@@ -93,6 +93,12 @@ export function AdminPanel({
     role: null,
     membership_status: null
   });
+  const instructorsQuery = useMembers({
+    offset: 0,
+    limit: 500,
+    role: "instructor",
+    membership_status: null
+  });
 
   const {
     register: registerUpdate,
@@ -118,6 +124,10 @@ export function AdminPanel({
   const availableMembers = useMemo(
     () => (membersQuery.data ?? []).filter((member) => !assignedMemberIds.has(member.id)),
     [assignedMemberIds, membersQuery.data]
+  );
+  const instructors = useMemo(
+    () => (instructorsQuery.data ?? []).filter((member) => member.instructor_profile?.id),
+    [instructorsQuery.data]
   );
   const normalizedSearch = memberSearch.trim().toLocaleLowerCase();
   const matchingMembers = useMemo(() => {
@@ -343,8 +353,20 @@ export function AdminPanel({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="update-workout-instructor">ID del instructor</FieldLabel>
-                <Input id="update-workout-instructor" {...registerUpdate("instructor_id")} />
+                <FieldLabel htmlFor="update-workout-instructor">Instructor</FieldLabel>
+                <Select id="update-workout-instructor" {...registerUpdate("instructor_id")}>
+                  <option value="">
+                    {instructorsQuery.isLoading ? "Cargando instructores..." : "Sin asignar"}
+                  </option>
+                  {instructors.map((instructor) => (
+                    <option key={instructor.id} value={instructor.instructor_profile?.id ?? ""}>
+                      {instructor.full_name}
+                    </option>
+                  ))}
+                </Select>
+                {!instructorsQuery.isLoading && instructors.length === 0 ? (
+                  <FieldHint>No hay instructores disponibles para asignar.</FieldHint>
+                ) : null}
               </Field>
 
               <Field>

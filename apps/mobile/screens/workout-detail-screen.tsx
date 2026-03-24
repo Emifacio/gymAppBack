@@ -3,6 +3,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { ScreenShell } from "../components/screen-shell";
 import { useAuth } from "../hooks/use-auth";
+import { useBilling } from "../hooks/useBilling";
 import { useCreateBooking, useWorkout } from "../hooks/use-workouts";
 import { formatWorkoutSchedule } from "../app/format";
 import type { RootStackParamList } from "../navigation/types";
@@ -11,18 +12,22 @@ type WorkoutDetailScreenProps = NativeStackScreenProps<RootStackParamList, "Work
 
 export function WorkoutDetailScreen({ route, navigation }: WorkoutDetailScreenProps) {
   const { session } = useAuth();
+  const { isPremium } = useBilling();
   const workoutQuery = useWorkout(route.params.workoutId);
   const bookingMutation = useCreateBooking();
 
   const workout = workoutQuery.data;
   const isPast = workout ? new Date(workout.scheduled_at) < new Date() : false;
+  const needsPremium = session?.member.role === "member" && !isPremium;
 
   if (!workout) {
     return (
       <ScreenShell>
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>Cargando clase...</Text>
-          <Text style={styles.emptyCopy}>Estamos obteniendo los detalles de la sesión desde el backend.</Text>
+          <Text style={styles.emptyCopy}>
+            Estamos obteniendo los detalles de la sesión desde el backend.
+          </Text>
         </View>
       </ScreenShell>
     );
@@ -31,7 +36,9 @@ export function WorkoutDetailScreen({ route, navigation }: WorkoutDetailScreenPr
   return (
     <ScreenShell>
       <View style={styles.heroCard}>
-        <Text style={styles.status}>{workout.status === 'scheduled' ? 'PROGRAMADA' : workout.status.toUpperCase()}</Text>
+        <Text style={styles.status}>
+          {workout.status === "scheduled" ? "PROGRAMADA" : workout.status.toUpperCase()}
+        </Text>
         <Text style={styles.title}>{workout.name}</Text>
         {isPast ? (
           <View style={styles.pastBadge}>
@@ -62,16 +69,29 @@ export function WorkoutDetailScreen({ route, navigation }: WorkoutDetailScreenPr
         <Text style={styles.infoValue}>{workout.duration_minutes} minutos</Text>
       </View>
 
+      {needsPremium ? (
+        <View style={styles.lockedBox}>
+          <Text style={styles.lockedTitle}>Premium required</Text>
+          <Text style={styles.lockedCopy}>
+            Bookings are gated behind ATHLYT Premium. Upgrade once to unlock class reservations.
+          </Text>
+        </View>
+      ) : null}
+
       <Pressable
         onPress={() => {
+          if (needsPremium) {
+            navigation.navigate("Paywall");
+            return;
+          }
           if (isPast) {
             Alert.alert(
               "Clase finalizada",
               "El tiempo de inscripción ha terminado. Por favor, selecciona otra sesión disponible.",
               [
                 { text: "Cerrar", style: "cancel" },
-                { 
-                  text: "Ver clases", 
+                {
+                  text: "Ver clases",
                   onPress: () => {
                     Alert.alert("Redirigiendo a clases...");
                     navigation.goBack();
@@ -89,10 +109,15 @@ export function WorkoutDetailScreen({ route, navigation }: WorkoutDetailScreenPr
         style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
       >
         <Text style={styles.primaryButtonText}>
-          {bookingMutation.isPending ? "Reservando..." : isPast ? "Clase concluida" : "Reservar clase"}
+          {bookingMutation.isPending
+            ? "Reservando..."
+            : needsPremium
+              ? "Unlock Premium"
+              : isPast
+                ? "Clase concluida"
+                : "Reservar clase"}
         </Text>
       </Pressable>
-
 
       {bookingMutation.data ? (
         <View style={styles.successBox}>
@@ -168,6 +193,22 @@ const styles = StyleSheet.create({
   },
   successText: {
     color: "#17B89C",
+    fontSize: 14,
+    lineHeight: 22
+  },
+  lockedBox: {
+    backgroundColor: "rgba(255,122,89,0.12)",
+    borderRadius: 20,
+    gap: 6,
+    padding: 18
+  },
+  lockedTitle: {
+    color: "#FF7A59",
+    fontSize: 16,
+    fontWeight: "700"
+  },
+  lockedCopy: {
+    color: "#A34E35",
     fontSize: 14,
     lineHeight: 22
   },

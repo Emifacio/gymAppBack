@@ -5,6 +5,7 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.exceptions import ForbiddenError, UnauthorizedError
 from app.core.security import bearer_scheme, decode_access_token, extract_bearer_token
 from app.domain.enums import MemberRole
@@ -34,6 +35,7 @@ from app.services.email_service import EmailService
 from app.services.integration_service import IntegrationService
 from app.services.member_service import MemberService
 from app.services.plan_service import PlanService
+from app.services.revenuecat_service import RevenueCatService
 from app.services.subscription_service import SubscriptionService
 
 
@@ -109,6 +111,18 @@ def enforce_member_access(current_user: Member, target_member_id: UUID) -> None:
 
 def get_auth_service(session: AsyncSession = Depends(get_db_session)) -> AuthService:
     return AuthService(session=session, member_repository=MemberRepository(session))
+
+
+def get_revenuecat_service(
+    session: AsyncSession = Depends(get_db_session),
+    cache: RedisCache = Depends(get_cache),
+) -> RevenueCatService:
+    return RevenueCatService(
+        session=session,
+        member_repository=MemberRepository(session),
+        cache=cache,
+        settings=get_settings(),
+    )
 
 
 def get_member_service(

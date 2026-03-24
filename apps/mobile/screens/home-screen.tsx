@@ -7,12 +7,14 @@ import { ScreenShell } from "../components/screen-shell";
 import { StatChip } from "../components/stat-chip";
 import { WorkoutCard } from "../components/workout-card";
 import { useAuth } from "../hooks/use-auth";
+import { useBilling } from "../hooks/useBilling";
 import { useMemberBookings, useWorkouts } from "../hooks/use-workouts";
 import type { RootStackParamList } from "../navigation/types";
 
 export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { logout, session } = useAuth();
+  const { isPremium } = useBilling();
   const workoutsQuery = useWorkouts({ limit: 4 });
   const bookingsQuery = useMemberBookings(session!.member.id);
 
@@ -20,6 +22,7 @@ export function HomeScreen() {
   const bookings = bookingsQuery.data?.bookings ?? [];
   const waitlist = bookingsQuery.data?.waitlist ?? [];
   const nextWorkout = workouts[0];
+  const needsPremium = session?.member.role === "member" && !isPremium;
 
   return (
     <ScreenShell>
@@ -27,9 +30,10 @@ export function HomeScreen() {
         <Text style={styles.eyebrow}>Plataforma Móvil</Text>
         <Text style={styles.heroTitle}>Hola {session?.member.full_name.split(" ")[0]}</Text>
         <Text style={styles.heroCopy}>
-          Esta pantalla utiliza el mismo paquete de API compartido que el panel web, con navegación nativa y almacenamiento local.
+          Esta pantalla utiliza el mismo paquete de API compartido que el panel web, con navegación
+          nativa y almacenamiento local.
         </Text>
-        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', marginTop: 8 }}>
+        <View style={{ flexDirection: "row", gap: 8, alignItems: "center", marginTop: 8 }}>
           <Pressable
             onPress={() => {
               void logout();
@@ -38,8 +42,13 @@ export function HomeScreen() {
           >
             <Text style={styles.secondaryButtonText}>Cerrar sesión</Text>
           </Pressable>
-          {session?.member.role !== 'member' && (
-            <View style={[styles.roleBadge, session?.member.role === 'admin' ? styles.adminBadge : styles.instructorBadge]}>
+          {session?.member.role !== "member" && (
+            <View
+              style={[
+                styles.roleBadge,
+                session?.member.role === "admin" ? styles.adminBadge : styles.instructorBadge
+              ]}
+            >
               <Text style={styles.roleText}>{session?.member.role?.toUpperCase()}</Text>
             </View>
           )}
@@ -47,17 +56,23 @@ export function HomeScreen() {
       </View>
 
       <View style={styles.statsRow}>
-        {session?.member.role === 'admin' ? (
+        {session?.member.role === "admin" ? (
           <View style={styles.adminWelcome}>
             <Ionicons name="shield-checkmark" size={48} color="rgba(255,255,255,0.2)" />
             <Text style={styles.adminWelcomeTitle}>Panel de Control</Text>
-            <Text style={styles.adminWelcomeText}>Gestiona miembros, clases y asistencia desde las pestañas inferiores.</Text>
-            
+            <Text style={styles.adminWelcomeText}>
+              Gestiona miembros, clases y asistencia desde las pestañas inferiores.
+            </Text>
+
             <Pressable
               onPress={() => {
                 navigation.navigate("Members");
               }}
-              style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed, { marginTop: 8 }]}
+              style={({ pressed }) => [
+                styles.primaryButton,
+                pressed && styles.buttonPressed,
+                { marginTop: 8 }
+              ]}
             >
               <Text style={styles.primaryButtonText}>Gestionar Miembros</Text>
             </Pressable>
@@ -67,14 +82,27 @@ export function HomeScreen() {
             <StatChip label="Clases" tone="accent" value={String(workouts.length)} />
             <StatChip label="Reservas" tone="highlight" value={String(bookings.length)} />
             <StatChip label="En Espera" value={String(waitlist.length)} />
+            {needsPremium ? (
+              <Pressable
+                onPress={() => {
+                  navigation.navigate("Paywall");
+                }}
+                style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+              >
+                <Text style={styles.primaryButtonText}>Upgrade to Premium</Text>
+              </Pressable>
+            ) : null}
           </>
         )}
       </View>
 
-
-      {(session?.member.role !== 'admin' && nextWorkout) ? (
+      {session?.member.role !== "admin" && nextWorkout ? (
         <WorkoutCard
           onPress={() => {
+            if (needsPremium) {
+              navigation.navigate("Paywall");
+              return;
+            }
             navigation.navigate("WorkoutDetail", { workoutId: nextWorkout.id });
           }}
           workout={nextWorkout}
@@ -131,20 +159,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderWidth: 1,
+    borderWidth: 1
   },
   adminBadge: {
     backgroundColor: "#F3E8FF",
-    borderColor: "#D8B4FE",
+    borderColor: "#D8B4FE"
   },
   instructorBadge: {
     backgroundColor: "#DBEAFE",
-    borderColor: "#93C5FD",
+    borderColor: "#93C5FD"
   },
   roleText: {
     fontSize: 10,
     fontWeight: "800",
-    color: "#4B5563",
+    color: "#4B5563"
   },
   adminWelcome: {
     padding: 24,

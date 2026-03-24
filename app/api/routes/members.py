@@ -19,7 +19,6 @@ from app.schemas.booking_schema import MemberBookingsResponse
 from app.schemas.member_schema import (
     AvatarUploadResponse,
     MemberCreate,
-    MemberListRead,
     MemberRead,
     MemberUpdate,
 )
@@ -50,7 +49,7 @@ async def create_member(payload: MemberCreate, service: MemberService = Depends(
 
 @router.get(
     "",
-    response_model=list[MemberListRead],
+    response_model=list[MemberRead],
     dependencies=[Depends(require_roles(MemberRole.ADMIN, MemberRole.INSTRUCTOR))],
 )
 async def list_members(
@@ -59,7 +58,7 @@ async def list_members(
     offset: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=500),
     service: MemberService = Depends(get_member_service),
-) -> list[MemberListRead]:
+) -> list[MemberRead]:
     return await service.list_members(
         role=role,
         membership_status=membership_status,

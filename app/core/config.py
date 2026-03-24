@@ -154,6 +154,12 @@ class Settings(BaseSettings):
     google_client_id: str | None = None
     google_client_ids: list[str] | None = None
     google_client_secret: str | None = None
+    revenuecat_api_base_url: str = "https://api.revenuecat.com"
+    revenuecat_secret_api_key: str | None = None
+    revenuecat_webhook_authorization: str | None = None
+    revenuecat_premium_entitlement_id: str = "premium"
+    revenuecat_premium_product_id: str = "athlyt_premium_monthly"
+    revenuecat_timeout_seconds: float = 10.0
     jwt_algorithm: str = "HS256"
     smtp_host: str | None = None
     smtp_port: int = 587

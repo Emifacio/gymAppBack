@@ -1,11 +1,18 @@
-import { StyleSheet, Text, View, Pressable } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { ScreenShell } from "../components/screen-shell";
 import { useAuth } from "../hooks/use-auth";
+import { getBillingErrorMessage, useBilling } from "../hooks/useBilling";
 import { Ionicons } from "@expo/vector-icons";
+import type { RootStackParamList } from "../navigation/types";
 
 export function SettingsScreen() {
   const { logout, session } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isPremium, loading, restore } = useBilling();
+  const showPremiumCard = session?.member.role === "member";
 
   return (
     <ScreenShell>
@@ -28,7 +35,7 @@ export function SettingsScreen() {
           </View>
           <View style={styles.divider} />
           <View style={styles.row}>
-            <View style={[styles.iconContainer, { backgroundColor: '#F3E8FF' }]}>
+            <View style={[styles.iconContainer, { backgroundColor: "#F3E8FF" }]}>
               <Ionicons name="shield-outline" size={20} color="#7C3AED" />
             </View>
             <View style={styles.textContainer}>
@@ -38,6 +45,56 @@ export function SettingsScreen() {
           </View>
         </View>
       </View>
+
+      {showPremiumCard ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Premium</Text>
+          <View style={styles.card}>
+            <View style={styles.row}>
+              <View style={[styles.iconContainer, styles.premiumIconContainer]}>
+                <Ionicons name="diamond-outline" size={20} color="#FF7A59" />
+              </View>
+              <View style={styles.textContainer}>
+                <Text style={styles.label}>{isPremium ? "Premium active" : "Free member"}</Text>
+                <Text style={styles.subLabel}>
+                  {isPremium
+                    ? "Your premium entitlement is active."
+                    : "Upgrade to unlock premium booking."}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.actionsRow}>
+              {!isPremium ? (
+                <Pressable
+                  onPress={() => {
+                    navigation.navigate("Paywall");
+                  }}
+                  style={({ pressed }) => [styles.primaryAction, pressed && styles.buttonPressed]}
+                >
+                  <Text style={styles.primaryActionText}>Upgrade to Premium</Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                onPress={() => {
+                  void restore()
+                    .then(() => {
+                      Alert.alert("Restore complete", "Your purchases are synced.");
+                    })
+                    .catch((error) => {
+                      Alert.alert("Restore unavailable", getBillingErrorMessage(error));
+                    });
+                }}
+                style={({ pressed }) => [styles.secondaryAction, pressed && styles.buttonPressed]}
+              >
+                <Text style={styles.secondaryActionText}>
+                  {loading ? "Syncing..." : "Restore purchases"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      ) : null}
 
       <View style={styles.section}>
         <Pressable
@@ -138,5 +195,35 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.8
+  },
+  premiumIconContainer: {
+    backgroundColor: "#FFF2EC"
+  },
+  actionsRow: {
+    gap: 10,
+    padding: 16
+  },
+  primaryAction: {
+    alignItems: "center",
+    backgroundColor: "#FF7A59",
+    borderRadius: 999,
+    paddingVertical: 14
+  },
+  primaryActionText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "700"
+  },
+  secondaryAction: {
+    alignItems: "center",
+    borderColor: "rgba(19,34,56,0.1)",
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingVertical: 14
+  },
+  secondaryActionText: {
+    color: "#132238",
+    fontSize: 15,
+    fontWeight: "700"
   }
 });

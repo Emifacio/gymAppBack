@@ -4,1627 +4,1629 @@
  */
 
 export interface paths {
-    "/auth/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Register */
-        post: operations["register_auth_register_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/auth/register": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Login */
-        post: operations["login_auth_login_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Register */
+    post: operations["register_auth_register_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/login": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/auth/google-login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Google login */
-        post: operations["google_login_auth_google_login_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Login */
+    post: operations["login_auth_login_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/google-login": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Members */
-        get: operations["list_members_members_get"];
-        put?: never;
-        /** Create Member */
-        post: operations["create_member_members_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Google login */
+    post: operations["google_login_auth_google_login_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/members": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/members/{member_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Member */
-        get: operations["get_member_members__member_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** Update Member */
-        patch: operations["update_member_members__member_id__patch"];
-        trace?: never;
+    /** List Members */
+    get: operations["list_members_members_get"];
+    put?: never;
+    /** Create Member */
+    post: operations["create_member_members_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/members/{member_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/members/{member_id}/bookings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Member Bookings */
-        get: operations["get_member_bookings_members__member_id__bookings_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get Member */
+    get: operations["get_member_members__member_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /** Update Member */
+    patch: operations["update_member_members__member_id__patch"];
+    trace?: never;
+  };
+  "/members/{member_id}/bookings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/members/{member_id}/activities": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Member Activities */
-        get: operations["get_member_activities_members__member_id__activities_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get Member Bookings */
+    get: operations["get_member_bookings_members__member_id__bookings_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/members/{member_id}/activities": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/classes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Classes */
-        get: operations["list_classes_classes_get"];
-        put?: never;
-        /** Create Class */
-        post: operations["create_class_classes_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get Member Activities */
+    get: operations["get_member_activities_members__member_id__activities_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/classes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/classes/{class_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Class */
-        get: operations["get_class_classes__class_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete Class */
-        delete: operations["delete_class_classes__class_id__delete"];
-        options?: never;
-        head?: never;
-        /** Update Class */
-        patch: operations["update_class_classes__class_id__patch"];
-        trace?: never;
+    /** List Classes */
+    get: operations["list_classes_classes_get"];
+    put?: never;
+    /** Create Class */
+    post: operations["create_class_classes_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/classes/{class_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/bookings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Create Booking */
-        post: operations["create_booking_bookings_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get Class */
+    get: operations["get_class_classes__class_id__get"];
+    put?: never;
+    post?: never;
+    /** Delete Class */
+    delete: operations["delete_class_classes__class_id__delete"];
+    options?: never;
+    head?: never;
+    /** Update Class */
+    patch: operations["update_class_classes__class_id__patch"];
+    trace?: never;
+  };
+  "/bookings": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/bookings/{booking_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Cancel Booking */
-        delete: operations["cancel_booking_bookings__booking_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Create Booking */
+    post: operations["create_booking_bookings_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/bookings/{booking_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/attendance": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Mark Attendance */
-        post: operations["mark_attendance_attendance_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    /** Cancel Booking */
+    delete: operations["cancel_booking_bookings__booking_id__delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/attendance": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/attendance/class/{class_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Class Attendance */
-        get: operations["get_class_attendance_attendance_class__class_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Mark Attendance */
+    post: operations["mark_attendance_attendance_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/attendance/class/{class_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/attendance/member/{member_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Member Attendance */
-        get: operations["get_member_attendance_attendance_member__member_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get Class Attendance */
+    get: operations["get_class_attendance_attendance_class__class_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/attendance/member/{member_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/integrations/strava/connect": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Connect Strava */
-        post: operations["connect_strava_integrations_strava_connect_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get Member Attendance */
+    get: operations["get_member_attendance_attendance_member__member_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/integrations/strava/connect": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/activities/sync": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Enqueue Activity Sync */
-        post: operations["enqueue_activity_sync_activities_sync_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Connect Strava */
+    post: operations["connect_strava_integrations_strava_connect_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/activities/sync": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Healthcheck */
-        get: operations["healthcheck_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Enqueue Activity Sync */
+    post: operations["enqueue_activity_sync_activities_sync_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    /** Healthcheck */
+    get: operations["healthcheck_health_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        /** ActivityRead */
-        ActivityRead: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Member Id
-             * Format: uuid
-             */
-            member_id: string;
-            /** Integration Account Id */
-            integration_account_id?: string | null;
-            provider: components["schemas"]["IntegrationProvider"];
-            /** External Id */
-            external_id: string;
-            /** Name */
-            name: string;
-            /** Activity Type */
-            activity_type: string;
-            /** Distance Meters */
-            distance_meters?: number | null;
-            /** Moving Time Seconds */
-            moving_time_seconds?: number | null;
-            /** Started At */
-            started_at?: string | null;
-            /** Payload */
-            payload: {
-                [key: string]: unknown;
-            };
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /** ActivitySyncRequest */
-        ActivitySyncRequest: {
-            /** Member Id */
-            member_id?: string | null;
-        };
-        /** AttendanceCreate */
-        AttendanceCreate: {
-            /**
-             * Member Id
-             * Format: uuid
-             */
-            member_id: string;
-            /**
-             * Class Id
-             * Format: uuid
-             */
-            class_id: string;
-            status: components["schemas"]["AttendanceStatus"];
-            /** Notes */
-            notes?: string | null;
-        };
-        /** AttendanceRead */
-        AttendanceRead: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Member Id
-             * Format: uuid
-             */
-            member_id: string;
-            /**
-             * Class Id
-             * Format: uuid
-             */
-            class_id: string;
-            /** Marked By Instructor Id */
-            marked_by_instructor_id?: string | null;
-            status: components["schemas"]["AttendanceStatus"];
-            /** Notes */
-            notes?: string | null;
-            /** Mark Source */
-            mark_source: string;
-            /**
-             * Marked At
-             * Format: date-time
-             */
-            marked_at: string;
-        };
-        /**
-         * AttendanceStatus
-         * @enum {string}
-         */
-        AttendanceStatus: "present" | "absent" | "late";
-        /** BookingActionResponse */
-        BookingActionResponse: {
-            /** State */
-            state: string;
-            /** Message */
-            message: string;
-            booking?: components["schemas"]["BookingRead"] | null;
-            waitlist_entry?: components["schemas"]["WaitlistRead"] | null;
-        };
-        /** BookingCancellationResponse */
-        BookingCancellationResponse: {
-            /** Status */
-            status: "cancelled";
-            /** Credit Restored */
-            credit_restored: boolean;
-            promoted_booking?: components["schemas"]["BookingRead"] | null;
-        };
-        /** BookingCreate */
-        BookingCreate: {
-            /**
-             * Class Id
-             * Format: uuid
-             */
-            class_id: string;
-            /** Member Id */
-            member_id?: string | null;
-        };
-        /** BookingRead */
-        BookingRead: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Member Id
-             * Format: uuid
-             */
-            member_id: string;
-            /**
-             * Class Id
-             * Format: uuid
-             */
-            class_id: string;
-            status: components["schemas"]["BookingStatus"];
-            /**
-             * Booked At
-             * Format: date-time
-             */
-            booked_at: string;
-            /** Cancelled At */
-            cancelled_at?: string | null;
-            gym_class?: components["schemas"]["ClassRead"] | null;
-        };
-        /**
-         * BookingStatus
-         * @enum {string}
-         */
-        BookingStatus: "confirmed" | "waitlist" | "cancelled" | "attended" | "no_show";
-        /** ClassCreate */
-        ClassCreate: {
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Instructor Id */
-            instructor_id?: string | null;
-            /**
-             * Scheduled At
-             * Format: date-time
-             */
-            scheduled_at?: string | null;
-            /**
-             * Dates - bulk creation
-             * Format: date-time
-             */
-            dates?: string[] | null;
-            /**
-             * Duration Minutes
-             * @default 60
-             */
-            duration_minutes: number;
-            /** Capacity */
-            capacity: number;
-            /** Location */
-            location: string;
-            /** @default scheduled */
-            status?: components["schemas"]["ClassStatus"];
-        };
-        /** ClassRead */
-        ClassRead: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Instructor Id */
-            instructor_id?: string | null;
-            instructor?: components["schemas"]["InstructorSummary"] | null;
-            /**
-             * Scheduled At
-             * Format: date-time
-             */
-            scheduled_at: string;
-            /** Duration Minutes */
-            duration_minutes: number;
-            /** Capacity */
-            capacity: number;
-            /** Location */
-            location: string;
-            status: components["schemas"]["ClassStatus"];
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /**
-         * ClassStatus
-         * @enum {string}
-         */
-        ClassStatus: "scheduled" | "cancelled" | "completed";
-        /** ClassUpdate */
-        ClassUpdate: {
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Instructor Id */
-            instructor_id?: string | null;
-            /** Scheduled At */
-            scheduled_at?: string | null;
-            /** Duration Minutes */
-            duration_minutes?: number | null;
-            /** Capacity */
-            capacity?: number | null;
-            /** Location */
-            location?: string | null;
-            status?: components["schemas"]["ClassStatus"] | null;
-        };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
-        /** InstructorProfileRead */
-        InstructorProfileRead: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Bio */
-            bio?: string | null;
-            /** Specialties */
-            specialties?: string | null;
-            /** Full Name */
-            full_name?: string | null;
-        };
-        /** InstructorSummary */
-        InstructorSummary: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Member Id
-             * Format: uuid
-             */
-            member_id: string;
-            /** Bio */
-            bio?: string | null;
-            /** Specialties */
-            specialties?: string | null;
-            /** Full Name */
-            full_name?: string | null;
-        };
-        /** IntegrationAccountRead */
-        IntegrationAccountRead: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Member Id
-             * Format: uuid
-             */
-            member_id: string;
-            provider: components["schemas"]["IntegrationProvider"];
-            /** External Account Id */
-            external_account_id?: string | null;
-            /** Token Expires At */
-            token_expires_at?: string | null;
-            status: components["schemas"]["IntegrationStatus"];
-            /** Provider Metadata */
-            provider_metadata: {
-                [key: string]: unknown;
-            };
-            /** Last Synced At */
-            last_synced_at?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /**
-         * IntegrationProvider
-         * @enum {string}
-         */
-        IntegrationProvider: "strava";
-        /**
-         * IntegrationStatus
-         * @enum {string}
-         */
-        IntegrationStatus: "connected" | "expired" | "revoked";
-        /** LoginRequest */
-        LoginRequest: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Password */
-            password: string;
-        };
-        /** GoogleLoginRequest */
-        GoogleLoginRequest: {
-            /**
-             * Id Token
-             */
-            id_token: string;
-        };
-        /** MemberBookingsResponse */
-        MemberBookingsResponse: {
-            /** Bookings */
-            bookings: components["schemas"]["BookingRead"][];
-            /** Waitlist */
-            waitlist: components["schemas"]["WaitlistRead"][];
-        };
-        /** MemberCreate */
-        MemberCreate: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Full Name */
-            full_name: string;
-            /** Phone */
-            phone?: string | null;
-            /** Birth Date */
-            birth_date?: string | null;
-            /** Emergency Contact */
-            emergency_contact?: string | null;
-            /** Notes */
-            notes?: string | null;
-            /** Membership Plan Id */
-            membership_plan_id?: string | null;
-            /** Password */
-            password: string;
-            /** @default member */
-            role: components["schemas"]["MemberRole"];
-            /** @default active */
-            membership_status: components["schemas"]["MembershipStatus"];
-            /**
-             * Is Active
-             * @default true
-             */
-            is_active: boolean;
-            /** Instructor Bio */
-            instructor_bio?: string | null;
-            /** Instructor Specialties */
-            instructor_specialties?: string | null;
-        };
-        /** MemberRead */
-        MemberRead: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Full Name */
-            full_name: string;
-            /** Phone */
-            phone?: string | null;
-            /** Birth Date */
-            birth_date?: string | null;
-            /** Emergency Contact */
-            emergency_contact?: string | null;
-            /** Notes */
-            notes?: string | null;
-            role: components["schemas"]["MemberRole"];
-            membership_status: components["schemas"]["MembershipStatus"];
-            /** Is Active */
-            is_active: boolean;
-            /** Google Picture Url */
-            google_picture_url?: string | null;
-            /** Profile Image Url */
-            profile_image_url?: string | null;
-            active_subscription?: components["schemas"]["MemberSubscriptionRead"] | null;
-            membership_plan?: components["schemas"]["MembershipPlanRead"] | null;
-            instructor_profile?: components["schemas"]["InstructorProfileRead"] | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /**
-         * MemberRole
-         * @enum {string}
-         */
-        MemberRole: "member" | "instructor" | "admin";
-        /** MemberSubscriptionRead */
-        MemberSubscriptionRead: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Member Id
-             * Format: uuid
-             */
-            member_id: string;
-            /**
-             * Plan Id
-             * Format: uuid
-             */
-            plan_id: string;
-            /** Active Credits */
-            active_credits: number;
-            /**
-             * Period Start
-             * Format: date-time
-             */
-            period_start: string;
-            /**
-             * Period End
-             * Format: date-time
-             */
-            period_end: string;
-            status: "active" | "expired" | "cancelled";
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            plan: components["schemas"]["MembershipPlanRead"];
-        };
-        /** MemberUpdate */
-        MemberUpdate: {
-            /** Full Name */
-            full_name?: string | null;
-            /** Phone */
-            phone?: string | null;
-            /** Birth Date */
-            birth_date?: string | null;
-            /** Emergency Contact */
-            emergency_contact?: string | null;
-            /** Notes */
-            notes?: string | null;
-            /** Membership Plan Id */
-            membership_plan_id?: string | null;
-            membership_status?: components["schemas"]["MembershipStatus"] | null;
-            role?: components["schemas"]["MemberRole"] | null;
-            /** Is Active */
-            is_active?: boolean | null;
-            /** Password */
-            password?: string | null;
-            /** Instructor Bio */
-            instructor_bio?: string | null;
-            /** Instructor Specialties */
-            instructor_specialties?: string | null;
-            /** Profile Image Url */
-            profile_image_url?: string | null;
-        };
-        /** MembershipPlanRead */
-        MembershipPlanRead: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
-            /** Price */
-            price: string;
-            /** Duration Days */
-            duration_days: number;
-            /** Is Active */
-            is_active: boolean;
-        };
-        /**
-         * MembershipStatus
-         * @enum {string}
-         */
-        MembershipStatus: "active" | "inactive" | "suspended" | "cancelled";
-        /** RegisterRequest */
-        RegisterRequest: {
-            /**
-             * Email
-             * Format: email
-             */
-            email: string;
-            /** Full Name */
-            full_name: string;
-            /** Password */
-            password: string;
-            /** Phone */
-            phone?: string | null;
-        };
-        /** StravaConnectRequest */
-        StravaConnectRequest: {
-            /** Access Token */
-            access_token: string;
-            /** Refresh Token */
-            refresh_token?: string | null;
-            /** Token Expires At */
-            token_expires_at?: string | null;
-            /** External Account Id */
-            external_account_id?: string | null;
-        };
-        /** TaskEnqueueResponse */
-        TaskEnqueueResponse: {
-            /** Task Id */
-            task_id: string;
-            /** Status */
-            status: string;
-        };
-        /** TokenResponse */
-        TokenResponse: {
-            /** Access Token */
-            access_token: string;
-            /**
-             * Token Type
-             * @default bearer
-             */
-            token_type: string;
-            member: components["schemas"]["MemberRead"];
-        };
-        /** ValidationError */
-        ValidationError: {
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-        };
-        /** WaitlistRead */
-        WaitlistRead: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /**
-             * Member Id
-             * Format: uuid
-             */
-            member_id: string;
-            /**
-             * Class Id
-             * Format: uuid
-             */
-            class_id: string;
-            /** Position */
-            position: number;
-            status: components["schemas"]["WaitlistStatus"];
-            /**
-             * Joined At
-             * Format: date-time
-             */
-            joined_at: string;
-            /** Promoted At */
-            promoted_at?: string | null;
-            /** Cancelled At */
-            cancelled_at?: string | null;
-            gym_class?: components["schemas"]["ClassRead"] | null;
-        };
-        /**
-         * WaitlistStatus
-         * @enum {string}
-         */
-        WaitlistStatus: "waiting" | "promoted" | "cancelled";
+  schemas: {
+    /** ActivityRead */
+    ActivityRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Member Id
+       * Format: uuid
+       */
+      member_id: string;
+      /** Integration Account Id */
+      integration_account_id?: string | null;
+      provider: components["schemas"]["IntegrationProvider"];
+      /** External Id */
+      external_id: string;
+      /** Name */
+      name: string;
+      /** Activity Type */
+      activity_type: string;
+      /** Distance Meters */
+      distance_meters?: number | null;
+      /** Moving Time Seconds */
+      moving_time_seconds?: number | null;
+      /** Started At */
+      started_at?: string | null;
+      /** Payload */
+      payload: {
+        [key: string]: unknown;
+      };
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    /** ActivitySyncRequest */
+    ActivitySyncRequest: {
+      /** Member Id */
+      member_id?: string | null;
+    };
+    /** AttendanceCreate */
+    AttendanceCreate: {
+      /**
+       * Member Id
+       * Format: uuid
+       */
+      member_id: string;
+      /**
+       * Class Id
+       * Format: uuid
+       */
+      class_id: string;
+      status: components["schemas"]["AttendanceStatus"];
+      /** Notes */
+      notes?: string | null;
+    };
+    /** AttendanceRead */
+    AttendanceRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Member Id
+       * Format: uuid
+       */
+      member_id: string;
+      /**
+       * Class Id
+       * Format: uuid
+       */
+      class_id: string;
+      /** Marked By Instructor Id */
+      marked_by_instructor_id?: string | null;
+      status: components["schemas"]["AttendanceStatus"];
+      /** Notes */
+      notes?: string | null;
+      /** Mark Source */
+      mark_source: string;
+      /**
+       * Marked At
+       * Format: date-time
+       */
+      marked_at: string;
+    };
+    /**
+     * AttendanceStatus
+     * @enum {string}
+     */
+    AttendanceStatus: "present" | "absent" | "late";
+    /** BookingActionResponse */
+    BookingActionResponse: {
+      /** State */
+      state: string;
+      /** Message */
+      message: string;
+      booking?: components["schemas"]["BookingRead"] | null;
+      waitlist_entry?: components["schemas"]["WaitlistRead"] | null;
+    };
+    /** BookingCancellationResponse */
+    BookingCancellationResponse: {
+      /** Status */
+      status: "cancelled";
+      /** Credit Restored */
+      credit_restored: boolean;
+      promoted_booking?: components["schemas"]["BookingRead"] | null;
+    };
+    /** BookingCreate */
+    BookingCreate: {
+      /**
+       * Class Id
+       * Format: uuid
+       */
+      class_id: string;
+      /** Member Id */
+      member_id?: string | null;
+    };
+    /** BookingRead */
+    BookingRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Member Id
+       * Format: uuid
+       */
+      member_id: string;
+      /**
+       * Class Id
+       * Format: uuid
+       */
+      class_id: string;
+      status: components["schemas"]["BookingStatus"];
+      /**
+       * Booked At
+       * Format: date-time
+       */
+      booked_at: string;
+      /** Cancelled At */
+      cancelled_at?: string | null;
+      gym_class?: components["schemas"]["ClassRead"] | null;
+    };
+    /**
+     * BookingStatus
+     * @enum {string}
+     */
+    BookingStatus: "confirmed" | "waitlist" | "cancelled" | "attended" | "no_show";
+    /** ClassCreate */
+    ClassCreate: {
+      /** Name */
+      name: string;
+      /** Description */
+      description?: string | null;
+      /** Instructor Id */
+      instructor_id?: string | null;
+      /**
+       * Scheduled At
+       * Format: date-time
+       */
+      scheduled_at?: string | null;
+      /**
+       * Dates - bulk creation
+       * Format: date-time
+       */
+      dates?: string[] | null;
+      /**
+       * Duration Minutes
+       * @default 60
+       */
+      duration_minutes: number;
+      /** Capacity */
+      capacity: number;
+      /** Location */
+      location: string;
+      /** @default scheduled */
+      status?: components["schemas"]["ClassStatus"];
+    };
+    /** ClassRead */
+    ClassRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Description */
+      description?: string | null;
+      /** Instructor Id */
+      instructor_id?: string | null;
+      instructor?: components["schemas"]["InstructorSummary"] | null;
+      /**
+       * Scheduled At
+       * Format: date-time
+       */
+      scheduled_at: string;
+      /** Duration Minutes */
+      duration_minutes: number;
+      /** Capacity */
+      capacity: number;
+      /** Location */
+      location: string;
+      status: components["schemas"]["ClassStatus"];
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /**
+     * ClassStatus
+     * @enum {string}
+     */
+    ClassStatus: "scheduled" | "cancelled" | "completed";
+    /** ClassUpdate */
+    ClassUpdate: {
+      /** Name */
+      name?: string | null;
+      /** Description */
+      description?: string | null;
+      /** Instructor Id */
+      instructor_id?: string | null;
+      /** Scheduled At */
+      scheduled_at?: string | null;
+      /** Duration Minutes */
+      duration_minutes?: number | null;
+      /** Capacity */
+      capacity?: number | null;
+      /** Location */
+      location?: string | null;
+      status?: components["schemas"]["ClassStatus"] | null;
+    };
+    /** HTTPValidationError */
+    HTTPValidationError: {
+      /** Detail */
+      detail?: components["schemas"]["ValidationError"][];
+    };
+    /** InstructorProfileRead */
+    InstructorProfileRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Bio */
+      bio?: string | null;
+      /** Specialties */
+      specialties?: string | null;
+      /** Full Name */
+      full_name?: string | null;
+    };
+    /** InstructorSummary */
+    InstructorSummary: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Member Id
+       * Format: uuid
+       */
+      member_id: string;
+      /** Bio */
+      bio?: string | null;
+      /** Specialties */
+      specialties?: string | null;
+      /** Full Name */
+      full_name?: string | null;
+    };
+    /** IntegrationAccountRead */
+    IntegrationAccountRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Member Id
+       * Format: uuid
+       */
+      member_id: string;
+      provider: components["schemas"]["IntegrationProvider"];
+      /** External Account Id */
+      external_account_id?: string | null;
+      /** Token Expires At */
+      token_expires_at?: string | null;
+      status: components["schemas"]["IntegrationStatus"];
+      /** Provider Metadata */
+      provider_metadata: {
+        [key: string]: unknown;
+      };
+      /** Last Synced At */
+      last_synced_at?: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /**
+     * IntegrationProvider
+     * @enum {string}
+     */
+    IntegrationProvider: "strava";
+    /**
+     * IntegrationStatus
+     * @enum {string}
+     */
+    IntegrationStatus: "connected" | "expired" | "revoked";
+    /** LoginRequest */
+    LoginRequest: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
+      /** Password */
+      password: string;
+    };
+    /** GoogleLoginRequest */
+    GoogleLoginRequest: {
+      /**
+       * Id Token
+       */
+      id_token: string;
+    };
+    /** MemberBookingsResponse */
+    MemberBookingsResponse: {
+      /** Bookings */
+      bookings: components["schemas"]["BookingRead"][];
+      /** Waitlist */
+      waitlist: components["schemas"]["WaitlistRead"][];
+    };
+    /** MemberCreate */
+    MemberCreate: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
+      /** Full Name */
+      full_name: string;
+      /** Phone */
+      phone?: string | null;
+      /** Birth Date */
+      birth_date?: string | null;
+      /** Emergency Contact */
+      emergency_contact?: string | null;
+      /** Notes */
+      notes?: string | null;
+      /** Membership Plan Id */
+      membership_plan_id?: string | null;
+      /** Password */
+      password: string;
+      /** @default member */
+      role: components["schemas"]["MemberRole"];
+      /** @default active */
+      membership_status: components["schemas"]["MembershipStatus"];
+      /**
+       * Is Active
+       * @default true
+       */
+      is_active: boolean;
+      /** Instructor Bio */
+      instructor_bio?: string | null;
+      /** Instructor Specialties */
+      instructor_specialties?: string | null;
+    };
+    /** MemberRead */
+    MemberRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
+      /** Full Name */
+      full_name: string;
+      /** Phone */
+      phone?: string | null;
+      /** Birth Date */
+      birth_date?: string | null;
+      /** Emergency Contact */
+      emergency_contact?: string | null;
+      /** Notes */
+      notes?: string | null;
+      role: components["schemas"]["MemberRole"];
+      membership_status: components["schemas"]["MembershipStatus"];
+      /** Is Active */
+      is_active: boolean;
+      /** Is Premium */
+      is_premium: boolean;
+      /** Google Picture Url */
+      google_picture_url?: string | null;
+      /** Profile Image Url */
+      profile_image_url?: string | null;
+      active_subscription?: components["schemas"]["MemberSubscriptionRead"] | null;
+      membership_plan?: components["schemas"]["MembershipPlanRead"] | null;
+      instructor_profile?: components["schemas"]["InstructorProfileRead"] | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /**
+     * MemberRole
+     * @enum {string}
+     */
+    MemberRole: "member" | "instructor" | "admin";
+    /** MemberSubscriptionRead */
+    MemberSubscriptionRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Member Id
+       * Format: uuid
+       */
+      member_id: string;
+      /**
+       * Plan Id
+       * Format: uuid
+       */
+      plan_id: string;
+      /** Active Credits */
+      active_credits: number;
+      /**
+       * Period Start
+       * Format: date-time
+       */
+      period_start: string;
+      /**
+       * Period End
+       * Format: date-time
+       */
+      period_end: string;
+      status: "active" | "expired" | "cancelled";
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      plan: components["schemas"]["MembershipPlanRead"];
+    };
+    /** MemberUpdate */
+    MemberUpdate: {
+      /** Full Name */
+      full_name?: string | null;
+      /** Phone */
+      phone?: string | null;
+      /** Birth Date */
+      birth_date?: string | null;
+      /** Emergency Contact */
+      emergency_contact?: string | null;
+      /** Notes */
+      notes?: string | null;
+      /** Membership Plan Id */
+      membership_plan_id?: string | null;
+      membership_status?: components["schemas"]["MembershipStatus"] | null;
+      role?: components["schemas"]["MemberRole"] | null;
+      /** Is Active */
+      is_active?: boolean | null;
+      /** Password */
+      password?: string | null;
+      /** Instructor Bio */
+      instructor_bio?: string | null;
+      /** Instructor Specialties */
+      instructor_specialties?: string | null;
+      /** Profile Image Url */
+      profile_image_url?: string | null;
+    };
+    /** MembershipPlanRead */
+    MembershipPlanRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Description */
+      description?: string | null;
+      /** Price */
+      price: string;
+      /** Duration Days */
+      duration_days: number;
+      /** Is Active */
+      is_active: boolean;
+    };
+    /**
+     * MembershipStatus
+     * @enum {string}
+     */
+    MembershipStatus: "active" | "inactive" | "suspended" | "cancelled";
+    /** RegisterRequest */
+    RegisterRequest: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string;
+      /** Full Name */
+      full_name: string;
+      /** Password */
+      password: string;
+      /** Phone */
+      phone?: string | null;
+    };
+    /** StravaConnectRequest */
+    StravaConnectRequest: {
+      /** Access Token */
+      access_token: string;
+      /** Refresh Token */
+      refresh_token?: string | null;
+      /** Token Expires At */
+      token_expires_at?: string | null;
+      /** External Account Id */
+      external_account_id?: string | null;
+    };
+    /** TaskEnqueueResponse */
+    TaskEnqueueResponse: {
+      /** Task Id */
+      task_id: string;
+      /** Status */
+      status: string;
+    };
+    /** TokenResponse */
+    TokenResponse: {
+      /** Access Token */
+      access_token: string;
+      /**
+       * Token Type
+       * @default bearer
+       */
+      token_type: string;
+      member: components["schemas"]["MemberRead"];
+    };
+    /** ValidationError */
+    ValidationError: {
+      /** Location */
+      loc: (string | number)[];
+      /** Message */
+      msg: string;
+      /** Error Type */
+      type: string;
+    };
+    /** WaitlistRead */
+    WaitlistRead: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Member Id
+       * Format: uuid
+       */
+      member_id: string;
+      /**
+       * Class Id
+       * Format: uuid
+       */
+      class_id: string;
+      /** Position */
+      position: number;
+      status: components["schemas"]["WaitlistStatus"];
+      /**
+       * Joined At
+       * Format: date-time
+       */
+      joined_at: string;
+      /** Promoted At */
+      promoted_at?: string | null;
+      /** Cancelled At */
+      cancelled_at?: string | null;
+      gym_class?: components["schemas"]["ClassRead"] | null;
+    };
+    /**
+     * WaitlistStatus
+     * @enum {string}
+     */
+    WaitlistStatus: "waiting" | "promoted" | "cancelled";
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    register_auth_register_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  register_auth_register_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    login_auth_login_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RegisterRequest"];
+      };
     };
-    google_login_auth_google_login_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GoogleLoginRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["TokenResponse"];
         };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
+  };
+  login_auth_login_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TokenResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  google_login_auth_google_login_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GoogleLoginRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TokenResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
 
-    list_members_members_get: {
-        parameters: {
-            query?: {
-                role?: components["schemas"]["MemberRole"] | null;
-                membership_status?: components["schemas"]["MembershipStatus"] | null;
-                offset?: number;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemberRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  list_members_members_get: {
+    parameters: {
+      query?: {
+        role?: components["schemas"]["MemberRole"] | null;
+        membership_status?: components["schemas"]["MembershipStatus"] | null;
+        offset?: number;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    create_member_members_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MemberCreate"];
-            };
+        content: {
+          "application/json": components["schemas"]["MemberRead"][];
         };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemberRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_member_members__member_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                member_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemberRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  create_member_members_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    update_member_members__member_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                member_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MemberUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemberRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MemberCreate"];
+      };
     };
-    get_member_bookings_members__member_id__bookings_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                member_id: string;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MemberBookingsResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["MemberRead"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_member_activities_members__member_id__activities_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                member_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ActivityRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_member_members__member_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        member_id: string;
+      };
+      cookie?: never;
     };
-    list_classes_classes_get: {
-        parameters: {
-            query?: {
-                status?: components["schemas"]["ClassStatus"] | null;
-                offset?: number;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClassRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["MemberRead"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    create_class_classes_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClassCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClassRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  update_member_members__member_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        member_id: string;
+      };
+      cookie?: never;
     };
-    get_class_classes__class_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                class_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClassRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MemberUpdate"];
+      };
     };
-    delete_class_classes__class_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                class_id: string;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["MemberRead"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    update_class_classes__class_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                class_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClassUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ClassRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_member_bookings_members__member_id__bookings_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        member_id: string;
+      };
+      cookie?: never;
     };
-    create_booking_bookings_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BookingCreate"];
-            };
+        content: {
+          "application/json": components["schemas"]["MemberBookingsResponse"];
         };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingActionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    cancel_booking_bookings__booking_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                booking_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BookingCancellationResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  get_member_activities_members__member_id__activities_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        member_id: string;
+      };
+      cookie?: never;
     };
-    mark_attendance_attendance_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AttendanceCreate"];
-            };
+        content: {
+          "application/json": components["schemas"]["ActivityRead"][];
         };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttendanceRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    get_class_attendance_attendance_class__class_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                class_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttendanceRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  list_classes_classes_get: {
+    parameters: {
+      query?: {
+        status?: components["schemas"]["ClassStatus"] | null;
+        offset?: number;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    get_member_attendance_attendance_member__member_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                member_id: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AttendanceRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["ClassRead"][];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    connect_strava_integrations_strava_connect_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StravaConnectRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IntegrationAccountRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  create_class_classes_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    enqueue_activity_sync_activities_sync_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ActivitySyncRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TaskEnqueueResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ClassCreate"];
+      };
     };
-    healthcheck_health_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: string;
-                    };
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["ClassRead"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
+  };
+  get_class_classes__class_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        class_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ClassRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  delete_class_classes__class_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        class_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  update_class_classes__class_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        class_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ClassUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ClassRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  create_booking_bookings_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BookingCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BookingActionResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  cancel_booking_bookings__booking_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        booking_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BookingCancellationResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  mark_attendance_attendance_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AttendanceCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_class_attendance_attendance_class__class_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        class_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceRead"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_member_attendance_attendance_member__member_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        member_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AttendanceRead"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  connect_strava_integrations_strava_connect_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["StravaConnectRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["IntegrationAccountRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  enqueue_activity_sync_activities_sync_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ActivitySyncRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TaskEnqueueResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  healthcheck_health_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            [key: string]: string;
+          };
+        };
+      };
+    };
+  };
 }

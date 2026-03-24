@@ -10,6 +10,7 @@ import { LoginScreen } from "../screens/login-screen";
 import { WorkoutDetailScreen } from "../screens/workout-detail-screen";
 import { WorkoutsScreen } from "../screens/workouts-screen";
 import { MembersScreen } from "../screens/members-screen";
+import { PaywallScreen } from "../screens/PaywallScreen";
 import { SettingsScreen } from "../screens/settings-screen";
 import { RegisterScreen } from "../screens/register-screen";
 import type { MainTabParamList, RootStackParamList } from "./types";
@@ -42,31 +43,31 @@ function MainTabs() {
           else if (route.name === "Classes") iconName = "barbell-outline";
           else if (route.name === "Members") iconName = "people-outline";
           else if (route.name === "Settings") iconName = "settings-outline";
-          
+
           return <Ionicons color={color} name={iconName} size={size} />;
         },
         tabBarLabel: ({ children }) => {
-          const label = 
-            children === "Dashboard" ? "Inicio" : 
-            children === "Classes" ? "Clases" : 
-            children === "Members" ? "Miembros" : 
-            children === "Settings" ? "Ajustes" : 
-            children;
+          const label =
+            children === "Dashboard"
+              ? "Inicio"
+              : children === "Classes"
+                ? "Clases"
+                : children === "Members"
+                  ? "Miembros"
+                  : children === "Settings"
+                    ? "Ajustes"
+                    : children;
           return <Text style={{ fontSize: 10, fontWeight: "700", color: "#718198" }}>{label}</Text>;
         }
       })}
     >
       <Tabs.Screen component={HomeScreen} name="Dashboard" />
       <Tabs.Screen component={WorkoutsScreen} name="Classes" />
-      {canManage ? (
-        <Tabs.Screen component={MembersScreen} name="Members" />
-      ) : null}
+      {canManage ? <Tabs.Screen component={MembersScreen} name="Members" /> : null}
       <Tabs.Screen component={SettingsScreen} name="Settings" />
     </Tabs.Navigator>
   );
 }
-
-
 
 function LoadingState() {
   return (
@@ -98,6 +99,14 @@ export function RootNavigator() {
         <>
           <RootStack.Screen component={MainTabs} name="MainTabs" options={{ headerShown: false }} />
           <RootStack.Screen
+            component={PaywallScreen}
+            name="Paywall"
+            options={{
+              headerShadowVisible: false,
+              title: "Premium"
+            }}
+          />
+          <RootStack.Screen
             component={WorkoutDetailScreen}
             name="WorkoutDetail"
             options={{
@@ -110,7 +119,11 @@ export function RootNavigator() {
       ) : (
         <>
           <RootStack.Screen component={LoginScreen} name="Login" options={{ headerShown: false }} />
-          <RootStack.Screen component={RegisterScreen} name="Register" options={{ headerShown: false }} />
+          <RootStack.Screen
+            component={RegisterScreen}
+            name="Register"
+            options={{ headerShown: false }}
+          />
         </>
       )}
     </RootStack.Navigator>
