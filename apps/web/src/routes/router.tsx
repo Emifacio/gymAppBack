@@ -14,18 +14,23 @@ import { ProfilePage } from "@/pages/profile-page";
 import { RegisterPage } from "@/pages/register-page";
 import { WorkoutDetailPage } from "@/pages/workout-detail-page";
 import { WorkoutsPage } from "@/pages/workouts-page";
+import { PublicEntryGate } from "@/features/public-onboarding/public-entry-gate";
 import { OnboardingProvider } from "@/providers/onboarding-provider";
 
 export const router = createBrowserRouter([
   {
-    path: "/login",
-    element: <LoginPage />,
-    errorElement: <ErrorFallback />
-  },
-  {
-    path: "/register",
-    element: <RegisterPage />,
-    errorElement: <ErrorFallback />
+    element: <PublicEntryGate />,
+    errorElement: <ErrorFallback />,
+    children: [
+      {
+        path: "/login",
+        element: <LoginPage />
+      },
+      {
+        path: "/register",
+        element: <RegisterPage />
+      }
+    ]
   },
   {
     element: (
