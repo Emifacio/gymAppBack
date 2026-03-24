@@ -1,9 +1,9 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { OnboardingController } from "./onboarding.controller";
 import { getOnboardingSteps } from "./onboarding.steps";
 import { hasSeenTour, resetTour } from "./onboarding.store";
 import { useAuth } from "@/hooks/use-auth";
+import type { OnboardingController } from "./onboarding.controller";
 
 declare global {
   interface Window {
@@ -35,6 +35,8 @@ export function useOnboarding({ devMode = false }: UseOnboardingOptions = {}) {
   }, []);
 
   useEffect(() => {
+    let isCancelled = false;
+
     if (devMode) {
       window.resetOnboardingTour = () => {
         console.log("[Onboarding] Dev reset triggered");
@@ -70,34 +72,56 @@ export function useOnboarding({ devMode = false }: UseOnboardingOptions = {}) {
 
     console.log("[Onboarding] Initializing controller");
 
-    const controller = new OnboardingController(steps, (path) => { void navigate(path); }, {
-      userId: memberId ?? null,
-      onComplete: () => {
-        console.log("[Onboarding] Tour completed");
-        destroyController();
-      },
-      onClose: () => {
-        console.log("[Onboarding] Tour closed early");
-        destroyController();
-      },
-      onAbort: (reason) => {
-        console.warn("[Onboarding] Tour aborted:", reason);
-        destroyController();
-      },
-      onStepChange: (index, total) => {
-        console.log(`[Onboarding] Step ${index + 1}/${total}`);
-      },
-    });
+    void (async () => {
+      try {
+        const { OnboardingController } = await import("./onboarding.controller");
+        if (isCancelled) {
+          hasStarted.current = false;
+          hasStartedGlobally = false;
+          return;
+        }
 
-    controllerRef.current = controller;
+        const controller = new OnboardingController(
+          steps,
+          (path) => {
+            void navigate(path);
+          },
+          {
+            userId: memberId ?? null,
+            onComplete: () => {
+              console.log("[Onboarding] Tour completed");
+              destroyController();
+            },
+            onClose: () => {
+              console.log("[Onboarding] Tour closed early");
+              destroyController();
+            },
+            onAbort: (reason) => {
+              console.warn("[Onboarding] Tour aborted:", reason);
+              destroyController();
+            },
+            onStepChange: (index, total) => {
+              console.log(`[Onboarding] Step ${index + 1}/${total}`);
+            }
+          }
+        );
 
-    setTimeout(() => {
-      if (controllerRef.current === controller) {
-        controller.start();
+        controllerRef.current = controller;
+
+        setTimeout(() => {
+          if (controllerRef.current === controller) {
+            controller.start();
+          }
+        }, 500);
+      } catch (error) {
+        console.warn("[Onboarding] Failed to initialize controller", error);
+        hasStarted.current = false;
+        hasStartedGlobally = false;
       }
-    }, 500);
+    })();
 
     return () => {
+      isCancelled = true;
       if (devMode) {
         delete window.resetOnboardingTour;
       }

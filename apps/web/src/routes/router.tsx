@@ -1,21 +1,91 @@
+import { lazy, Suspense, type ComponentType, type ReactNode } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
-import { ErrorFallback } from "@/components/error-handling/ErrorFallback";
 
+import { AppLoader } from "@/components/app-loader";
+import { ErrorFallback } from "@/components/error-handling/ErrorFallback";
 import { AuthGuard } from "@/components/auth-guard";
-import { DashboardLayout } from "@/layouts/dashboard-layout";
-import { AttendancePage } from "@/pages/attendance-page";
-import { BookingsPage } from "@/pages/bookings-page";
-import { DashboardPage } from "@/pages/dashboard-page";
-import { LoginPage } from "@/pages/login-page";
-import { MemberDetailPage } from "@/pages/member-detail-page";
-import { MembersPage } from "@/pages/members-page";
-import { PlansPage } from "@/pages/plans-page";
-import { ProfilePage } from "@/pages/profile-page";
-import { RegisterPage } from "@/pages/register-page";
-import { WorkoutDetailPage } from "@/pages/workout-detail-page";
-import { WorkoutsPage } from "@/pages/workouts-page";
 import { PublicEntryGate } from "@/features/public-onboarding/public-entry-gate";
 import { OnboardingProvider } from "@/providers/onboarding-provider";
+
+function lazyPage<T extends ComponentType<object>>(loader: () => Promise<{ default: T }>) {
+  return lazy(loader);
+}
+
+function routeElement(element: ReactNode, fullScreen = false) {
+  return <Suspense fallback={<AppLoader fullScreen={fullScreen} />}>{element}</Suspense>;
+}
+
+const DashboardLayout = lazyPage(() =>
+  import("@/layouts/dashboard-layout").then((module) => ({
+    default: module.DashboardLayout
+  }))
+);
+
+const AttendancePage = lazyPage(() =>
+  import("@/pages/attendance-page").then((module) => ({
+    default: module.AttendancePage
+  }))
+);
+
+const BookingsPage = lazyPage(() =>
+  import("@/pages/bookings-page").then((module) => ({
+    default: module.BookingsPage
+  }))
+);
+
+const DashboardPage = lazyPage(() =>
+  import("@/pages/dashboard-page").then((module) => ({
+    default: module.DashboardPage
+  }))
+);
+
+const LoginPage = lazyPage(() =>
+  import("@/pages/login-page").then((module) => ({
+    default: module.LoginPage
+  }))
+);
+
+const MemberDetailPage = lazyPage(() =>
+  import("@/pages/member-detail-page").then((module) => ({
+    default: module.MemberDetailPage
+  }))
+);
+
+const MembersPage = lazyPage(() =>
+  import("@/pages/members-page").then((module) => ({
+    default: module.MembersPage
+  }))
+);
+
+const PlansPage = lazyPage(() =>
+  import("@/pages/plans-page").then((module) => ({
+    default: module.PlansPage
+  }))
+);
+
+const ProfilePage = lazyPage(() =>
+  import("@/pages/profile-page").then((module) => ({
+    default: module.ProfilePage
+  }))
+);
+
+const RegisterPage = lazyPage(() =>
+  import("@/pages/register-page").then((module) => ({
+    default: module.RegisterPage
+  }))
+);
+
+const WorkoutDetailPage = lazyPage(() =>
+  import("@/pages/workout-detail-page").then((module) => ({
+    default: module.WorkoutDetailPage
+  }))
+);
+
+const WorkoutsPage = lazyPage(() =>
+  import("@/pages/workouts-page").then((module) => ({
+    default: module.WorkoutsPage
+  }))
+);
 
 export const router = createBrowserRouter([
   {
@@ -24,11 +94,11 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/login",
-        element: <LoginPage />
+        element: routeElement(<LoginPage />, true)
       },
       {
         path: "/register",
-        element: <RegisterPage />
+        element: routeElement(<RegisterPage />, true)
       }
     ]
   },
@@ -41,44 +111,44 @@ export const router = createBrowserRouter([
     errorElement: <ErrorFallback />,
     children: [
       {
-        element: <DashboardLayout />,
+        element: routeElement(<DashboardLayout />, true),
         errorElement: <ErrorFallback />,
         children: [
           {
             index: true,
-            element: <DashboardPage />
+            element: routeElement(<DashboardPage />)
           },
           {
             path: "/profile",
-            element: <ProfilePage />
+            element: routeElement(<ProfilePage />)
           },
           {
             path: "/workouts",
-            element: <WorkoutsPage />
+            element: routeElement(<WorkoutsPage />)
           },
           {
             path: "/workouts/:workoutId",
-            element: <WorkoutDetailPage />
+            element: routeElement(<WorkoutDetailPage />)
           },
           {
             path: "/bookings",
-            element: <BookingsPage />
+            element: routeElement(<BookingsPage />)
           },
           {
             path: "/members",
-            element: <MembersPage />
+            element: routeElement(<MembersPage />)
           },
           {
             path: "/plans",
-            element: <PlansPage />
+            element: routeElement(<PlansPage />)
           },
           {
             path: "/members/:memberId",
-            element: <MemberDetailPage />
+            element: routeElement(<MemberDetailPage />)
           },
           {
             path: "/attendance",
-            element: <AttendancePage />
+            element: routeElement(<AttendancePage />)
           }
         ]
       }

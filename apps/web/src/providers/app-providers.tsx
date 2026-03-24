@@ -1,11 +1,18 @@
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import type { PropsWithChildren } from "react";
 
 import { queryClient } from "@/api/query-client";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
+
+const ReactQueryDevtools = import.meta.env.DEV
+  ? lazy(() =>
+      import("@tanstack/react-query-devtools").then((mod) => ({
+        default: mod.ReactQueryDevtools
+      }))
+    )
+  : null;
 
 export function AppProviders({ children }: PropsWithChildren) {
   useEffect(() => {
@@ -23,11 +30,15 @@ export function AppProviders({ children }: PropsWithChildren) {
       const now = Date.now();
       if (now - lastForbiddenAt < 1000) return;
       lastForbiddenAt = now;
-      window.alert("No estás autorizado para realizar esta acción. Por favor inicia sesión con una cuenta con permisos adecuados.");
+      window.alert(
+        "No estás autorizado para realizar esta acción. Por favor inicia sesión con una cuenta con permisos adecuados."
+      );
     };
 
     const handleServerError = () => {
-      window.alert("Se produjo un error del servidor (500). Por favor intenta nuevamente más tarde.");
+      window.alert(
+        "Se produjo un error del servidor (500). Por favor intenta nuevamente más tarde."
+      );
     };
 
     window.addEventListener("gym:api-unauthorized", handleUnauthorized);
@@ -44,11 +55,13 @@ export function AppProviders({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider defaultTheme="system">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </ThemeProvider>
-      <ReactQueryDevtools buttonPosition="bottom-left" initialIsOpen={false} />
+      {ReactQueryDevtools ? (
+        <Suspense fallback={null}>
+          <ReactQueryDevtools buttonPosition="bottom-left" initialIsOpen={false} />
+        </Suspense>
+      ) : null}
     </QueryClientProvider>
   );
 }

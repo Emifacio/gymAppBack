@@ -1,9 +1,16 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 
+import { AppLoader } from "@/components/app-loader";
 import { LoadingScreen } from "@/components/loading-screen";
-import { PublicOnboardingCarousel } from "@/features/public-onboarding/public-onboarding-carousel";
 import { usePublicOnboarding } from "@/features/public-onboarding/use-public-onboarding";
 import { useAuth } from "@/hooks/use-auth";
+
+const PublicOnboardingCarousel = lazy(() =>
+  import("@/features/public-onboarding/public-onboarding-carousel").then((module) => ({
+    default: module.PublicOnboardingCarousel
+  }))
+);
 
 export function PublicEntryGate() {
   const location = useLocation();
@@ -24,15 +31,17 @@ export function PublicEntryGate() {
 
   if (!isCompleted) {
     return (
-      <PublicOnboardingCarousel
-        onComplete={() => {
-          complete();
-          void navigate("/login", {
-            replace: true,
-            state: location.state
-          });
-        }}
-      />
+      <Suspense fallback={<AppLoader fullScreen label="Preparando tu bienvenida a ATLHYT..." />}>
+        <PublicOnboardingCarousel
+          onComplete={() => {
+            complete();
+            void navigate("/login", {
+              replace: true,
+              state: location.state
+            });
+          }}
+        />
+      </Suspense>
     );
   }
 

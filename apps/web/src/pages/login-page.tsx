@@ -1,5 +1,5 @@
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { isApiResponseError } from "@gym/api-client";
@@ -22,6 +22,17 @@ export function LoginPage() {
 
   const redirectTo =
     (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/";
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      void import("@/layouts/dashboard-layout");
+      void import("@/pages/dashboard-page");
+    }, 1000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, []);
 
   const handleGoogleSuccess = useCallback(
     (credential: string) => {

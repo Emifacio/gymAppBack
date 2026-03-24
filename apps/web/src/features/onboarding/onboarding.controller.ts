@@ -1,9 +1,25 @@
-import { driver, type Driver } from "driver.js";
-import type { OnboardingStepDefinition, OnboardingControllerOptions, OnboardingWaitOptions } from "./onboarding.types";
+import type {
+  OnboardingStepDefinition,
+  OnboardingControllerOptions,
+  OnboardingWaitOptions
+} from "./onboarding.types";
 import { completeTour } from "./onboarding.store";
+import type { Driver } from "driver.js";
 
 const DEFAULT_TIMEOUT_MS = 8000;
 const DEFAULT_POLL_INTERVAL_MS = 100;
+let driverAssetsPromise: Promise<typeof import("driver.js")> | null = null;
+
+async function loadDriverAssets() {
+  if (!driverAssetsPromise) {
+    driverAssetsPromise = Promise.all([
+      import("driver.js"),
+      import("driver.js/dist/driver.css")
+    ]).then(([driverModule]) => driverModule);
+  }
+
+  return driverAssetsPromise;
+}
 
 function isElementVisible(el: HTMLElement): boolean {
   if (!el.isConnected) return false;
@@ -25,7 +41,7 @@ function waitForRouteAndElement(
   options: OnboardingWaitOptions = {}
 ): Promise<HTMLElement> {
   const { timeoutMs = DEFAULT_TIMEOUT_MS, pollIntervalMs = DEFAULT_POLL_INTERVAL_MS } = options;
-  
+
   return new Promise((resolve, reject) => {
     let elapsed = 0;
     const { pathname } = window.location;
@@ -66,7 +82,11 @@ export class OnboardingController {
   private options: OnboardingControllerOptions;
   private navigateFn: (path: string) => void;
 
-  constructor(steps: OnboardingStepDefinition[], navigateFn: (path: string) => void, options: OnboardingControllerOptions) {
+  constructor(
+    steps: OnboardingStepDefinition[],
+    navigateFn: (path: string) => void,
+    options: OnboardingControllerOptions
+  ) {
     this.steps = steps;
     this.navigateFn = navigateFn;
     this.options = options;
@@ -116,11 +136,11 @@ export class OnboardingController {
 
     try {
       await this.navigateAndWait(step.route, step.selector);
-      this.renderDriverStep(step);
+      await this.renderDriverStep(step);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       console.error("[Onboarding] Failed to show step:", reason);
-      
+
       if (step.isOptional) {
         console.log("[Onboarding] Step is optional, skipping");
         if (index < this.steps.length - 1) {
@@ -141,7 +161,7 @@ export class OnboardingController {
     if (!isRouteActive(route, pathname)) {
       console.log("[Onboarding] Navigating to", route);
       this.navigateFn(route);
-      
+
       await new Promise<void>((resolve) => {
         const checkRoute = () => {
           if (isRouteActive(route, window.location.pathname)) {
@@ -169,14 +189,17 @@ export class OnboardingController {
     console.log("[Onboarding] Element found:", selector);
   }
 
-  private renderDriverStep(step: OnboardingStepDefinition): void {
+  private async renderDriverStep(step: OnboardingStepDefinition): Promise<void> {
+    if (this.isDestroyed) return;
+
+    const { driver } = await loadDriverAssets();
     if (this.isDestroyed) return;
 
     this.driverInstance?.destroy();
 
     const popoverConfig: Record<string, string | undefined> = {
       title: step.popover.title,
-      description: typeof step.popover.description === "string" ? step.popover.description : "",
+      description: typeof step.popover.description === "string" ? step.popover.description : ""
     };
     if (step.popover.side) popoverConfig.side = step.popover.side;
     if (step.popover.align) popoverConfig.align = step.popover.align;
@@ -189,8 +212,8 @@ export class OnboardingController {
       steps: [
         {
           element: step.selector,
-          popover: popoverConfig,
-        },
+          popover: popoverConfig
+        }
       ],
       onNextClick: () => {
         console.log("[Onboarding] Next clicked from step", this.currentStepIndex + 1);
@@ -203,7 +226,7 @@ export class OnboardingController {
       onCloseClick: () => {
         console.log("[Onboarding] Close clicked");
         void this.close();
-      },
+      }
     });
 
     const el = document.querySelector<HTMLElement>(step.selector);
