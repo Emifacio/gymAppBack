@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Calendar as CalendarIcon, PlusCircle } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronDown, PlusCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/empty-state";
@@ -25,6 +25,8 @@ import type { WorkoutCreatePayload } from "@gym/api-client";
 const DISPLAY_DATE_PLACEHOLDER = "dd/mm/yyyy";
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DISPLAY_DATE_PATTERN = /^\d{2}\/\d{2}\/\d{4}$/;
+const INITIAL_CONCLUDED_VISIBLE_COUNT = 3;
+const CONCLUDED_REVEAL_STEP = 5;
 
 function formatDateToDisplay(value: string) {
   if (!ISO_DATE_PATTERN.test(value)) {
@@ -95,6 +97,101 @@ function parseDisplayDateToIso(value: string) {
   return `${year}-${month}-${day}`;
 }
 
+function isWorkoutConcluded(workout: Workout) {
+  return workout.status === "completed" || new Date(workout.scheduled_at) <= new Date();
+}
+
+interface ConcludedWorkoutsSectionProps {
+  workouts: Workout[];
+  visibleWorkouts: Workout[];
+  isOpen: boolean;
+  onToggle: () => void;
+  onShowMore: () => void;
+}
+
+function ConcludedWorkoutsSection({
+  workouts,
+  visibleWorkouts,
+  isOpen,
+  onToggle,
+  onShowMore
+}: ConcludedWorkoutsSectionProps) {
+  const hasMoreConcludedClasses = visibleWorkouts.length < workouts.length;
+
+  return (
+    <section className="mt-10 border-t border-[var(--border-base)] pt-6">
+      <button
+        aria-controls="concluded-workouts-panel"
+        aria-expanded={isOpen}
+        className={`flex w-full items-center justify-between gap-4 rounded-[1.75rem] border px-5 py-4 text-left transition-all duration-300 ${
+          isOpen
+            ? "border-[var(--accent-soft)] bg-[var(--bg-surface-secondary)] shadow-md"
+            : "border-[var(--border-base)] bg-[var(--bg-surface-secondary)]/70 hover:border-[var(--accent)] hover:shadow-sm"
+        }`}
+        onClick={onToggle}
+        type="button"
+      >
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="section-title text-[var(--font-size-lg)] text-[var(--text-primary)]">
+              Clases concluidas
+            </span>
+            <span className="inline-flex items-center rounded-full bg-[var(--bg-surface)] px-3 py-1 text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)]">
+              {workouts.length}
+            </span>
+          </div>
+          <p className="mt-1 text-sm font-medium text-[var(--text-secondary)]">
+            {isOpen
+              ? `Mostrando ${visibleWorkouts.length} de ${workouts.length} clases concluidas.`
+              : "Consulta el historial sin mezclarlo con las clases activas o próximas."}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+            {isOpen ? "Ocultar" : "Mostrar"}
+          </span>
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <ChevronDown
+              className={`h-5 w-5 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+            />
+          </span>
+        </div>
+      </button>
+
+      <div
+        className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out ${
+          isOpen ? "mt-5 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+        id="concluded-workouts-panel"
+      >
+        <div className="overflow-hidden">
+          <div className="space-y-6 pb-1">
+            <div className="grid gap-6">
+              {visibleWorkouts.map((workout) => (
+                <WorkoutCard key={workout.id} workout={workout} />
+              ))}
+            </div>
+
+            {hasMoreConcludedClasses ? (
+              <div className="flex justify-center pt-1">
+                <Button
+                  className="h-11 rounded-2xl px-6"
+                  onClick={onShowMore}
+                  type="button"
+                  variant="secondary"
+                >
+                  Ver más
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const workoutCreateSchema = z.object({
   name: z.string().trim().min(1, "El nombre es obligatorio"),
   location: z.string().trim().min(1, "La ubicación es obligatoria"),
@@ -148,7 +245,36 @@ export function WorkoutsPage() {
   const workouts: Workout[] = workoutsQuery.data ?? [];
   const instructors = instructorsQuery.data ?? [];
   const subscription = subscriptionQuery.data;
-  const showEmptyState = !workouts.length && workoutsQuery.isSuccess;
+  const [isConcludedSectionOpen, setIsConcludedSectionOpen] = useState(false);
+  const [visibleConcludedCount, setVisibleConcludedCount] = useState(0);
+  const { activeAndUpcomingClasses, concludedClasses } = useMemo(() => {
+    const activeClasses: Workout[] = [];
+    const completedClasses: Workout[] = [];
+
+    workouts.forEach((workout) => {
+      if (isWorkoutConcluded(workout)) {
+        completedClasses.push(workout);
+        return;
+      }
+
+      activeClasses.push(workout);
+    });
+
+    completedClasses.sort(
+      (a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime()
+    );
+
+    return {
+      activeAndUpcomingClasses: activeClasses,
+      concludedClasses: completedClasses
+    };
+  }, [workouts]);
+  const visibleConcludedClasses = useMemo(
+    () => concludedClasses.slice(0, visibleConcludedCount),
+    [concludedClasses, visibleConcludedCount]
+  );
+  const showConcludedSection = concludedClasses.length > 0;
+  const showActiveEmptyState = !activeAndUpcomingClasses.length && workoutsQuery.isSuccess;
 
   const addDate = () => {
     if (!pendingDateDisplay) {
@@ -175,6 +301,20 @@ export function WorkoutsPage() {
 
   const removeDate = (date: string) => {
     setSelectedDates((prev) => prev.filter((d) => d !== date));
+  };
+
+  const handleToggleConcludedSection = () => {
+    if (!isConcludedSectionOpen && visibleConcludedCount === 0) {
+      setVisibleConcludedCount(Math.min(INITIAL_CONCLUDED_VISIBLE_COUNT, concludedClasses.length));
+    }
+
+    setIsConcludedSectionOpen((current) => !current);
+  };
+
+  const handleShowMoreConcluded = () => {
+    setVisibleConcludedCount((current) =>
+      Math.min(current + CONCLUDED_REVEAL_STEP, concludedClasses.length)
+    );
   };
 
   const onSubmit = async (values: WorkoutCreateFormValues) => {
@@ -296,20 +436,38 @@ export function WorkoutsPage() {
                 <SkeletonWorkoutCard />
                 <SkeletonWorkoutCard />
               </div>
-            ) : showEmptyState ? (
-              <EmptyState
-                eyebrow="Gimnasio"
-                title="Sin clases disponibles"
-                description="No se encontraron sesiones con los filtros actuales."
-              />
             ) : (
               <>
-                <WeeklySchedule classes={workouts} />
-                <div className="grid gap-6 mt-8">
-                  {workouts.map((workout) => (
-                    <WorkoutCard key={workout.id} workout={workout} />
-                  ))}
-                </div>
+                {showActiveEmptyState ? (
+                  <EmptyState
+                    eyebrow="Gimnasio"
+                    title="Sin clases activas o próximas"
+                    description={
+                      showConcludedSection
+                        ? "Las clases finalizadas quedaron agrupadas al final para mantener esta vista más clara."
+                        : "No se encontraron sesiones con los filtros actuales."
+                    }
+                  />
+                ) : (
+                  <>
+                    <WeeklySchedule classes={activeAndUpcomingClasses} />
+                    <div className="mt-8 grid gap-6">
+                      {activeAndUpcomingClasses.map((workout) => (
+                        <WorkoutCard key={workout.id} workout={workout} />
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {showConcludedSection ? (
+                  <ConcludedWorkoutsSection
+                    isOpen={isConcludedSectionOpen}
+                    onShowMore={handleShowMoreConcluded}
+                    onToggle={handleToggleConcludedSection}
+                    visibleWorkouts={visibleConcludedClasses}
+                    workouts={concludedClasses}
+                  />
+                ) : null}
               </>
             )}
           </div>
