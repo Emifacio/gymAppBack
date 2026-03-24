@@ -23,6 +23,7 @@ from app.repositories.member_repository import MemberRepository
 from app.repositories.member_subscription_repository import MemberSubscriptionRepository
 from app.repositories.membership_plan_repository import MembershipPlanRepository
 from app.repositories.plan_repository import PlanRepository
+from app.repositories.revenuecat_webhook_event_repository import RevenueCatWebhookEventRepository
 from app.repositories.waitlist_repository import WaitlistRepository
 from app.services.activity_service import ActivityService
 from app.services.attendance_service import AttendanceService
@@ -123,6 +124,12 @@ def get_revenuecat_service(
         cache=cache,
         settings=get_settings(),
     )
+
+
+def get_revenuecat_webhook_event_repository(
+    session: AsyncSession = Depends(get_db_session),
+) -> RevenueCatWebhookEventRepository:
+    return RevenueCatWebhookEventRepository(session)
 
 
 def get_member_service(

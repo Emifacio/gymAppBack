@@ -8,6 +8,7 @@ from app.domain.models.member import Member
 from app.domain.models.member_subscription import MemberSubscription
 from app.domain.models.membership_plan import MembershipPlan
 from app.domain.models.plan import Plan
+from app.domain.models.revenuecat_webhook_event import RevenueCatWebhookEvent
 from app.domain.models.waitlist import Waitlist
 
 __all__ = [
@@ -21,5 +22,6 @@ __all__ = [
     "MemberSubscription",
     "MembershipPlan",
     "Plan",
+    "RevenueCatWebhookEvent",
     "Waitlist",
 ]
