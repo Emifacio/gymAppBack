@@ -207,8 +207,12 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
     });
   }
 
-  function useMembers(filters: MemberFilters = {}) {
-    return useQuery(getMembersQueryOptions(client, filters));
+  function useMembers(filters: MemberFilters = {}, opts: { enabled?: boolean } = {}) {
+    return useQuery({
+      ...getMembersQueryOptions(client, filters),
+      enabled: opts.enabled ?? true,
+      ...opts
+    });
   }
 
   function useMember(memberId: string) {

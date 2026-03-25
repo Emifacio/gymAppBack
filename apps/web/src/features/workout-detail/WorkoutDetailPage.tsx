@@ -37,14 +37,18 @@ export function WorkoutDetailPage() {
     handleBook,
     handleCloseEligibilityModal
   } = useWorkoutBooking(workoutId);
-  const instructorsQuery = useMembers({
-    offset: 0,
-    limit: 500,
-    role: "instructor",
-    membership_status: null
-  });
-
   const canManage = canManageOperations(session?.member);
+  const instructorsQuery = useMembers(
+    {
+      offset: 0,
+      limit: 500,
+      role: "instructor",
+      membership_status: null
+    },
+    {
+      enabled: canManage
+    }
+  );
   const {
     classMembersQuery,
     classAttendanceQuery,
