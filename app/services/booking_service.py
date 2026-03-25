@@ -194,7 +194,10 @@ class BookingService:
         member_id: UUID,
         actor: Member,
     ) -> BookingActionResponse:
-        if actor.role != MemberRole.ADMIN:
+        actor_role = actor.role
+        actor_id = actor.id
+
+        if actor_role != MemberRole.ADMIN:
             raise ForbiddenError("Only admins can assign members to classes")
 
         now = datetime.now(timezone.utc)
@@ -245,7 +248,7 @@ class BookingService:
                 class_id=class_id,
                 reference_time=now,
                 existing_booking=existing_booking,
-                assigned_by_user_id=actor.id,
+                assigned_by_user_id=actor_id,
             )
             booking_id = booking.id
             await self.session.flush()

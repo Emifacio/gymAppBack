@@ -28,6 +28,22 @@ class SessionStub:
         yield
 
 
+class ExpiringActor:
+    def __init__(self, actor_id, role: MemberRole) -> None:
+        self._id = actor_id
+        self.role = role
+        self._id_is_expired = False
+
+    @property
+    def id(self):
+        if self._id_is_expired:
+            raise AssertionError("actor.id should not be accessed after async repository work begins")
+        return self._id
+
+    def expire_id(self) -> None:
+        self._id_is_expired = True
+
+
 class BookingServiceTests(IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.session = SessionStub()
@@ -250,6 +266,48 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
                 member_id=member_id,
                 actor=actor,
             )
+
+    async def test_assign_member_by_admin_captures_actor_id_before_async_work(self) -> None:
+        actor_id = uuid4()
+        actor = ExpiringActor(actor_id, MemberRole.ADMIN)
+        member_id = uuid4()
+        class_id = uuid4()
+        now = datetime.now(timezone.utc)
+        booking_holder: dict[str, Booking] = {}
+
+        async def get_class(*args, **kwargs):
+            actor.expire_id()
+            return SimpleNamespace(
+                id=class_id,
+                capacity=12,
+                status=ClassStatus.SCHEDULED,
+                scheduled_at=now + timedelta(hours=2),
+                duration_minutes=60,
+            )
+
+        async def add_booking(booking: Booking) -> Booking:
+            booking_holder["booking"] = booking
+            return booking
+
+        self.class_repository.get_by_id = AsyncMock(side_effect=get_class)
+        self.member_repository.get_by_id = AsyncMock(return_value=SimpleNamespace(id=member_id))
+        self.booking_repository.get_by_member_and_class = AsyncMock(return_value=None)
+        self.booking_repository.count_confirmed_bookings = AsyncMock(return_value=1)
+        self.booking_repository.add = AsyncMock(side_effect=add_booking)
+        self.booking_repository.get_by_id = AsyncMock(
+            side_effect=lambda booking_id, for_update=False: booking_holder.get("booking")
+        )
+        self.waitlist_repository.get_by_member_and_class = AsyncMock(return_value=None)
+
+        response = await self.service.assign_member_by_admin(
+            class_id=class_id,
+            member_id=member_id,
+            actor=actor,
+        )
+
+        self.assertIsNotNone(response.booking)
+        assert response.booking is not None
+        self.assertEqual(response.booking.assigned_by_user_id, actor_id)
 
     async def test_cancel_confirmed_booking_restores_credit_and_promotes_waitlist(self) -> None:
         actor = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)
