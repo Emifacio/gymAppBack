@@ -10,6 +10,7 @@ import type {
   WorkoutUpdatePayload
 } from "@gym/api-client";
 
+import { getApiErrorMessage } from "@/api/client";
 import { Button } from "@/components/ui/Button";
 import {
   Card,
@@ -70,6 +71,7 @@ type MutationState<TData = unknown, TVariables = unknown> = {
 
 interface Props {
   workout: Workout;
+  canAssignMembers: boolean;
   classMembers: ClassMember[];
   onDelete: () => void;
   assignMemberMutation: MutationState<
@@ -85,6 +87,7 @@ interface Props {
 
 export function AdminPanel({
   workout,
+  canAssignMembers,
   classMembers,
   assignMemberMutation,
   updateWorkoutMutation,
@@ -174,152 +177,165 @@ export function AdminPanel({
   return (
     <Card as="section" className="xl:col-span-2">
       <div className="grid gap-6 xl:grid-cols-2">
-        <CardInset>
-          <CardHeader className="space-y-2">
-            <CardEyebrow>Asignación manual</CardEyebrow>
-            <CardTitle className="text-[var(--font-size-lg)]">Agregar miembro a la clase</CardTitle>
-            <CardDescription>
-              Busca un miembro por nombre y asígnalo manualmente a esta sesión.
-            </CardDescription>
-          </CardHeader>
+        {canAssignMembers ? (
+          <CardInset>
+            <CardHeader className="space-y-2">
+              <CardEyebrow>Asignación manual</CardEyebrow>
+              <CardTitle className="text-[var(--font-size-lg)]">
+                Agregar miembro a la clase
+              </CardTitle>
+              <CardDescription>
+                Busca un miembro por nombre y asígnalo manualmente a esta sesión.
+              </CardDescription>
+            </CardHeader>
 
-          <CardContent className="mt-5">
-            <form
-              onSubmit={handleSubmitAssign((values) => {
-                assignMemberMutation.mutate(
-                  {
-                    classId: workout.id,
-                    memberId: values.member_id,
-                    payload: { member_id: values.member_id }
-                  },
-                  {
-                    onSuccess: () => {
-                      resetAssign();
-                      setSelectedMemberId("");
-                      setMemberSearch("");
-                    }
-                  }
-                );
-              })}
-              className="space-y-4"
-            >
-              <input type="hidden" {...registerAssign("member_id")} />
-              <Field>
-                <FieldLabel htmlFor="assign-member-search">Buscar miembro</FieldLabel>
-                <Input
-                  id="assign-member-search"
-                  error={Boolean(assignErrors.member_id)}
-                  placeholder="Escribe un nombre o email"
-                  aria-invalid={assignErrors.member_id ? "true" : "false"}
-                  value={memberSearch}
-                  onChange={(event) => {
-                    setMemberSearch(event.target.value);
-                    setSelectedMemberId("");
-                    setAssignValue("member_id", "", { shouldValidate: false });
-                  }}
-                />
-                <FieldHint>
-                  {membersQuery.isLoading
-                    ? "Cargando miembros..."
-                    : selectedAvailableMember
-                      ? `Seleccionado: ${formatMemberLabel(selectedAvailableMember)}`
-                      : "Selecciona un miembro de la lista para asignarlo."}
-                </FieldHint>
-                {assignErrors.member_id ? (
-                  <FieldError>{assignErrors.member_id.message}</FieldError>
-                ) : null}
-              </Field>
-
-              {selectedAvailableMember ? (
-                <CardInset className="border-[var(--border-base)] bg-[var(--bg-surface-secondary)] shadow-none">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">
-                        {selectedAvailableMember.full_name}
-                      </p>
-                      <p className="text-xs text-[var(--text-secondary)]">
-                        {selectedAvailableMember.email}
-                      </p>
-                    </div>
-                    <Button
-                      className="rounded-xl"
-                      onClick={() => {
+            <CardContent className="mt-5">
+              <form
+                onSubmit={handleSubmitAssign((values) => {
+                  assignMemberMutation.mutate(
+                    {
+                      classId: workout.id,
+                      memberId: values.member_id,
+                      payload: { member_id: values.member_id }
+                    },
+                    {
+                      onSuccess: () => {
+                        resetAssign();
                         setSelectedMemberId("");
                         setMemberSearch("");
-                        setAssignValue("member_id", "", { shouldValidate: false });
-                      }}
-                      size="sm"
-                      type="button"
-                      variant="ghost"
-                    >
-                      Cambiar
-                    </Button>
-                  </div>
-                </CardInset>
-              ) : null}
-
-              {!selectedAvailableMember && memberSearch.trim().length > 0 ? (
-                <div className="space-y-2 rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] p-2">
-                  {matchingMembers.length > 0 ? (
-                    matchingMembers.map((member) => (
-                      <button
-                        key={member.id}
-                        className="flex w-full items-start justify-between rounded-xl px-3 py-2 text-left transition hover:bg-[var(--bg-surface)]"
-                        onClick={() => {
-                          setSelectedMemberId(member.id);
-                          setMemberSearch(formatMemberLabel(member));
-                          setAssignValue("member_id", member.id, { shouldValidate: true });
-                          clearAssignErrors("member_id");
-                        }}
-                        type="button"
-                      >
-                        <span>
-                          <span className="block text-sm font-semibold text-[var(--text-primary)]">
-                            {member.full_name}
-                          </span>
-                          <span className="block text-xs text-[var(--text-secondary)]">
-                            {member.email}
-                          </span>
-                        </span>
-                      </button>
-                    ))
-                  ) : (
-                    <p className="px-3 py-2 text-sm text-[var(--text-secondary)]">
-                      No encontramos miembros con ese nombre.
-                    </p>
-                  )}
-                </div>
-              ) : null}
-
-              {!membersQuery.isLoading && availableMembers.length === 0 ? (
-                <FieldHint>No hay miembros disponibles para agregar a esta clase.</FieldHint>
-              ) : null}
-
-              <Button
-                className="h-12 w-full rounded-2xl"
-                disabled={
-                  membersQuery.isLoading ||
-                  availableMembers.length === 0 ||
-                  !selectedAvailableMember
-                }
-                loading={isAssigning || assignMemberMutation.isPending}
-                type="submit"
-                variant="secondary"
+                      }
+                    }
+                  );
+                })}
+                className="space-y-4"
               >
-                {isAssigning || assignMemberMutation.isPending
-                  ? "Asignando..."
-                  : "Asignar miembro a la clase"}
-              </Button>
-              {assignMemberMutation.data && (
-                <CardInset className="border-[var(--success-soft)] bg-[var(--success-soft)] shadow-none">
-                  <p className="text-sm font-medium text-[var(--success)]">
-                    {assignMemberMutation.data.message}
-                  </p>
-                </CardInset>
-              )}
-            </form>
-          </CardContent>
-        </CardInset>
+                <input type="hidden" {...registerAssign("member_id")} />
+                <Field>
+                  <FieldLabel htmlFor="assign-member-search">Buscar miembro</FieldLabel>
+                  <Input
+                    id="assign-member-search"
+                    error={Boolean(assignErrors.member_id)}
+                    placeholder="Escribe un nombre o email"
+                    aria-invalid={assignErrors.member_id ? "true" : "false"}
+                    value={memberSearch}
+                    onChange={(event) => {
+                      setMemberSearch(event.target.value);
+                      setSelectedMemberId("");
+                      setAssignValue("member_id", "", { shouldValidate: false });
+                    }}
+                  />
+                  <FieldHint>
+                    {membersQuery.isLoading
+                      ? "Cargando miembros..."
+                      : selectedAvailableMember
+                        ? `Seleccionado: ${formatMemberLabel(selectedAvailableMember)}`
+                        : "Selecciona un miembro de la lista para asignarlo."}
+                  </FieldHint>
+                  {assignErrors.member_id ? (
+                    <FieldError>{assignErrors.member_id.message}</FieldError>
+                  ) : null}
+                </Field>
+
+                {selectedAvailableMember ? (
+                  <CardInset className="border-[var(--border-base)] bg-[var(--bg-surface-secondary)] shadow-none">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[var(--text-primary)]">
+                          {selectedAvailableMember.full_name}
+                        </p>
+                        <p className="text-xs text-[var(--text-secondary)]">
+                          {selectedAvailableMember.email}
+                        </p>
+                      </div>
+                      <Button
+                        className="rounded-xl"
+                        onClick={() => {
+                          setSelectedMemberId("");
+                          setMemberSearch("");
+                          setAssignValue("member_id", "", { shouldValidate: false });
+                        }}
+                        size="sm"
+                        type="button"
+                        variant="ghost"
+                      >
+                        Cambiar
+                      </Button>
+                    </div>
+                  </CardInset>
+                ) : null}
+
+                {!selectedAvailableMember && memberSearch.trim().length > 0 ? (
+                  <div className="space-y-2 rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] p-2">
+                    {matchingMembers.length > 0 ? (
+                      matchingMembers.map((member) => (
+                        <button
+                          key={member.id}
+                          className="flex w-full items-start justify-between rounded-xl px-3 py-2 text-left transition hover:bg-[var(--bg-surface)]"
+                          onClick={() => {
+                            setSelectedMemberId(member.id);
+                            setMemberSearch(formatMemberLabel(member));
+                            setAssignValue("member_id", member.id, { shouldValidate: true });
+                            clearAssignErrors("member_id");
+                          }}
+                          type="button"
+                        >
+                          <span>
+                            <span className="block text-sm font-semibold text-[var(--text-primary)]">
+                              {member.full_name}
+                            </span>
+                            <span className="block text-xs text-[var(--text-secondary)]">
+                              {member.email}
+                            </span>
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <p className="px-3 py-2 text-sm text-[var(--text-secondary)]">
+                        No encontramos miembros con ese nombre.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+
+                {!membersQuery.isLoading && availableMembers.length === 0 ? (
+                  <FieldHint>No hay miembros disponibles para agregar a esta clase.</FieldHint>
+                ) : null}
+
+                <Button
+                  className="h-12 w-full rounded-2xl"
+                  disabled={
+                    membersQuery.isLoading ||
+                    availableMembers.length === 0 ||
+                    !selectedAvailableMember
+                  }
+                  loading={isAssigning || assignMemberMutation.isPending}
+                  type="submit"
+                  variant="secondary"
+                >
+                  {isAssigning || assignMemberMutation.isPending
+                    ? "Asignando..."
+                    : "Asignar miembro a la clase"}
+                </Button>
+
+                {assignMemberMutation.error ? (
+                  <CardInset className="border-[var(--danger-soft)] bg-[var(--danger-soft)] shadow-none">
+                    <p className="text-sm font-medium text-[var(--danger)]">
+                      {getApiErrorMessage(assignMemberMutation.error)}
+                    </p>
+                  </CardInset>
+                ) : null}
+
+                {assignMemberMutation.data ? (
+                  <CardInset className="border-[var(--success-soft)] bg-[var(--success-soft)] shadow-none">
+                    <p className="text-sm font-medium text-[var(--success)]">
+                      {assignMemberMutation.data.message}
+                    </p>
+                  </CardInset>
+                ) : null}
+              </form>
+            </CardContent>
+          </CardInset>
+        ) : null}
 
         <CardInset>
           <CardHeader className="space-y-2">

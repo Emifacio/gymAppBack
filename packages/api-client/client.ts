@@ -88,6 +88,9 @@ export interface ClassMember {
   booked_at: string;
   booking_type: "credit" | "free_pass" | "waitlist";
   credits_consumed: number;
+  assigned_by_admin?: boolean;
+  assigned_by_user_id?: string | null;
+  assigned_at?: string | null;
 }
 
 export interface ClassAssignmentPayload {
@@ -110,6 +113,9 @@ export type BookingRecord = components["schemas"]["BookingRead"] & {
   subscription_id?: string | null;
   booking_type: "credit" | "free_pass" | "waitlist";
   credits_consumed: number;
+  assigned_by_admin?: boolean;
+  assigned_by_user_id?: string | null;
+  assigned_at?: string | null;
   gym_class?: Workout | null;
 };
 export type WaitlistEntry = components["schemas"]["WaitlistRead"] & {
@@ -160,10 +166,7 @@ function isApiErrorPayload(value: unknown): value is ApiErrorPayload {
   return typeof value === "object" && value !== null;
 }
 
-function extractApiErrorMessage(
-  status: number,
-  payload?: ApiErrorPayload | string | any
-): string {
+function extractApiErrorMessage(status: number, payload?: ApiErrorPayload | string | any): string {
   if (typeof payload === "string" && payload.trim()) {
     return payload;
   }

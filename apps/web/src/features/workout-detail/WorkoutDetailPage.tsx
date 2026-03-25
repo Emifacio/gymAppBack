@@ -5,7 +5,7 @@ import { BookingEligibilityModal } from "@/components/booking-eligibility-modal"
 import { Card, CardContent, CardEyebrow, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/use-auth";
 import { useMembers } from "@/hooks/use-workouts";
-import { canManageOperations } from "@/lib/roles";
+import { canManageOperations, isAdmin } from "@/lib/roles";
 import { isApiResponseError } from "@gym/api-client";
 import { WorkoutInfoPanel } from "./components/WorkoutInfoPanel";
 import { BookingPanel } from "./components/BookingPanel";
@@ -56,6 +56,7 @@ export function WorkoutDetailPage() {
     updateWorkoutMutation,
     deleteWorkoutMutation
   } = useWorkoutAdmin(workoutId, canManage);
+  const canAssignMembers = isAdmin(session?.member);
 
   const isPast = useMemo(
     () => (workout ? new Date(workout.scheduled_at) < new Date() : false),
@@ -150,6 +151,7 @@ export function WorkoutDetailPage() {
       {canManage ? (
         <AdminPanel
           workout={workout!}
+          canAssignMembers={canAssignMembers}
           classMembers={classMembersQuery.data ?? []}
           onDelete={handleDelete}
           assignMemberMutation={assignMemberMutation}

@@ -115,19 +115,16 @@ async def get_class_members(
 @router.post(
     "/{class_id}/assign-member",
     response_model=BookingActionResponse,
-    dependencies=[Depends(require_roles(MemberRole.ADMIN, MemberRole.INSTRUCTOR))],
+    dependencies=[Depends(require_roles(MemberRole.ADMIN))],
 )
 async def assign_member_to_class(
     class_id: UUID,
     payload: ClassAssignmentCreate,
     current_user: Member = Depends(get_current_user),
-    class_service: ClassService = Depends(get_class_service),
     booking_service: BookingService = Depends(get_booking_service),
 ) -> BookingActionResponse:
-    gym_class = await class_service.get_class_model(class_id)
-    _ensure_class_roster_access(current_user, gym_class.instructor_id)
-    return await booking_service.create_booking(
-        BookingCreate(class_id=class_id, member_id=payload.member_id),
-        current_user,
-        allow_staff_override=True,
+    return await booking_service.assign_member_by_admin(
+        class_id=class_id,
+        member_id=payload.member_id,
+        actor=current_user,
     )

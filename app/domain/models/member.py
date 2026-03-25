@@ -65,7 +65,10 @@ class Member(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         back_populates="member",
         cascade="all, delete-orphan",
     )
-    bookings: Mapped[list["Booking"]] = relationship(back_populates="member")
+    bookings: Mapped[list["Booking"]] = relationship(
+        back_populates="member",
+        foreign_keys="Booking.member_id",
+    )
     waitlist_entries: Mapped[list["Waitlist"]] = relationship(back_populates="member")
     attendance_records: Mapped[list["Attendance"]] = relationship(back_populates="member")
     activities: Mapped[list["Activity"]] = relationship(back_populates="member")

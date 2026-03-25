@@ -11,7 +11,7 @@ export function MembersList({ members }: Props) {
     return (
       <CardInset>
         <p className="text-sm text-[var(--text-secondary)]">
-        Aún no hay miembros confirmados para esta clase.
+          Aún no hay miembros confirmados para esta clase.
         </p>
       </CardInset>
     );
@@ -24,8 +24,10 @@ export function MembersList({ members }: Props) {
           <p className="text-sm font-semibold text-[var(--text-primary)]">{member.full_name}</p>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">{member.email}</p>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            reserva de {member.booking_type}
-            {member.credits_consumed
+            {member.assigned_by_admin
+              ? "asignacion manual por administracion"
+              : `reserva de ${member.booking_type}`}
+            {!member.assigned_by_admin && member.credits_consumed
               ? ` · ${member.credits_consumed} ${member.credits_consumed === 1 ? "crédito usado" : "créditos usados"}`
               : ""}
           </p>

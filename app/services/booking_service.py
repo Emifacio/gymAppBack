@@ -7,11 +7,18 @@ from uuid import UUID, uuid4
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import BookingNotCancellableError, ConflictError, ForbiddenError, NotFoundError
+from app.core.exceptions import (
+    BookingNotCancellableError,
+    ClassFullError,
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+)
 from app.domain.enums import (
     BookingActionState,
     BookingEligibilityOutcome,
     BookingStatus,
+    BookingType,
     ClassStatus,
     MemberRole,
     WaitlistStatus,
@@ -178,6 +185,79 @@ class BookingService:
             state=BookingActionState.ADDED_TO_WAITLIST,
             message="Added to waitlist",
             waitlist_entry=WaitlistRead.model_validate(waitlist_entry),
+        )
+
+    async def assign_member_by_admin(
+        self,
+        *,
+        class_id: UUID,
+        member_id: UUID,
+        actor: Member,
+    ) -> BookingActionResponse:
+        if actor.role != MemberRole.ADMIN:
+            raise ForbiddenError("Only admins can assign members to classes")
+
+        now = datetime.now(timezone.utc)
+        booking_id: UUID | None = None
+
+        if self.session.in_transaction():
+            await self.session.rollback()
+
+        async with self.session.begin():
+            locked_class = await self.class_repository.get_by_id(class_id, for_update=True)
+            if locked_class is None:
+                raise NotFoundError("Class not found")
+            if locked_class.status == ClassStatus.CANCELLED:
+                raise ConflictError("Cancelled classes cannot receive manual assignments")
+            if self._class_has_concluded(locked_class, reference_time=now):
+                raise ConflictError("Concluded classes cannot receive manual assignments")
+
+            member = await self.member_repository.get_by_id(member_id)
+            if member is None:
+                raise NotFoundError("Member not found")
+
+            existing_booking = await self.booking_repository.get_by_member_and_class(
+                member_id,
+                class_id,
+                for_update=True,
+            )
+            if existing_booking is not None and existing_booking.status in {
+                BookingStatus.CONFIRMED,
+                BookingStatus.WAITLIST,
+            }:
+                raise ConflictError("Member is already assigned to this class")
+
+            existing_waitlist = await self.waitlist_repository.get_by_member_and_class(
+                member_id,
+                class_id,
+                for_update=True,
+            )
+            if existing_waitlist is not None and existing_waitlist.status == WaitlistStatus.WAITING:
+                self._transition_waitlist_status(existing_waitlist, WaitlistStatus.CANCELLED)
+                existing_waitlist.cancelled_at = now
+
+            confirmed_count = await self.booking_repository.count_confirmed_bookings(class_id)
+            if confirmed_count >= locked_class.capacity:
+                raise ClassFullError("Class has no available spots")
+
+            booking = await self._upsert_admin_confirmed_booking(
+                member_id=member_id,
+                class_id=class_id,
+                reference_time=now,
+                existing_booking=existing_booking,
+                assigned_by_user_id=actor.id,
+            )
+            booking_id = booking.id
+            await self.session.flush()
+
+        await self._invalidate_related_cache(class_id, [member_id])
+
+        booking = await self.booking_repository.get_by_id(booking_id)
+        assert booking is not None
+        return BookingActionResponse(
+            state=BookingActionState.BOOKING_CONFIRMED,
+            message="Member assigned to class",
+            booking=BookingRead.model_validate(booking),
         )
 
     async def cancel_booking(self, booking_id: UUID, actor: Member) -> BookingCancellationResponse:
@@ -522,6 +602,42 @@ class BookingService:
         booking.subscription_id = subscription.id
         booking.booked_at = reference_time
         booking.cancelled_at = None
+        booking.assigned_by_admin = False
+        booking.assigned_by_user_id = None
+        booking.assigned_at = None
+        return booking
+
+    async def _upsert_admin_confirmed_booking(
+        self,
+        *,
+        member_id: UUID,
+        class_id: UUID,
+        reference_time: datetime,
+        existing_booking: Booking | None,
+        assigned_by_user_id: UUID,
+    ) -> Booking:
+        booking = existing_booking
+        if booking is None:
+            booking = Booking(
+                member_id=member_id,
+                class_id=class_id,
+                booked_at=reference_time,
+                status=BookingStatus.CONFIRMED,
+            )
+            if getattr(booking, "id", None) is None:
+                booking.id = uuid4()
+            await self._await_if_needed(self.booking_repository.add(booking))
+        else:
+            booking.status = BookingStatus.CONFIRMED
+
+        booking.booking_type = BookingType.FREE_PASS
+        booking.credits_consumed = 0
+        booking.subscription_id = None
+        booking.booked_at = reference_time
+        booking.cancelled_at = None
+        booking.assigned_by_admin = True
+        booking.assigned_by_user_id = assigned_by_user_id
+        booking.assigned_at = reference_time
         return booking
 
     async def _upsert_waitlist_entry(
@@ -587,3 +703,10 @@ class BookingService:
         keys = [f"class:{class_id}"]
         keys.extend(f"member:{member_id}" for member_id in member_ids)
         await self.cache.delete(*keys)
+
+    @staticmethod
+    def _class_has_concluded(gym_class, *, reference_time: datetime) -> bool:
+        if gym_class.status == ClassStatus.COMPLETED:
+            return True
+        class_end = gym_class.scheduled_at + timedelta(minutes=gym_class.duration_minutes)
+        return class_end <= reference_time

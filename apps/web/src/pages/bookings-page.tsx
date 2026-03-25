@@ -214,8 +214,9 @@ export function BookingsPage() {
 
                 <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                    {booking.booking_type} ·{" "}
-                    {booking.credits_consumed ? `${booking.credits_consumed} CR` : "S/C"}
+                    {booking.assigned_by_admin
+                      ? "ASIGNACION MANUAL · S/C"
+                      : `${booking.booking_type} · ${booking.credits_consumed ? `${booking.credits_consumed} CR` : "S/C"}`}
                   </p>
 
                   {!isBookingPast(booking.gym_class?.scheduled_at) && (

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Index, Integer, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.enums import BookingStatus, BookingType, enum_values
@@ -39,8 +39,18 @@ class Booking(UUIDPrimaryKeyMixin, Base):
     credits_consumed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     booked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    assigned_by_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    assigned_by_user_id = mapped_column(
+        ForeignKey("members.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    assigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    member: Mapped["Member"] = relationship(back_populates="bookings")
+    member: Mapped["Member"] = relationship(
+        back_populates="bookings",
+        foreign_keys=[member_id],
+    )
     gym_class: Mapped["GymClass"] = relationship(back_populates="bookings")
     subscription: Mapped["MemberSubscription | None"] = relationship(back_populates="bookings")
 

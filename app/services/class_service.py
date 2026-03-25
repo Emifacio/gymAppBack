@@ -139,8 +139,22 @@ class ClassService:
                 booked_at=booked_at,
                 booking_type=booking_type,
                 credits_consumed=credits_consumed,
+                assigned_by_admin=assigned_by_admin,
+                assigned_by_user_id=assigned_by_user_id,
+                assigned_at=assigned_at,
             )
-            for booking_id, member_id, full_name, email, booked_at, booking_type, credits_consumed in bookings
+            for (
+                booking_id,
+                member_id,
+                full_name,
+                email,
+                booked_at,
+                booking_type,
+                credits_consumed,
+                assigned_by_admin,
+                assigned_by_user_id,
+                assigned_at,
+            ) in bookings
         ]
 
     async def _serialize_classes(

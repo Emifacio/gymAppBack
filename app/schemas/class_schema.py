@@ -112,6 +112,9 @@ class ClassMemberRead(BaseModel):
     booked_at: datetime
     booking_type: BookingType
     credits_consumed: int
+    assigned_by_admin: bool = False
+    assigned_by_user_id: UUID | None = None
+    assigned_at: datetime | None = None
 
 
 class ClassRead(BaseModel):

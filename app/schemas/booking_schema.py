@@ -25,6 +25,9 @@ class BookingRead(BaseModel):
     credits_consumed: int
     booked_at: datetime
     cancelled_at: datetime | None = None
+    assigned_by_admin: bool | None = False
+    assigned_by_user_id: UUID | None = None
+    assigned_at: datetime | None = None
     gym_class: ClassRead | None = None
 
 

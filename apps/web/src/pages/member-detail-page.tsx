@@ -765,8 +765,10 @@ export function MemberDetailPage() {
                       Reservado el {formatDateTime(booking.booked_at)}
                     </p>
                     <p className="text-sm text-[var(--text-secondary)]">
-                      {booking.booking_type}
-                      {booking.credits_consumed
+                      {booking.assigned_by_admin
+                        ? "Asignacion manual por administracion"
+                        : booking.booking_type}
+                      {!booking.assigned_by_admin && booking.credits_consumed
                         ? ` · ${booking.credits_consumed} ${booking.credits_consumed === 1 ? "credito usado" : "creditos usados"}`
                         : ""}
                     </p>

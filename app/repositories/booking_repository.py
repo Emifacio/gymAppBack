@@ -82,6 +82,9 @@ class BookingRepository(BaseRepository[Booking]):
                 Booking.booked_at,
                 Booking.booking_type,
                 Booking.credits_consumed,
+                Booking.assigned_by_admin,
+                Booking.assigned_by_user_id,
+                Booking.assigned_at,
             )
             .join(Member, Member.id == Booking.member_id)
             .where(

@@ -7,7 +7,7 @@ from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, Mock, ANY
 from uuid import uuid4
 
-from app.core.exceptions import BookingNotCancellableError, ForbiddenError
+from app.core.exceptions import BookingNotCancellableError, ClassFullError, ConflictError, ForbiddenError
 from app.domain.enums import BookingEligibilityOutcome, BookingStatus, BookingType, ClassStatus, MemberRole, WaitlistStatus
 from app.domain.models.booking import Booking
 from app.domain.models.waitlist import Waitlist
@@ -76,6 +76,180 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
             created_at=scheduled_at - timedelta(days=7),
             updated_at=scheduled_at - timedelta(days=1),
         )
+
+    async def test_assign_member_by_admin_creates_audited_booking_without_consuming_credits(self) -> None:
+        actor = SimpleNamespace(id=uuid4(), role=MemberRole.ADMIN)
+        member_id = uuid4()
+        class_id = uuid4()
+        now = datetime.now(timezone.utc)
+        booking_holder: dict[str, Booking] = {}
+
+        waitlist_entry = Waitlist(
+            id=uuid4(),
+            member_id=member_id,
+            class_id=class_id,
+            position=1,
+            status=WaitlistStatus.WAITING,
+            joined_at=now - timedelta(hours=1),
+            promoted_at=None,
+            cancelled_at=None,
+        )
+
+        self.class_repository.get_by_id = AsyncMock(
+            return_value=SimpleNamespace(
+                id=class_id,
+                capacity=12,
+                status=ClassStatus.SCHEDULED,
+                scheduled_at=now + timedelta(hours=2),
+                duration_minutes=60,
+            )
+        )
+        self.member_repository.get_by_id = AsyncMock(return_value=SimpleNamespace(id=member_id))
+        self.booking_repository.get_by_member_and_class = AsyncMock(return_value=None)
+        self.booking_repository.count_confirmed_bookings = AsyncMock(return_value=3)
+
+        async def add_booking(booking: Booking) -> Booking:
+            booking_holder["booking"] = booking
+            return booking
+
+        self.booking_repository.add = AsyncMock(side_effect=add_booking)
+        self.booking_repository.get_by_id = AsyncMock(
+            side_effect=lambda booking_id, for_update=False: booking_holder.get("booking")
+        )
+        self.waitlist_repository.get_by_member_and_class = AsyncMock(return_value=waitlist_entry)
+        self.subscription_service.consume_credit_for_booking = Mock()
+
+        response = await self.service.assign_member_by_admin(
+            class_id=class_id,
+            member_id=member_id,
+            actor=actor,
+        )
+
+        self.assertEqual(response.state, "BOOKING_CONFIRMED")
+        self.assertEqual(response.message, "Member assigned to class")
+        self.assertIsNotNone(response.booking)
+        assert response.booking is not None
+        self.assertEqual(response.booking.member_id, member_id)
+        self.assertEqual(response.booking.class_id, class_id)
+        self.assertEqual(response.booking.booking_type, BookingType.FREE_PASS)
+        self.assertEqual(response.booking.credits_consumed, 0)
+        self.assertTrue(response.booking.assigned_by_admin)
+        self.assertEqual(response.booking.assigned_by_user_id, actor.id)
+        self.assertIsNotNone(response.booking.assigned_at)
+        self.assertEqual(waitlist_entry.status, WaitlistStatus.CANCELLED)
+        self.assertIsNotNone(waitlist_entry.cancelled_at)
+        self.subscription_service.consume_credit_for_booking.assert_not_called()
+        self.cache.delete.assert_awaited_once_with(f"class:{class_id}", f"member:{member_id}")
+
+    async def test_assign_member_by_admin_rejects_non_admin_actor(self) -> None:
+        actor = SimpleNamespace(id=uuid4(), role=MemberRole.INSTRUCTOR)
+
+        with self.assertRaises(ForbiddenError):
+            await self.service.assign_member_by_admin(
+                class_id=uuid4(),
+                member_id=uuid4(),
+                actor=actor,
+            )
+
+        self.class_repository.get_by_id.assert_not_called()
+
+    async def test_assign_member_by_admin_rejects_duplicate_assignment(self) -> None:
+        actor = SimpleNamespace(id=uuid4(), role=MemberRole.ADMIN)
+        member_id = uuid4()
+        class_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        existing_booking = Booking(
+            id=uuid4(),
+            member_id=member_id,
+            class_id=class_id,
+            status=BookingStatus.CONFIRMED,
+            booking_type=BookingType.CREDIT,
+            credits_consumed=1,
+            booked_at=now - timedelta(days=1),
+            cancelled_at=None,
+        )
+
+        self.class_repository.get_by_id = AsyncMock(
+            return_value=SimpleNamespace(
+                id=class_id,
+                capacity=12,
+                status=ClassStatus.SCHEDULED,
+                scheduled_at=now + timedelta(hours=2),
+                duration_minutes=60,
+            )
+        )
+        self.member_repository.get_by_id = AsyncMock(return_value=SimpleNamespace(id=member_id))
+        self.booking_repository.get_by_member_and_class = AsyncMock(return_value=existing_booking)
+
+        with self.assertRaises(ConflictError):
+            await self.service.assign_member_by_admin(
+                class_id=class_id,
+                member_id=member_id,
+                actor=actor,
+            )
+
+        self.booking_repository.count_confirmed_bookings.assert_not_called()
+
+    async def test_assign_member_by_admin_rejects_full_or_unassignable_classes(self) -> None:
+        actor = SimpleNamespace(id=uuid4(), role=MemberRole.ADMIN)
+        member_id = uuid4()
+        class_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        self.member_repository.get_by_id = AsyncMock(return_value=SimpleNamespace(id=member_id))
+        self.booking_repository.get_by_member_and_class = AsyncMock(return_value=None)
+        self.waitlist_repository.get_by_member_and_class = AsyncMock(return_value=None)
+
+        self.class_repository.get_by_id = AsyncMock(
+            return_value=SimpleNamespace(
+                id=class_id,
+                capacity=12,
+                status=ClassStatus.CANCELLED,
+                scheduled_at=now + timedelta(hours=2),
+                duration_minutes=60,
+            )
+        )
+        with self.assertRaises(ConflictError):
+            await self.service.assign_member_by_admin(
+                class_id=class_id,
+                member_id=member_id,
+                actor=actor,
+            )
+
+        self.class_repository.get_by_id = AsyncMock(
+            return_value=SimpleNamespace(
+                id=class_id,
+                capacity=12,
+                status=ClassStatus.COMPLETED,
+                scheduled_at=now - timedelta(hours=3),
+                duration_minutes=60,
+            )
+        )
+        with self.assertRaises(ConflictError):
+            await self.service.assign_member_by_admin(
+                class_id=class_id,
+                member_id=member_id,
+                actor=actor,
+            )
+
+        self.class_repository.get_by_id = AsyncMock(
+            return_value=SimpleNamespace(
+                id=class_id,
+                capacity=2,
+                status=ClassStatus.SCHEDULED,
+                scheduled_at=now + timedelta(hours=2),
+                duration_minutes=60,
+            )
+        )
+        self.booking_repository.count_confirmed_bookings = AsyncMock(return_value=2)
+
+        with self.assertRaises(ClassFullError):
+            await self.service.assign_member_by_admin(
+                class_id=class_id,
+                member_id=member_id,
+                actor=actor,
+            )
 
     async def test_cancel_confirmed_booking_restores_credit_and_promotes_waitlist(self) -> None:
         actor = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)
