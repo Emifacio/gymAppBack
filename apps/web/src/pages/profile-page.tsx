@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/hooks/use-auth";
 import { useUpdateMember, useUploadAvatar } from "@/hooks/use-workouts";
 import { getAvatarData } from "@/lib/avatar";
-import { resetTour } from "@/features/onboarding/onboarding.store";
 import { getApiErrorMessage } from "@/api/client";
 import type { Profile, PartialProfileUpdate } from "@/types/gym";
 
@@ -58,18 +57,6 @@ export function ProfilePage() {
       console.error(err);
       setMessage({ type: "error", text: getApiErrorMessage(err) });
     }
-  };
-
-  const handleResetOnboarding = () => {
-    setMessage(null);
-
-    try {
-      resetTour(member?.id);
-    } catch {
-      // ignore localStorage failures
-    }
-
-    setMessage({ type: "success", text: "Onboarding reiniciado. Vuelve al Dashboard para verlo." });
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,26 +200,6 @@ export function ProfilePage() {
                 {avatarMessage.text}
               </p>
             )}
-          </div>
-
-          <div className="apple-card p-6 shadow-md border-l-4 border-l-[var(--accent)]">
-            <div className="flex items-center gap-3 mb-4">
-              <Rocket className="h-5 w-5 text-[var(--accent)]" />
-              <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)]">
-                Guía Rápida
-              </h3>
-            </div>
-            <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed">
-              ¿Perdido? Puedes reiniciar el tutorial interactivo para recordar cómo navegar las
-              secciones principales.
-            </p>
-            <Button
-              variant="secondary"
-              className="w-full h-10 mt-6 text-xs font-bold"
-              onClick={handleResetOnboarding}
-            >
-              Reiniciar Tour
-            </Button>
           </div>
         </div>
 

@@ -15,11 +15,16 @@ export function DashboardPage() {
   const { session } = useAuth();
 
   const workoutsQuery = useWorkouts({ limit: 6 });
-  const bookingsQuery = useMemberBookings(session?.member.id ?? "", { enabled: Boolean(session?.member.id) });
+  const bookingsQuery = useMemberBookings(session?.member.id ?? "", {
+    enabled: Boolean(session?.member.id)
+  });
   const subscriptionQuery = useMySubscriptionStatus({ enabled: Boolean(session) });
 
   const workouts: Workout[] = useMemo(() => workoutsQuery.data ?? [], [workoutsQuery.data]);
-  const bookings: Booking[] = useMemo(() => bookingsQuery.data?.bookings ?? [], [bookingsQuery.data]);
+  const bookings: Booking[] = useMemo(
+    () => bookingsQuery.data?.bookings ?? [],
+    [bookingsQuery.data]
+  );
   const waitlist = useMemo(() => bookingsQuery.data?.waitlist ?? [], [bookingsQuery.data]);
   const confirmedBookings = bookings.filter((booking) => booking.status === "confirmed");
   const activeWaitlist = waitlist.filter((entry) => entry.status === "waiting");
@@ -60,7 +65,7 @@ export function DashboardPage() {
         </div>
         <div>
           <h2 className="section-title text-[var(--font-size-2xl)] text-[var(--text-primary)] leading-tight">
-            Buenos días, {session?.member.full_name.split(' ')[0]}
+            Buenos días, {session?.member.full_name.split(" ")[0]}
           </h2>
           <p className="mt-1 text-sm font-medium text-[var(--text-secondary)] lg:text-base opacity-80">
             Tienes {confirmedBookings.length} clases programadas para esta semana.
@@ -104,7 +109,7 @@ export function DashboardPage() {
         <EmptyState
           eyebrow="Listo para crecer"
           title="Aún no hay entrenamientos programados"
-          description="Tan pronto como se creen clases en el backend, aparecerán aquí automáticamente."
+          description="Tan pronto agendes tu primera clase, aparecerá aquí automáticamente."
         />
       ) : (
         <>
@@ -113,15 +118,23 @@ export function DashboardPage() {
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
                 Suscripción
               </p>
-              <h2 className="section-title mt-2 text-[var(--font-size-xl)] text-[var(--text-primary)]">Membresía</h2>
+              <h2 className="section-title mt-2 text-[var(--font-size-xl)] text-[var(--text-primary)]">
+                Membresía
+              </h2>
               {subscription?.active_plan ? (
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
-                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Plan</p>
-                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{subscription.plan_name}</p>
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                      Plan
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
+                      {subscription.plan_name}
+                    </p>
                   </div>
                   <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
-                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Créditos</p>
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                      Créditos
+                    </p>
                     <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
                       {subscription.allows_free_pass
                         ? "Ilimitados"
@@ -129,12 +142,20 @@ export function DashboardPage() {
                     </p>
                   </div>
                   <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
-                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Vencimiento</p>
-                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{formatDateTime(subscription.period_end)}</p>
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                      Vencimiento
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
+                      {formatDateTime(subscription.period_end)}
+                    </p>
                   </div>
                   <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
-                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Espera</p>
-                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{activeWaitlist.length} entradas</p>
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                      Espera
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
+                      {activeWaitlist.length} entradas
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -150,20 +171,34 @@ export function DashboardPage() {
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
                 Estado
               </p>
-              <h2 className="section-title mt-2 text-[var(--font-size-xl)] text-[var(--text-primary)]">Vista general</h2>
+              <h2 className="section-title mt-2 text-[var(--font-size-xl)] text-[var(--text-primary)]">
+                Vista general
+              </h2>
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Confirmadas</p>
-                  <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{confirmedBookings.length} reservas</p>
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                    Confirmadas
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
+                    {confirmedBookings.length} reservas
+                  </p>
                 </div>
                 <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Pendientes</p>
-                  <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{activeWaitlist.length} en espera</p>
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                    Pendientes
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
+                    {activeWaitlist.length} en espera
+                  </p>
                 </div>
                 <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 sm:col-span-2 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">Próxima sesión</p>
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                    Próxima sesión
+                  </p>
                   <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
-                    {upcomingWorkout ? formatRelativeSlot(upcomingWorkout.scheduled_at) : "Sin clases pronto."}
+                    {upcomingWorkout
+                      ? formatRelativeSlot(upcomingWorkout.scheduled_at)
+                      : "Sin clases pronto."}
                   </p>
                 </div>
               </div>
@@ -173,10 +208,20 @@ export function DashboardPage() {
           <section className="space-y-6">
             <div className="flex items-end justify-between px-2">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)] opacity-80">Próximamente</p>
-                <h2 className="section-title mt-1 text-3xl font-bold text-[var(--text-primary)]">Tu Agenda</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)] opacity-80">
+                  Próximamente
+                </p>
+                <h2 className="section-title mt-1 text-3xl font-bold text-[var(--text-primary)]">
+                  Tu Agenda
+                </h2>
               </div>
-              <Link className={buttonClassName({ size: "sm", variant: "ghost" }) + " text-[var(--accent)] font-bold"} to="/workouts">
+              <Link
+                className={
+                  buttonClassName({ size: "sm", variant: "ghost" }) +
+                  " text-[var(--accent)] font-bold"
+                }
+                to="/workouts"
+              >
                 Explorar todas →
               </Link>
             </div>

@@ -5,7 +5,6 @@ import { AppLoader } from "@/components/app-loader";
 import { ErrorFallback } from "@/components/error-handling/ErrorFallback";
 import { AuthGuard } from "@/components/auth-guard";
 import { PublicEntryGate } from "@/features/public-onboarding/public-entry-gate";
-import { OnboardingProvider } from "@/providers/onboarding-provider";
 
 function lazyPage<T extends ComponentType<object>>(loader: () => Promise<{ default: T }>) {
   return lazy(loader);
@@ -103,11 +102,7 @@ export const router = createBrowserRouter([
     ]
   },
   {
-    element: (
-      <OnboardingProvider>
-        <AuthGuard />
-      </OnboardingProvider>
-    ),
+    element: <AuthGuard />,
     errorElement: <ErrorFallback />,
     children: [
       {

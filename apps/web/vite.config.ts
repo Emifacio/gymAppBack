@@ -28,10 +28,6 @@ export default defineConfig({
         manualChunks(id) {
           const normalizedId = id.replaceAll("\\", "/");
 
-          if (normalizedId.includes("driver.js")) {
-            return "onboarding";
-          }
-
           if (
             normalizedId.includes("framer-motion") ||
             normalizedId.includes("motion-dom") ||
@@ -48,10 +44,7 @@ export default defineConfig({
             return "forms";
           }
 
-          if (
-            normalizedId.includes("/features/onboarding/") ||
-            normalizedId.includes("/features/public-onboarding/")
-          ) {
+          if (normalizedId.includes("/features/public-onboarding/")) {
             return "onboarding";
           }
 
