@@ -2,17 +2,42 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Sparkles } from "lucide-react";
 
-import { buttonClassName } from "@/components/ui/button-utils";
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
 import { WorkoutCard } from "@/components/workout-card";
+import { Skeleton } from "@/components/ui/skeletons";
+import { buttonClassName } from "@/components/ui/button-utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useRandomMessage } from "@/hooks/use-random-message";
 import { useMemberBookings, useMySubscriptionStatus, useWorkouts } from "@/hooks/use-workouts";
-import { formatCredits, formatDateTime, formatRelativeSlot } from "@/lib/format";
 import { getDashboardMotivationMessages } from "@/lib/dashboard-motivation";
+import { formatCredits, formatDateTime, formatRelativeSlot } from "@/lib/format";
 import { filterActionableWaitlistEntries } from "@/lib/waitlist";
 import type { Booking, Subscription, Workout } from "@/types/gym";
+
+function DashboardSectionSkeleton({ compact = false }: { compact?: boolean }) {
+  return (
+    <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      {[1, 2, 3].map((index) => (
+        <div
+          key={index}
+          className={`rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 shadow-sm ${
+            !compact && index === 3 ? "sm:col-span-2" : ""
+          }`}
+        >
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="mt-3 h-5 w-28" />
+        </div>
+      ))}
+      {compact ? (
+        <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 shadow-sm">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="mt-3 h-5 w-28" />
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function DashboardPage() {
   const { session } = useAuth();
@@ -63,7 +88,53 @@ export function DashboardPage() {
   }, [workouts, now]);
 
   const upcomingWorkout = upcomingWorkouts[0];
-  const showEmptyState = !upcomingWorkouts.length && workoutsQuery.isSuccess;
+  const isInitialWorkoutsLoading = workoutsQuery.isLoading;
+  const isInitialBookingsLoading = bookingsQuery.isLoading;
+  const isInitialSubscriptionLoading = subscriptionQuery.isLoading;
+  const hasUpcomingWorkouts = upcomingWorkouts.length > 0;
+  const dashboardSubtitle = isInitialBookingsLoading
+    ? "Estamos preparando tu resumen de hoy."
+    : `Tienes ${confirmedBookings.length} clases programadas para esta semana.`;
+  const shouldRenderMembershipSection = isInitialSubscriptionLoading || subscriptionQuery.isSuccess;
+  const shouldRenderOverviewSection =
+    isInitialBookingsLoading ||
+    isInitialWorkoutsLoading ||
+    bookingsQuery.isSuccess ||
+    workoutsQuery.isSuccess;
+  const shouldRenderAgendaSection = hasUpcomingWorkouts;
+  const shouldRenderEmptyState = workoutsQuery.isSuccess && !hasUpcomingWorkouts;
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
+    console.debug("[DashboardPage] section visibility", {
+      isInitialWorkoutsLoading,
+      isInitialBookingsLoading,
+      isInitialSubscriptionLoading,
+      workoutsCount: workouts.length,
+      confirmedBookingsCount: confirmedBookings.length,
+      activeWaitlistCount: activeWaitlist.length,
+      hasUpcomingWorkouts,
+      shouldRenderMembershipSection,
+      shouldRenderOverviewSection,
+      shouldRenderAgendaSection,
+      shouldRenderEmptyState
+    });
+  }, [
+    activeWaitlist.length,
+    confirmedBookings.length,
+    hasUpcomingWorkouts,
+    isInitialBookingsLoading,
+    isInitialSubscriptionLoading,
+    isInitialWorkoutsLoading,
+    shouldRenderAgendaSection,
+    shouldRenderEmptyState,
+    shouldRenderMembershipSection,
+    shouldRenderOverviewSection,
+    workouts.length
+  ]);
 
   if (!session) {
     return null;
@@ -80,7 +151,7 @@ export function DashboardPage() {
             Buenos días, {firstName}
           </h2>
           <p className="mt-1 text-sm font-medium text-[var(--text-secondary)] lg:text-base opacity-80">
-            Tienes {confirmedBookings.length} clases programadas para esta semana.
+            {dashboardSubtitle}
           </p>
         </div>
       </header>
@@ -101,31 +172,25 @@ export function DashboardPage() {
                 : formatCredits(subscription.active_credits)
               : "Sin plan activo"
           }
-          loading={subscriptionQuery.isLoading}
+          loading={isInitialSubscriptionLoading}
         />
         <StatCard
           detail="Reservas confirmadas"
           label="Mis reservas"
           value={String(confirmedBookings.length)}
-          loading={bookingsQuery.isLoading}
+          loading={isInitialBookingsLoading}
         />
         <StatCard
           detail="Clases disponibles hoy"
           label="Próximas clases"
           value={String(upcomingWorkouts.length)}
-          loading={workoutsQuery.isLoading}
+          loading={isInitialWorkoutsLoading}
         />
       </section>
 
-      {showEmptyState ? (
-        <EmptyState
-          eyebrow="Tu impulso"
-          title="Hoy también cuenta"
-          description={motivationalEmptyStateMessage}
-        />
-      ) : (
-        <>
-          <section className="grid gap-[var(--section-gap)] lg:grid-cols-2">
+      {shouldRenderMembershipSection || shouldRenderOverviewSection ? (
+        <section className="grid gap-[var(--section-gap)] lg:grid-cols-2">
+          {shouldRenderMembershipSection ? (
             <div className="apple-card">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
                 Suscripción
@@ -133,7 +198,9 @@ export function DashboardPage() {
               <h2 className="section-title mt-2 text-[var(--font-size-xl)] text-[var(--text-primary)]">
                 Membresía
               </h2>
-              {subscription?.active_plan ? (
+              {isInitialSubscriptionLoading ? (
+                <DashboardSectionSkeleton compact />
+              ) : subscription?.active_plan ? (
                 <div className="mt-6 grid gap-4 sm:grid-cols-2">
                   <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
                     <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
@@ -178,7 +245,9 @@ export function DashboardPage() {
                 </div>
               )}
             </div>
+          ) : null}
 
+          {shouldRenderOverviewSection ? (
             <div className="apple-card">
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--accent)]">
                 Estado
@@ -186,66 +255,80 @@ export function DashboardPage() {
               <h2 className="section-title mt-2 text-[var(--font-size-xl)] text-[var(--text-primary)]">
                 Vista general
               </h2>
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
-                    Confirmadas
-                  </p>
-                  <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
-                    {confirmedBookings.length} reservas
-                  </p>
+              {isInitialBookingsLoading || isInitialWorkoutsLoading ? (
+                <DashboardSectionSkeleton />
+              ) : (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                      Confirmadas
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
+                      {confirmedBookings.length} reservas
+                    </p>
+                  </div>
+                  <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                      Pendientes
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
+                      {activeWaitlist.length} en espera
+                    </p>
+                  </div>
+                  <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 sm:col-span-2 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
+                      Próxima sesión
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
+                      {upcomingWorkout
+                        ? formatRelativeSlot(upcomingWorkout.scheduled_at)
+                        : "Sin clases pronto."}
+                    </p>
+                  </div>
                 </div>
-                <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
-                    Pendientes
-                  </p>
-                  <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
-                    {activeWaitlist.length} en espera
-                  </p>
-                </div>
-                <div className="rounded-[1.25rem] bg-[var(--bg-surface-secondary)] p-5 sm:col-span-2 border border-transparent hover:border-[var(--border-base)] transition-colors shadow-sm">
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
-                    Próxima sesión
-                  </p>
-                  <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">
-                    {upcomingWorkout
-                      ? formatRelativeSlot(upcomingWorkout.scheduled_at)
-                      : "Sin clases pronto."}
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
-          </section>
+          ) : null}
+        </section>
+      ) : null}
 
-          <section className="space-y-6">
-            <div className="flex items-end justify-between px-2">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)] opacity-80">
-                  Próximamente
-                </p>
-                <h2 className="section-title mt-1 text-3xl font-bold text-[var(--text-primary)]">
-                  Tu Agenda
-                </h2>
-              </div>
-              <Link
-                className={
-                  buttonClassName({ size: "sm", variant: "ghost" }) +
-                  " text-[var(--accent)] font-bold"
-                }
-                to="/workouts"
-              >
-                Explorar todas →
-              </Link>
+      {shouldRenderAgendaSection ? (
+        <section className="space-y-6">
+          <div className="flex items-end justify-between px-2">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)] opacity-80">
+                Próximamente
+              </p>
+              <h2 className="section-title mt-1 text-3xl font-bold text-[var(--text-primary)]">
+                Tu Agenda
+              </h2>
             </div>
+            <Link
+              className={
+                buttonClassName({ size: "sm", variant: "ghost" }) +
+                " text-[var(--accent)] font-bold"
+              }
+              to="/workouts"
+            >
+              Explorar todas →
+            </Link>
+          </div>
 
-            <div className="grid gap-6">
-              {upcomingWorkouts.slice(0, 3).map((workout) => (
-                <WorkoutCard key={workout.id} workout={workout} />
-              ))}
-            </div>
-          </section>
-        </>
-      )}
+          <div className="grid gap-6">
+            {upcomingWorkouts.slice(0, 3).map((workout) => (
+              <WorkoutCard key={workout.id} workout={workout} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {shouldRenderEmptyState ? (
+        <EmptyState
+          eyebrow="Tu impulso"
+          title="Hoy también cuenta"
+          description={motivationalEmptyStateMessage}
+        />
+      ) : null}
     </div>
   );
 }
