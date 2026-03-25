@@ -315,12 +315,9 @@ class BookingService:
 
         waitlist_entries = await self.waitlist_repository.list_for_member(member_id)
         for waitlist_entry in waitlist_entries:
-            if waitlist_entry.status != WaitlistStatus.WAITING:
-                continue
             gym_class = waitlist_entry.gym_class or await self.class_repository.get_by_id(waitlist_entry.class_id)
-            if gym_class is None or gym_class.status != ClassStatus.SCHEDULED:
-                continue
-            if gym_class.scheduled_at <= now:
+            waitlist_entry.__dict__["gym_class"] = gym_class
+            if not self._is_waitlist_entry_actionable(waitlist_entry, reference_time=now):
                 continue
             await self.cancel_booking(waitlist_entry.id, admin_actor)
 
@@ -331,9 +328,15 @@ class BookingService:
 
         bookings = await self.booking_repository.list_for_member(member_id)
         waitlist_entries = await self.waitlist_repository.list_for_member(member_id)
+        reference_time = datetime.now(timezone.utc)
+        actionable_waitlist_entries = [
+            item
+            for item in waitlist_entries
+            if self._is_waitlist_entry_actionable(item, reference_time=reference_time)
+        ]
         return MemberBookingsResponse(
             bookings=[BookingRead.model_validate(item) for item in bookings],
-            waitlist=[WaitlistRead.model_validate(item) for item in waitlist_entries],
+            waitlist=[WaitlistRead.model_validate(item) for item in actionable_waitlist_entries],
         )
 
     async def promote_waitlist_if_needed(
@@ -414,6 +417,53 @@ class BookingService:
     def cancellation_is_early(start_time: datetime, *, reference_time: datetime | None = None) -> bool:
         current_time = reference_time or datetime.now(timezone.utc)
         return start_time - current_time >= timedelta(hours=24)
+
+    @staticmethod
+    def _class_end_time(gym_class) -> datetime | None:
+        scheduled_at = getattr(gym_class, "scheduled_at", None)
+        if not isinstance(scheduled_at, datetime):
+            return None
+
+        duration_minutes = getattr(gym_class, "duration_minutes", None)
+        if not isinstance(duration_minutes, int) or duration_minutes <= 0:
+            duration_minutes = 60
+
+        return scheduled_at + timedelta(minutes=duration_minutes)
+
+    @classmethod
+    def _is_class_actionable_for_waitlist(
+        cls,
+        gym_class,
+        *,
+        reference_time: datetime | None = None,
+    ) -> bool:
+        if gym_class is None:
+            return False
+
+        if getattr(gym_class, "status", None) in {ClassStatus.CANCELLED, ClassStatus.COMPLETED}:
+            return False
+
+        current_time = reference_time or datetime.now(timezone.utc)
+        class_end_time = cls._class_end_time(gym_class)
+        if class_end_time is None:
+            return False
+
+        return class_end_time > current_time
+
+    @classmethod
+    def _is_waitlist_entry_actionable(
+        cls,
+        waitlist_entry: Waitlist,
+        *,
+        reference_time: datetime | None = None,
+    ) -> bool:
+        if waitlist_entry.status != WaitlistStatus.WAITING:
+            return False
+
+        return cls._is_class_actionable_for_waitlist(
+            waitlist_entry.gym_class,
+            reference_time=reference_time,
+        )
 
     @staticmethod
     def _ensure_cancellation_access(actor_role: MemberRole, actor_id: UUID, owner_id: UUID) -> None:

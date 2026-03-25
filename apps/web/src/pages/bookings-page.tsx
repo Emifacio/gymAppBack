@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Ticket, Clock, History, Ban, CheckCircle2, AlertCircle } from "lucide-react";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -9,6 +9,7 @@ import {
   useMySubscriptionStatus
 } from "@/hooks/use-workouts";
 import { formatCredits, formatDateTime, formatWorkoutSchedule } from "@/lib/format";
+import { filterActionableWaitlistEntries } from "@/lib/waitlist";
 import { CancellationModal } from "@/components/cancellation-modal";
 import { Button } from "@/components/ui/Button";
 
@@ -37,7 +38,10 @@ export function BookingsPage() {
   }, [toast]);
 
   const bookings = bookingsQuery.data?.bookings ?? [];
-  const waitlist = bookingsQuery.data?.waitlist ?? [];
+  const waitlist = useMemo(
+    () => filterActionableWaitlistEntries(bookingsQuery.data?.waitlist ?? []),
+    [bookingsQuery.data]
+  );
   const attendance = attendanceQuery.data ?? [];
   const subscription = subscriptionQuery.data;
 

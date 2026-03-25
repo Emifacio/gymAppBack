@@ -11,6 +11,7 @@ import { useRandomMessage } from "@/hooks/use-random-message";
 import { useMemberBookings, useMySubscriptionStatus, useWorkouts } from "@/hooks/use-workouts";
 import { formatCredits, formatDateTime, formatRelativeSlot } from "@/lib/format";
 import { getDashboardMotivationMessages } from "@/lib/dashboard-motivation";
+import { filterActionableWaitlistEntries } from "@/lib/waitlist";
 import type { Booking, Subscription, Workout } from "@/types/gym";
 
 export function DashboardPage() {
@@ -27,9 +28,12 @@ export function DashboardPage() {
     () => bookingsQuery.data?.bookings ?? [],
     [bookingsQuery.data]
   );
-  const waitlist = useMemo(() => bookingsQuery.data?.waitlist ?? [], [bookingsQuery.data]);
+  const waitlist = useMemo(
+    () => filterActionableWaitlistEntries(bookingsQuery.data?.waitlist ?? []),
+    [bookingsQuery.data]
+  );
   const confirmedBookings = bookings.filter((booking) => booking.status === "confirmed");
-  const activeWaitlist = waitlist.filter((entry) => entry.status === "waiting");
+  const activeWaitlist = waitlist;
   const subscription: Subscription | undefined = subscriptionQuery.data;
   const firstName = session?.member.full_name.split(" ")[0] ?? "";
   const dashboardMotivationMessages = useMemo(

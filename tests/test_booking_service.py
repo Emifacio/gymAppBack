@@ -52,6 +52,31 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
         )
         self.service._enqueue_waitlist_notification = AsyncMock()
 
+    def build_class(
+        self,
+        *,
+        scheduled_at: datetime,
+        status: ClassStatus = ClassStatus.SCHEDULED,
+        duration_minutes: int = 60,
+    ) -> SimpleNamespace:
+        return SimpleNamespace(
+            id=uuid4(),
+            name="Morning Flow",
+            description=None,
+            instructor_id=None,
+            instructor=None,
+            scheduled_at=scheduled_at,
+            duration_minutes=duration_minutes,
+            capacity=10,
+            location="Studio A",
+            status=status,
+            available_spots=4,
+            waitlist_size=0,
+            member_booking_status=None,
+            created_at=scheduled_at - timedelta(days=7),
+            updated_at=scheduled_at - timedelta(days=1),
+        )
+
     async def test_cancel_confirmed_booking_restores_credit_and_promotes_waitlist(self) -> None:
         actor = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)
         class_id = uuid4()
@@ -197,6 +222,105 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
         self.subscription_service.restore_credit_for_booking_cancellation.assert_not_awaited()
         self.service.promote_waitlist_if_needed.assert_not_awaited()
         self.service._enqueue_waitlist_notification.assert_not_awaited()
+
+    async def test_list_member_bookings_excludes_non_actionable_waitlist_entries(self) -> None:
+        member_id = uuid4()
+        now = datetime.now(timezone.utc)
+
+        upcoming_class = self.build_class(
+            scheduled_at=now + timedelta(hours=6),
+            status=ClassStatus.SCHEDULED,
+        )
+        concluded_class = self.build_class(
+            scheduled_at=now - timedelta(hours=3),
+            status=ClassStatus.COMPLETED,
+        )
+        cancelled_class = self.build_class(
+            scheduled_at=now + timedelta(hours=4),
+            status=ClassStatus.CANCELLED,
+        )
+        ended_but_unfinished_class = self.build_class(
+            scheduled_at=now - timedelta(hours=2),
+            status=ClassStatus.SCHEDULED,
+            duration_minutes=45,
+        )
+
+        booking = Booking(
+            id=uuid4(),
+            member_id=member_id,
+            class_id=upcoming_class.id,
+            status=BookingStatus.CONFIRMED,
+            booking_type=BookingType.CREDIT,
+            credits_consumed=1,
+            booked_at=now - timedelta(days=1),
+            cancelled_at=None,
+        )
+        booking.__dict__["gym_class"] = upcoming_class
+
+        upcoming_waitlist = Waitlist(
+            id=uuid4(),
+            member_id=member_id,
+            class_id=upcoming_class.id,
+            position=1,
+            status=WaitlistStatus.WAITING,
+            joined_at=now - timedelta(hours=1),
+            promoted_at=None,
+            cancelled_at=None,
+        )
+        upcoming_waitlist.__dict__["gym_class"] = upcoming_class
+
+        concluded_waitlist = Waitlist(
+            id=uuid4(),
+            member_id=member_id,
+            class_id=concluded_class.id,
+            position=2,
+            status=WaitlistStatus.WAITING,
+            joined_at=now - timedelta(hours=2),
+            promoted_at=None,
+            cancelled_at=None,
+        )
+        concluded_waitlist.__dict__["gym_class"] = concluded_class
+
+        cancelled_waitlist = Waitlist(
+            id=uuid4(),
+            member_id=member_id,
+            class_id=cancelled_class.id,
+            position=3,
+            status=WaitlistStatus.WAITING,
+            joined_at=now - timedelta(hours=3),
+            promoted_at=None,
+            cancelled_at=None,
+        )
+        cancelled_waitlist.__dict__["gym_class"] = cancelled_class
+
+        ended_waitlist = Waitlist(
+            id=uuid4(),
+            member_id=member_id,
+            class_id=ended_but_unfinished_class.id,
+            position=4,
+            status=WaitlistStatus.WAITING,
+            joined_at=now - timedelta(hours=4),
+            promoted_at=None,
+            cancelled_at=None,
+        )
+        ended_waitlist.__dict__["gym_class"] = ended_but_unfinished_class
+
+        self.member_repository.get_by_id = AsyncMock(return_value=SimpleNamespace(id=member_id))
+        self.booking_repository.list_for_member = AsyncMock(return_value=[booking])
+        self.waitlist_repository.list_for_member = AsyncMock(
+            return_value=[
+                upcoming_waitlist,
+                concluded_waitlist,
+                cancelled_waitlist,
+                ended_waitlist,
+            ]
+        )
+
+        response = await self.service.list_member_bookings(member_id)
+
+        self.assertEqual(len(response.bookings), 1)
+        self.assertEqual(len(response.waitlist), 1)
+        self.assertEqual(response.waitlist[0].id, upcoming_waitlist.id)
 
     def test_cancellation_is_early_boundary(self) -> None:
         now = datetime.now(timezone.utc)
