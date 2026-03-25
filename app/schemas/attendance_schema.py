@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 from app.domain.enums import AttendanceStatus
+from app.schemas.class_schema import ClassRead
 
 
 class AttendanceCreate(BaseModel):
@@ -19,9 +20,9 @@ class AttendanceRead(BaseModel):
     id: UUID
     member_id: UUID
     class_id: UUID
+    gym_class: ClassRead | None = None
     marked_by_instructor_id: UUID | None = None
     status: AttendanceStatus
     notes: str | None = None
     mark_source: str
     marked_at: datetime
-

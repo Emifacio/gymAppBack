@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   CalendarDays,
@@ -13,7 +14,7 @@ import {
   UserRound
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { Member } from "@gym/api-client";
+import { gymKeys, type AttendanceRecord, type Member, type Workout } from "@gym/api-client";
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -221,9 +222,58 @@ function parseDisplayDateToIso(value: string) {
   return `${year}-${month}-${day}`;
 }
 
+function getWorkoutName(workout: Workout | null | undefined) {
+  const normalizedName = workout?.name?.trim();
+  return normalizedName || "Clase sin nombre";
+}
+
+function getWorkoutInstructorName(workout: Workout | null | undefined) {
+  const normalizedName =
+    workout?.instructor?.name?.trim() || workout?.instructor?.full_name?.trim() || null;
+
+  return normalizedName || null;
+}
+
+function getWorkoutDetailLine(workout: Workout | null | undefined) {
+  const instructorName = getWorkoutInstructorName(workout);
+  const details = [
+    workout?.scheduled_at ? `Clase ${formatDateTime(workout.scheduled_at)}` : null,
+    instructorName ? `Instructor ${instructorName}` : null
+  ].filter(Boolean);
+
+  return details.join(" · ") || "Detalles de la clase pendientes.";
+}
+
+function getWorkoutLookup(
+  cachedWorkouts: Workout[],
+  bookings: Array<{ gym_class?: Workout | null }>,
+  attendance: AttendanceRecord[]
+) {
+  const lookup = new Map<string, Workout>();
+
+  for (const workout of cachedWorkouts) {
+    lookup.set(workout.id, workout);
+  }
+
+  for (const booking of bookings) {
+    if (booking.gym_class) {
+      lookup.set(booking.gym_class.id, booking.gym_class);
+    }
+  }
+
+  for (const record of attendance) {
+    if (record.gym_class) {
+      lookup.set(record.gym_class.id, record.gym_class);
+    }
+  }
+
+  return lookup;
+}
+
 export function MemberDetailPage() {
   const { memberId = "" } = useParams();
   const { session } = useAuth();
+  const queryClient = useQueryClient();
   const memberQuery = useMember(memberId);
   const bookingsQuery = useMemberBookings(memberId);
   const attendanceQuery = useMemberAttendance(memberId);
@@ -237,6 +287,13 @@ export function MemberDetailPage() {
   const bookings = bookingsQuery.data?.bookings ?? [];
   const attendance = attendanceQuery.data ?? [];
   const subscription = subscriptionQuery.data;
+  const cachedWorkoutLists = queryClient.getQueriesData<Workout[]>({
+    queryKey: gymKeys.workouts()
+  });
+  const cachedWorkouts = cachedWorkoutLists.flatMap(([, value]) =>
+    Array.isArray(value) ? value : []
+  );
+  const workoutLookup = getWorkoutLookup(cachedWorkouts, bookings, attendance);
   const canView =
     session && (canManageOperations(session.member) || session.member.id === memberId);
   const [birthDateError, setBirthDateError] = useState<string | null>(null);
@@ -758,9 +815,21 @@ export function MemberDetailPage() {
               {bookings.map((booking) => (
                 <CardInset key={booking.id} className="flex items-center justify-between gap-4">
                   <div className="space-y-1">
-                    <p className="font-bold text-[var(--text-primary)]">
-                      {booking.gym_class?.name ?? `Class ${booking.class_id}`}
-                    </p>
+                    {(() => {
+                      const workout =
+                        booking.gym_class ?? workoutLookup.get(booking.class_id) ?? null;
+
+                      return (
+                        <>
+                          <p className="font-bold text-[var(--text-primary)]">
+                            {getWorkoutName(workout)}
+                          </p>
+                          <p className="text-sm text-[var(--text-secondary)]">
+                            {getWorkoutDetailLine(workout)}
+                          </p>
+                        </>
+                      );
+                    })()}
                     <p className="text-sm text-[var(--text-secondary)]">
                       Reservado el {formatDateTime(booking.booked_at)}
                     </p>
@@ -814,7 +883,21 @@ export function MemberDetailPage() {
               {attendance.map((record) => (
                 <CardInset key={record.id} className="flex items-center justify-between gap-4">
                   <div className="space-y-1">
-                    <p className="font-bold text-[var(--text-primary)]">{record.class_id}</p>
+                    {(() => {
+                      const workout =
+                        record.gym_class ?? workoutLookup.get(record.class_id) ?? null;
+
+                      return (
+                        <>
+                          <p className="font-bold text-[var(--text-primary)]">
+                            {getWorkoutName(workout)}
+                          </p>
+                          <p className="text-sm text-[var(--text-secondary)]">
+                            {getWorkoutDetailLine(workout)}
+                          </p>
+                        </>
+                      );
+                    })()}
                     <p className="text-sm text-[var(--text-secondary)]">
                       Marcado el {formatDateTime(record.marked_at)}
                     </p>

@@ -143,7 +143,9 @@ export type MemberFilters = NonNullable<paths["/members"]["get"]["parameters"]["
 export type MemberCreatePayload = components["schemas"]["MemberCreate"];
 export type MemberUpdatePayload = components["schemas"]["MemberUpdate"];
 export type AttendancePayload = components["schemas"]["AttendanceCreate"];
-export type AttendanceRecord = components["schemas"]["AttendanceRead"];
+export type AttendanceRecord = components["schemas"]["AttendanceRead"] & {
+  gym_class?: Workout | null;
+};
 export type IntegrationConnectPayload = components["schemas"]["StravaConnectRequest"];
 export type IntegrationAccount = components["schemas"]["IntegrationAccountRead"];
 export type ActivityRecord = components["schemas"]["ActivityRead"];
