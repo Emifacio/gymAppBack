@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Ticket, Clock, History, Ban, CheckCircle2, AlertCircle } from "lucide-react";
+import { gymKeys, type Workout } from "@gym/api-client";
 
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -13,8 +15,21 @@ import { filterActionableWaitlistEntries } from "@/lib/waitlist";
 import { CancellationModal } from "@/components/cancellation-modal";
 import { Button } from "@/components/ui/Button";
 
+function getWorkoutName(workout: Workout | null | undefined) {
+  const normalizedName = workout?.name?.trim();
+  return normalizedName || "Clase registrada";
+}
+
+function getWorkoutInstructorName(workout: Workout | null | undefined) {
+  const normalizedName =
+    workout?.instructor?.name?.trim() || workout?.instructor?.full_name?.trim() || null;
+
+  return normalizedName || null;
+}
+
 export function BookingsPage() {
   const { session } = useAuth();
+  const queryClient = useQueryClient();
   const bookingsQuery = useMemberBookings(session!.member.id);
   const attendanceQuery = useMemberAttendance(session!.member.id);
   const subscriptionQuery = useMySubscriptionStatus();
@@ -44,6 +59,39 @@ export function BookingsPage() {
   );
   const attendance = attendanceQuery.data ?? [];
   const subscription = subscriptionQuery.data;
+  const cachedWorkoutLists = queryClient.getQueriesData<Workout[]>({
+    queryKey: gymKeys.workouts()
+  });
+  const workoutLookup = useMemo(() => {
+    const lookup = new Map<string, Workout>();
+    const cachedWorkouts = cachedWorkoutLists.flatMap(([, value]) =>
+      Array.isArray(value) ? value : []
+    );
+
+    for (const workout of cachedWorkouts) {
+      lookup.set(workout.id, workout);
+    }
+
+    for (const booking of bookings) {
+      if (booking.gym_class) {
+        lookup.set(booking.gym_class.id, booking.gym_class);
+      }
+    }
+
+    for (const entry of waitlist) {
+      if (entry.gym_class) {
+        lookup.set(entry.gym_class.id, entry.gym_class);
+      }
+    }
+
+    for (const record of attendance) {
+      if (record.gym_class) {
+        lookup.set(record.gym_class.id, record.gym_class);
+      }
+    }
+
+    return lookup;
+  }, [attendance, bookings, cachedWorkoutLists, waitlist]);
 
   const isBookingLateCancelable = (scheduledAt: string | undefined | null) => {
     if (!scheduledAt) return false;
@@ -323,28 +371,42 @@ export function BookingsPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {attendance.map((record) => (
-            <div
-              key={record.id}
-              className="rounded-2xl bg-[var(--bg-surface-secondary)]/50 p-5 border border-[var(--border-base)] hover:shadow-md transition-shadow"
-            >
-              <div
-                className={`mb-3 inline-flex px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-tighter ${
-                  record.status === "present"
-                    ? "bg-[var(--success-soft)] text-[var(--success)]"
-                    : "bg-[var(--danger-soft)] text-[var(--danger)]"
-                }`}
-              >
-                {record.status === "present" ? "Asistido" : "Falta"}
-              </div>
-              <p className="text-sm font-bold text-[var(--text-primary)] truncate">
-                Entrenamiento ID: {record.class_id}
-              </p>
-              <p className="mt-1 text-xs font-medium text-[var(--text-secondary)]">
-                {formatWorkoutSchedule(record.marked_at)}
-              </p>
-            </div>
-          ))}
+          {attendance.map((record) =>
+            (() => {
+              const workout = record.gym_class ?? workoutLookup.get(record.class_id) ?? null;
+              const instructorName = getWorkoutInstructorName(workout);
+              const details = [
+                workout?.scheduled_at ? formatWorkoutSchedule(workout.scheduled_at) : null,
+                instructorName ? `Instructor ${instructorName}` : null
+              ].filter(Boolean);
+
+              return (
+                <div
+                  key={record.id}
+                  className="rounded-2xl bg-[var(--bg-surface-secondary)]/50 p-5 border border-[var(--border-base)] hover:shadow-md transition-shadow"
+                >
+                  <div
+                    className={`mb-3 inline-flex px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-tighter ${
+                      record.status === "present"
+                        ? "bg-[var(--success-soft)] text-[var(--success)]"
+                        : "bg-[var(--danger-soft)] text-[var(--danger)]"
+                    }`}
+                  >
+                    {record.status === "present" ? "Asistido" : "Falta"}
+                  </div>
+                  <p className="text-sm font-bold text-[var(--text-primary)] truncate">
+                    {getWorkoutName(workout)}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-[var(--text-secondary)]">
+                    {details.join(" · ") || "Detalles de la clase pendientes."}
+                  </p>
+                  <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                    Marcado {formatWorkoutSchedule(record.marked_at)}
+                  </p>
+                </div>
+              );
+            })()
+          )}
 
           {!attendance.length && !attendanceQuery.isLoading && (
             <div className="col-span-full py-20 text-center opacity-40">
