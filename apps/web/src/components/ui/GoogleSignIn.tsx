@@ -53,20 +53,26 @@ export function GoogleSignIn({ clientId, onSuccess, onError, disabled }: GoogleS
   }
 
   const isBusy = Boolean(disabled);
+  const wrapperClassName =
+    "h-13 w-full overflow-hidden rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] shadow-sm shadow-black/5";
 
   return (
     <div className="relative w-full">
       {isReady ? (
-        <div
-          aria-describedby={statusId}
-          aria-disabled={isBusy}
-          className={isBusy ? "pointer-events-none opacity-60" : undefined}
-          ref={buttonContainerRef}
-        />
+        <div className={wrapperClassName}>
+          <div
+            aria-describedby={statusId}
+            aria-disabled={isBusy}
+            className={`flex h-full w-full items-center justify-center ${
+              isBusy ? "pointer-events-none opacity-60" : ""
+            }`}
+            ref={buttonContainerRef}
+          />
+        </div>
       ) : (
         <Button
           aria-describedby={statusId}
-          className="h-13 w-full justify-center rounded-2xl border border-[var(--border-base)] bg-[var(--bg-surface-secondary)] px-5 text-[15px] font-semibold text-[var(--text-primary)] shadow-sm shadow-black/5"
+          className={`${wrapperClassName} justify-center px-5 text-[15px] font-semibold text-[var(--text-primary)]`}
           disabled
           loading
           size="lg"

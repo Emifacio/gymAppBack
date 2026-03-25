@@ -93,6 +93,7 @@ export function useGoogleAuth({
   onError
 }: UseGoogleAuthOptions) {
   const [isReady, setIsReady] = useState(false);
+  const [buttonWidth, setButtonWidth] = useState(0);
   const buttonContainerRef = useRef<HTMLDivElement | null>(null);
   const initializedClientId = useRef<string | null>(null);
   const promptedClientId = useRef<string | null>(null);
@@ -163,6 +164,37 @@ export function useGoogleAuth({
       return;
     }
 
+    const container = buttonContainerRef.current;
+    const updateWidth = () => {
+      const nextWidth = Math.round(container.getBoundingClientRect().width);
+      setButtonWidth((currentWidth) => (currentWidth === nextWidth ? currentWidth : nextWidth));
+    };
+
+    updateWidth();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const resizeObserver = new ResizeObserver(() => {
+        updateWidth();
+      });
+
+      resizeObserver.observe(container);
+
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }
+  }, [isReady]);
+
+  useEffect(() => {
+    if (
+      !isReady ||
+      !buttonContainerRef.current ||
+      !window.google?.accounts?.id ||
+      buttonWidth <= 0
+    ) {
+      return;
+    }
+
     buttonContainerRef.current.innerHTML = "";
     window.google.accounts.id.renderButton(buttonContainerRef.current, {
       type: "standard",
@@ -171,9 +203,9 @@ export function useGoogleAuth({
       text: "continue_with",
       shape: "pill",
       logo_alignment: "left",
-      width: buttonContainerRef.current.offsetWidth || 320
+      width: buttonWidth
     });
-  }, [isReady]);
+  }, [buttonWidth, isReady]);
 
   useEffect(() => {
     if (!isReady || disabled || !window.google?.accounts?.id) {
