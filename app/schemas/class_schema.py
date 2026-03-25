@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
@@ -8,20 +8,63 @@ from app.domain.enums import BookingType
 from app.domain.enums import ClassStatus
 
 
+def _get_instructor_value(source: Any, field_name: str) -> Any:
+    if isinstance(source, dict):
+        return source.get(field_name)
+    return getattr(source, field_name, None)
+
+
+def _resolve_instructor_display_name(source: Any) -> str | None:
+    member = _get_instructor_value(source, "member")
+    resolved_name = (
+        _get_instructor_value(source, "name")
+        or _get_instructor_value(source, "full_name")
+        or getattr(member, "full_name", None)
+    )
+
+    if not isinstance(resolved_name, str):
+        return None
+
+    normalized_name = resolved_name.strip()
+    return normalized_name or None
+
+
 class InstructorSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
     member_id: UUID
+    name: str | None = None
     full_name: str | None = None
     bio: str | None = None
     specialties: str | None = None
 
-    @model_validator(mode="after")
-    def set_full_name(self) -> "InstructorSummary":
-        if hasattr(self, "member") and self.member:
-             self.full_name = self.member.full_name
-        return self
+    @model_validator(mode="before")
+    @classmethod
+    def set_display_name(cls, data: Any) -> Any:
+        if data is None:
+            return data
+
+        payload = (
+            dict(data)
+            if isinstance(data, dict)
+            else {
+                "id": getattr(data, "id", None),
+                "member_id": getattr(data, "member_id", None),
+                "bio": getattr(data, "bio", None),
+                "specialties": getattr(data, "specialties", None),
+            }
+        )
+
+        resolved_name = _resolve_instructor_display_name(data)
+        if resolved_name is None:
+            resolved_name = _resolve_instructor_display_name(payload)
+
+        if resolved_name is not None:
+            payload["name"] = resolved_name
+            payload["full_name"] = resolved_name
+
+        return payload
 
 
 class ClassCreate(BaseModel):

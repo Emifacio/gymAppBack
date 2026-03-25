@@ -7,8 +7,10 @@ import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
 import { WorkoutCard } from "@/components/workout-card";
 import { useAuth } from "@/hooks/use-auth";
+import { useRandomMessage } from "@/hooks/use-random-message";
 import { useMemberBookings, useMySubscriptionStatus, useWorkouts } from "@/hooks/use-workouts";
 import { formatCredits, formatDateTime, formatRelativeSlot } from "@/lib/format";
+import { getDashboardMotivationMessages } from "@/lib/dashboard-motivation";
 import type { Booking, Subscription, Workout } from "@/types/gym";
 
 export function DashboardPage() {
@@ -29,6 +31,12 @@ export function DashboardPage() {
   const confirmedBookings = bookings.filter((booking) => booking.status === "confirmed");
   const activeWaitlist = waitlist.filter((entry) => entry.status === "waiting");
   const subscription: Subscription | undefined = subscriptionQuery.data;
+  const firstName = session?.member.full_name.split(" ")[0] ?? "";
+  const dashboardMotivationMessages = useMemo(
+    () => getDashboardMotivationMessages(firstName),
+    [firstName]
+  );
+  const motivationalEmptyStateMessage = useRandomMessage(dashboardMotivationMessages);
 
   const [now, setNow] = useState(() => new Date());
 
@@ -65,7 +73,7 @@ export function DashboardPage() {
         </div>
         <div>
           <h2 className="section-title text-[var(--font-size-2xl)] text-[var(--text-primary)] leading-tight">
-            Buenos días, {session?.member.full_name.split(" ")[0]}
+            Buenos días, {firstName}
           </h2>
           <p className="mt-1 text-sm font-medium text-[var(--text-secondary)] lg:text-base opacity-80">
             Tienes {confirmedBookings.length} clases programadas para esta semana.
@@ -107,9 +115,9 @@ export function DashboardPage() {
 
       {showEmptyState ? (
         <EmptyState
-          eyebrow="Listo para crecer"
-          title="Aún no hay entrenamientos programados"
-          description="Tan pronto agendes tu primera clase, aparecerá aquí automáticamente."
+          eyebrow="Tu impulso"
+          title="Hoy también cuenta"
+          description={motivationalEmptyStateMessage}
         />
       ) : (
         <>

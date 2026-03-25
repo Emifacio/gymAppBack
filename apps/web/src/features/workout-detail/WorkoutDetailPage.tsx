@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { BookingEligibilityModal } from "@/components/booking-eligibility-modal";
 import { Card, CardContent, CardEyebrow, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAuth } from "@/hooks/use-auth";
+import { useMembers } from "@/hooks/use-workouts";
 import { canManageOperations } from "@/lib/roles";
 import { isApiResponseError } from "@gym/api-client";
 import { WorkoutInfoPanel } from "./components/WorkoutInfoPanel";
@@ -13,6 +14,7 @@ import { MembersList } from "./components/MembersList";
 import { AttendancePanel } from "./components/AttendancePanel";
 import { useWorkoutBooking } from "./hooks/useWorkoutBooking";
 import { useWorkoutAdmin } from "./hooks/useWorkoutAdmin";
+import { buildInstructorNameMap, resolveWorkoutInstructorName } from "./utils/workout.utils";
 
 import { SkeletonWorkoutDetail } from "@/components/ui/skeletons";
 
@@ -35,6 +37,12 @@ export function WorkoutDetailPage() {
     handleBook,
     handleCloseEligibilityModal
   } = useWorkoutBooking(workoutId);
+  const instructorsQuery = useMembers({
+    offset: 0,
+    limit: 500,
+    role: "instructor",
+    membership_status: null
+  });
 
   const canManage = canManageOperations(session?.member);
   const {
@@ -49,6 +57,14 @@ export function WorkoutDetailPage() {
     () => (workout ? new Date(workout.scheduled_at) < new Date() : false),
     [workout]
   );
+  const instructorsMap = useMemo(
+    () => buildInstructorNameMap(instructorsQuery.data ?? []),
+    [instructorsQuery.data]
+  );
+  const resolvedInstructorName = useMemo(
+    () => (workout ? resolveWorkoutInstructorName(workout, instructorsMap) : null),
+    [instructorsMap, workout]
+  );
   const classMemberNamesById = useMemo(
     () =>
       Object.fromEntries(
@@ -58,6 +74,22 @@ export function WorkoutDetailPage() {
   );
   const isLoading = workoutQuery.isPending || isCheckingEligibility || bookingMutation.isPending;
   const isNotFound = workoutQuery.isSuccess && !workout;
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || !workoutQuery.data) {
+      return;
+    }
+
+    console.debug("[WorkoutDetailPage] class detail instructor debug", {
+      classId: workoutQuery.data.id,
+      instructorId: workoutQuery.data.instructor_id,
+      instructor: workoutQuery.data.instructor,
+      fallbackInstructorName: workoutQuery.data.instructor_id
+        ? instructorsMap[workoutQuery.data.instructor_id]
+        : undefined,
+      resolvedInstructorName
+    });
+  }, [instructorsMap, resolvedInstructorName, workoutQuery.data]);
 
   if (isLoading) {
     return <SkeletonWorkoutDetail />;
@@ -96,7 +128,7 @@ export function WorkoutDetailPage() {
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-      <WorkoutInfoPanel workout={workout!} isPast={isPast} />
+      <WorkoutInfoPanel workout={workout!} isPast={isPast} instructorsMap={instructorsMap} />
 
       <BookingPanel
         bookingButtonConfig={bookingButtonConfig}

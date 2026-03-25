@@ -10,45 +10,44 @@ import {
   CardInset,
   CardTitle
 } from "@/components/ui/Card";
-import { formatWorkoutSchedule } from "@/lib/format";
+import { formatWorkoutInfo, type InstructorNameMap } from "../utils/workout.utils";
 
 interface Props {
   workout: Workout;
   isPast: boolean;
+  instructorsMap?: InstructorNameMap;
 }
 
-export function WorkoutInfoPanel({ workout, isPast }: Props) {
+export function WorkoutInfoPanel({ workout, isPast, instructorsMap = {} }: Props) {
+  const workoutInfo = formatWorkoutInfo(workout, instructorsMap);
   const details = [
     {
       label: "Horario",
-      value: formatWorkoutSchedule(workout.scheduled_at)
+      value: workoutInfo.schedule
     },
     {
       label: "Ubicación",
-      value: workout.location
+      value: workoutInfo.location
     },
     {
       label: "Disponibilidad",
-      value:
-        typeof workout.available_spots === "number"
-          ? `${workout.available_spots} ${workout.available_spots === 1 ? "lugar restante" : "lugares restantes"}`
-          : `${workout.capacity} lugares totales`
+      value: workoutInfo.availability
     },
     {
       label: "Lista de espera",
-      value: `${workout.waitlist_size ?? 0} miembros esperando`
+      value: workoutInfo.waitlist
     },
     {
       label: "Duración",
-      value: `${workout.duration_minutes} minutos`
+      value: workoutInfo.duration
     },
     {
       label: "Instructor",
-      value: workout.instructor?.full_name ?? "Sin asignar"
+      value: workoutInfo.instructor
     },
     {
       label: "Tu estado",
-      value: workout.member_booking_status ?? "No reservado"
+      value: workoutInfo.memberStatus
     }
   ];
 

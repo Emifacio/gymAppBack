@@ -580,6 +580,8 @@ export interface components {
        * Format: uuid
        */
       member_id: string;
+      /** Name */
+      name?: string | null;
       /** Bio */
       bio?: string | null;
       /** Specialties */
