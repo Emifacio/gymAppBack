@@ -1,4 +1,10 @@
-import { queryOptions, useMutation, useQuery, useQueryClient, type UseMutationOptions } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationOptions
+} from "@tanstack/react-query";
 
 import { toAuthSession, type AuthSession, type SessionManager } from "./auth";
 import {
@@ -42,7 +48,8 @@ export const gymKeys = {
   memberList: (filters: MemberFilters = {}) => [...gymKeys.members(), "list", filters] as const,
   memberDetail: (memberId: string) => [...gymKeys.members(), "detail", memberId] as const,
   memberBookings: (memberId: string) => [...gymKeys.all, "member-bookings", memberId] as const,
-  memberSubscription: (memberId: string) => [...gymKeys.all, "member-subscription", memberId] as const,
+  memberSubscription: (memberId: string) =>
+    [...gymKeys.all, "member-subscription", memberId] as const,
   memberSelfSubscription: () => [...gymKeys.all, "member-self-subscription"] as const,
   memberAttendance: (memberId: string) => [...gymKeys.all, "member-attendance", memberId] as const,
   classAttendance: (classId: string) => [...gymKeys.all, "class-attendance", classId] as const,
@@ -87,7 +94,9 @@ export function getMemberQueryOptions(client: GymApiClient, memberId: string) {
   return queryOptions({
     queryKey: gymKeys.memberDetail(memberId),
     queryFn: () =>
-      unwrapResult<Member>(client.GET("/members/{member_id}", { params: { path: { member_id: memberId } } }))
+      unwrapResult<Member>(
+        client.GET("/members/{member_id}", { params: { path: { member_id: memberId } } })
+      )
   });
 }
 
@@ -130,9 +139,7 @@ export function getMemberSelfSubscriptionQueryOptions(client: GymApiClient) {
   return queryOptions({
     queryKey: gymKeys.memberSelfSubscription(),
     queryFn: () =>
-      unwrapResult<MemberSubscriptionStatus>(
-        untypedClient.GET("/members/me/subscription")
-      )
+      unwrapResult<MemberSubscriptionStatus>(untypedClient.GET("/members/me/subscription"))
   });
 }
 
@@ -335,7 +342,10 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
   }
 
   function useCreateBooking(
-    options: Omit<UseMutationOptions<BookingAction, Error, { classId: string; memberId?: string }>, "mutationFn"> = {}
+    options: Omit<
+      UseMutationOptions<BookingAction, Error, { classId: string; memberId?: string }>,
+      "mutationFn"
+    > = {}
   ) {
     const queryClient = useQueryClient();
 
@@ -370,7 +380,10 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
   }
 
   function useCancelBooking(
-    options: Omit<UseMutationOptions<BookingCancellation, Error, { bookingId: string; memberId: string }>, "mutationFn"> = {}
+    options: Omit<
+      UseMutationOptions<BookingCancellation, Error, { bookingId: string; memberId: string }>,
+      "mutationFn"
+    > = {}
   ) {
     const queryClient = useQueryClient();
 
@@ -384,8 +397,12 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
       ...options,
       onSuccess: async (result, variables, onMutateResult, context) => {
         await queryClient.invalidateQueries({ queryKey: gymKeys.workouts() });
-        await queryClient.invalidateQueries({ queryKey: gymKeys.memberBookings(variables.memberId) });
-        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSubscription(variables.memberId) });
+        await queryClient.invalidateQueries({
+          queryKey: gymKeys.memberBookings(variables.memberId)
+        });
+        await queryClient.invalidateQueries({
+          queryKey: gymKeys.memberSubscription(variables.memberId)
+        });
         await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(variables.memberId) });
         await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });
         await options.onSuccess?.(result, variables, onMutateResult, context);
@@ -427,8 +444,22 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
         ),
       ...options,
       onSuccess: async (result, variables, onMutateResult, context) => {
+        queryClient.setQueryData(gymKeys.memberDetail(variables.memberId), result);
+
+        if (sessionManager) {
+          const currentSession = await sessionManager.getSession();
+
+          if (currentSession?.member.id === variables.memberId) {
+            await sessionManager.setSession({
+              ...currentSession,
+              member: result
+            });
+          }
+        }
+
         await queryClient.invalidateQueries({ queryKey: gymKeys.members() });
         await queryClient.invalidateQueries({ queryKey: gymKeys.memberDetail(variables.memberId) });
+        await queryClient.invalidateQueries({ queryKey: gymKeys.dashboard(variables.memberId) });
         await options.onSuccess?.(result, variables, onMutateResult, context);
       }
     });
@@ -469,7 +500,9 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
       ...options,
       onSuccess: async (result, variables, onMutateResult, context) => {
         await queryClient.invalidateQueries({ queryKey: gymKeys.workouts() });
-        await queryClient.invalidateQueries({ queryKey: gymKeys.workoutDetail(variables.workoutId) });
+        await queryClient.invalidateQueries({
+          queryKey: gymKeys.workoutDetail(variables.workoutId)
+        });
         await options.onSuccess?.(result, variables, onMutateResult, context);
       }
     });
@@ -504,8 +537,12 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
         unwrapResult<AttendanceRecord>(client.POST("/attendance", { body: payload })),
       ...options,
       onSuccess: async (result, variables, onMutateResult, context) => {
-        await queryClient.invalidateQueries({ queryKey: gymKeys.classAttendance(variables.class_id) });
-        await queryClient.invalidateQueries({ queryKey: gymKeys.memberAttendance(variables.member_id) });
+        await queryClient.invalidateQueries({
+          queryKey: gymKeys.classAttendance(variables.class_id)
+        });
+        await queryClient.invalidateQueries({
+          queryKey: gymKeys.memberAttendance(variables.member_id)
+        });
         await options.onSuccess?.(result, variables, onMutateResult, context);
       }
     });
@@ -697,8 +734,12 @@ export function createApiHooks({ client, sessionManager }: CreateApiHooksOptions
         await queryClient.invalidateQueries({ queryKey: gymKeys.workouts() });
         await queryClient.invalidateQueries({ queryKey: gymKeys.workoutDetail(variables.classId) });
         await queryClient.invalidateQueries({ queryKey: gymKeys.classMembers(variables.classId) });
-        await queryClient.invalidateQueries({ queryKey: gymKeys.memberBookings(variables.memberId) });
-        await queryClient.invalidateQueries({ queryKey: gymKeys.memberSubscription(variables.memberId) });
+        await queryClient.invalidateQueries({
+          queryKey: gymKeys.memberBookings(variables.memberId)
+        });
+        await queryClient.invalidateQueries({
+          queryKey: gymKeys.memberSubscription(variables.memberId)
+        });
         await queryClient.invalidateQueries({ queryKey: gymKeys.memberSelfSubscription() });
         await options.onSuccess?.(result, variables, onMutateResult, context);
       }
