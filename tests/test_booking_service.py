@@ -556,9 +556,9 @@ class BookingServiceTests(IsolatedAsyncioTestCase):
 
     def test_cancellation_is_early_boundary(self) -> None:
         now = datetime.now(timezone.utc)
-        self.assertTrue(BookingService.cancellation_is_early(now + timedelta(hours=24)))
-        self.assertFalse(BookingService.cancellation_is_early(now + timedelta(hours=23, minutes=59)))
-        self.assertFalse(BookingService.cancellation_is_early(now - timedelta(hours=1)))
+        self.assertTrue(BookingService.cancellation_is_early(now + timedelta(hours=24), reference_time=now))
+        self.assertFalse(BookingService.cancellation_is_early(now + timedelta(hours=23, minutes=59), reference_time=now))
+        self.assertFalse(BookingService.cancellation_is_early(now - timedelta(hours=1), reference_time=now))
 
     async def test_cancel_booking_rejects_non_cancellable_statuses(self) -> None:
         actor = SimpleNamespace(id=uuid4(), role=MemberRole.MEMBER)
