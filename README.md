@@ -514,3 +514,11 @@ The web app’s Vercel project config is committed at `apps/web/vercel.json`, so
 - The Strava connect endpoint stores access credentials supplied by a client-side OAuth flow or admin tooling.
 - The class model file is named `gym_class.py` because `class.py` would conflict with Python syntax.
 - The local Docker stack has been verified to serve `/health` and `/docs`.
+
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) to get started.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
